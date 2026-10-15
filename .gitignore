@@ -1,0 +1,12 @@
+.venv/
+.env
+__pycache__/
+data/raw/
+contracts/out/
+contracts/cache/
+runs/
+rpc.json
+data/
+models/
+*.zip
+!archives/*.zip
