@@ -29,13 +29,15 @@ flowchart TB
     end
     CACHE[(On-disk cache<br/>traces + API responses)]
     subgraph MODEL[Model]
-        TRAIN[Train + grouped CV] --> FREEZE[Frozen model<br/>+ hashes] --> SCORE[Sealed test<br/>scored once]
+        TRAIN[Train + grouped CV<br/>logistic regression] --> FREEZE[Frozen model<br/>+ hashes] --> SCORE[Sealed test<br/>scored once]
     end
+    LAYA[Laya text model<br/>reads the card text<br/>benchmarked, not deciding]
     SRC --> EXE --> CACHE --> FC
     META --> FC
     PRICE --> FC
-    FC --> TRAIN
+    FC -- numbers --> TRAIN
     FC --> SCORE
+    FC -. card text .-> LAYA
 ```
 
 | Layer | Code | Role |
@@ -45,6 +47,7 @@ flowchart TB
 | Data clients | `oracle/sources.py` | archive RPC, explorer, prices; rate-limited and cached |
 | Card builder | `oracle/card.py`, `oracle/category.py` | turn an execution into a fact card and features |
 | Model | `scripts/eval_nested.py`, `freeze_v9.py`, `eval_test2.py` | train, freeze, score sealed tests |
+| Text model (experimental) | `scripts/eval_laya.py`, `models/laya_frozen_v7` | Laya fine-tuned on card text; compared against the main model |
 
 **In production (planned):** a protocol opts in, and its contracts only accept transactions that passed the oracle.
 
@@ -100,6 +103,28 @@ A real exploit card, shortened (*WhereIsMyDragonTreasure*, a training example):
 The model is a logistic regression with a fixed threshold. It is small and auditable, and every decision traces back
 to card numbers.
 
+## How the model was trained
+
+1. **Labels.** Exploits are real attack transactions, each checked against its incident report and required to move
+   value in its own trace. Normals are: transactions to the same victim from at least a day before the attack,
+   look-alike DeFi traffic (flash loans, liquidations, aggregators, MEV bots, vaults), and random traffic per chain.
+2. **Features.** The ~45 card numbers, log-scaled (amounts range from $1 to $100M+) and standardised.
+3. **Model choice.** Logistic regression, gradient boosting and their average were compared with nested
+   cross-validation, grouped by victim contract so a protocol is never in both the training and the scoring fold.
+   Logistic regression matched the others and was the most stable, so it was chosen.
+4. **Threshold.** Chosen on out-of-fold predictions to keep precision at 95% or above on the training mix (0.188 for v10).
+5. **Freeze.** The model, threshold, and hashes of the code and training data are saved before any test is scored.
+
+Cross-validated on its training data (v10: 152 exploits, 1,214 normals), it caught **96.7%** of exploits with **0.58%**
+false alarms.
+
+**Where Laya fits.** Laya is a small language model (ModernBERT, 421M parameters) built for fast yes/no decisions.
+We fine-tuned it to read the fact card's text and say "exploit" or "normal". It ranks well (AUC 0.997). At a usable
+threshold, though, it caught 87–90% of exploits with 0.8–1.4% false alarms, which is worse than the logistic model
+(cross-validation on 3 of 5 folds). It is not used for decisions today. It stays a candidate for the planned second
+stage: explaining flagged transactions and giving a second opinion on unclear ones. It runs locally in about 55 ms
+per card on an M5 Max.
+
 ## Results (sealed tests, each scored once)
 
 | Test | Exploits caught | False alarms |
@@ -141,6 +166,7 @@ flowchart LR
 | Sealed v2 | testing only | 82 / 3,026 |
 | Sealed v3 | testing only | 32 / 918 |
 | Sealed v4 | being built, untouched | – |
+| Per-category holdouts (v12) | testing only: about 25% of each exploit category (lending, DEX, vault, bridge, token, NFT, drainers) | reserved before training |
 
 - **No shared transactions:** zero overlap between training and any test, checked automatically before scoring.
 - **No shared victims:** a test exploit never targets a contract that appears in training. Cross-validation is grouped
@@ -202,3 +228,7 @@ uv run python scripts/eval_nested.py --cards data/cards_v10_clean.jsonl
 uv run python scripts/freeze_v9.py --cards data/cards_v10_clean.jsonl --model logreg --tag v10
 uv run python scripts/eval_test2.py --cards <sealed_test_cards.jsonl> --tag v10 --name <test>
 ```
+
+## License
+
+[Business Source License 1.1](LICENSE). You may copy, modify and use it, including in production, but not to offer a hosted or embedded transaction-security, exploit-detection or screening product or service to others. Each version becomes Apache-2.0 on 2030-10-15 (or four years after its first public release, if sooner). For other terms, contact the author.
