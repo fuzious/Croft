@@ -112,8 +112,9 @@ def check(h: str, listed: set) -> dict | None:
     sender, to = tx["from"].lower(), tx["to"].lower()
     trs = hc.transfers(rc["logs"])
     emitters = {t["token"] for t in trs}
-    to_is_drainer = to in listed or (to not in INFRA and to not in emitters and not verified(to))
-    side = listed | {sender} | ({to} if to_is_drainer else set())
+    # ScamSniffer's domain->address map also lists legit contracts a phishing site touched (e.g. USDT)
+    to_is_drainer = to not in INFRA and to not in emitters and (to in listed or not verified(to))
+    side = (listed - emitters - INFRA) | {sender} | ({to} if to_is_drainer else set())
     block = int(tx["blockNumber"], 16)
     ts = None
     taken, victims = [], set()
@@ -140,32 +141,47 @@ def check(h: str, listed: set) -> dict | None:
         return None  # victim got something back: looks like a trade, not a drain
     kind = "drainer_nft" if any(t["std"] != "erc20" for t in taken) else "drainer_token"
     members = {sender} if sender in listed or to_is_drainer else set()
-    members |= {t["to"] for t in trs if t["to"] in listed}
+    members |= {t["to"] for t in trs if t["to"] in side and t["to"] not in emitters}
     if to_is_drainer:
         members.add(to)
     return {"tx_hash": h, "kind": kind, "block": block, "victims": sorted(victims), "taken": taken[:6],
             "operator": sender, "drainer_contract": to if to_is_drainer else None, "members": sorted(members)}
 
 
-def discover(listed, n_addresses, seed, used):
+INFERNO = "0x0000db5c8b030ae20308ac975898e09741e70000"  # Etherscan name tag "Inferno Drainer" (via eth-labels)
+
+
+def discover(listed, n_addresses, seed, used, head=0, snowball=False):
     rng = random.Random(seed)
-    cands = sorted(listed)
-    rng.shuffle(cands)
+    if snowball:  # newest activity of addresses already seen draining (operators, receivers, drainer contracts)
+        pool = [json.loads(l) for l in open(POOL)]
+        cands = sorted({m for c in pool for m in c["members"]} | {INFERNO})
+        rng.shuffle(cands)
+        cands = [INFERNO] + [c for c in cands if c != INFERNO]
+    elif head:  # ScamSniffer all.json is newest-first: its head holds the 2024-2026 addresses
+        cands = [a.lower() for a in json.loads((RAW / "scam-database/repo/blacklist/all.json").read_text())["address"]]
+        cands = cands[:head]
+    else:
+        cands = sorted(listed)
+        rng.shuffle(cands)
     cands = cands[:n_addresses]
     done = {json.loads(l)["tx_hash"] for l in open(POOL)} if POOL.exists() else set()
     lock = threading.Lock()
     stats = Counter()
 
     def work(x):
-        sort = rng.choice(["asc", "desc"])
+        order = "desc" if snowball else rng.choice(["asc", "desc"])
         hashes = []
-        for action in ("tokennfttx", "token1155tx", "tokentx"):
-            for r in es_list(action, x, sort):
-                if (r.get("to") or "").lower() == x and (r.get("from") or "").lower() != x:
-                    hashes.append(r["hash"].lower())
-        for r in es_list("txlist", x, sort, 40):
-            if (r.get("to") or "").lower() == x and r.get("isError") == "0":
-                hashes.append(r["hash"].lower())
+        try:
+            r = hc.alchemy.rpc("alchemy_getAssetTransfers", [{
+                "toAddress": x, "category": ["erc20", "erc721", "erc1155"], "maxCount": "0x64",
+                "excludeZeroValue": True, "order": order}])
+            hashes += [t["hash"].lower() for t in r.get("transfers", []) if (t.get("from") or "").lower() != x]
+        except RuntimeError:
+            pass
+        if not hc.is_eoa(x):  # drainer contract: operator calls into it
+            hashes += [t["hash"].lower() for t in es_list("txlist", x, order, 40)
+                       if (t.get("to") or "").lower() == x and t.get("isError") == "0"]
         hashes = [h for h in dict.fromkeys(hashes) if h not in used]
         rng.shuffle(hashes)
         kept = 0
@@ -192,9 +208,9 @@ def discover(listed, n_addresses, seed, used):
         stats["addr_with_hits" if kept else "addr_empty"] += 1
         return kept
 
-    with ThreadPoolExecutor(4) as pool:
+    with ThreadPoolExecutor(8) as pool:
         for i, k in enumerate(pool.map(work, cands)):
-            if i % 25 == 0:
+            if i % 50 == 0:
                 print(f"[discover] {i}/{len(cands)} addrs, pool={len(done)} {dict(stats)}", flush=True)
     print(f"[discover] pool={len(done)} {dict(stats)}", flush=True)
 
@@ -215,11 +231,12 @@ def clusters(pool, domains):
     by_dom = defaultdict(list)
     for c in pool:
         ms = set(c["members"]) | {c["listed_seed"]}
-        ms = sorted(ms)
+        ok = sorted(m for m in ms if not verified(m))  # never link via legit (verified) contracts
+        ms = ok or [c["listed_seed"]]
         for m in ms[1:]:
             union(ms[0], m)
         find(ms[0])
-        for m in ms:
+        for m in ok:
             for d in domains.get(m, ()):
                 by_dom[d].append(m)
     for ms in by_dom.values():
@@ -234,30 +251,54 @@ def main():
     ap.add_argument("--target", type=int, default=220)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--skip-discover", action="store_true")
+    ap.add_argument("--discover-only", action="store_true")
+    ap.add_argument("--snowball", action="store_true")
+    ap.add_argument("--head", type=int, default=0, help="seed from the newest N ScamSniffer addresses")
     args = ap.parse_args()
     listed, domains, src = load_lists()
     print(f"listed addresses: {len(listed)}", flush=True)
     used = hc.used_hashes()
+    if POOL.exists():  # addresses already seen draining count as drainer side (snowball seeds)
+        for l in open(POOL):
+            for m in json.loads(l)["members"]:
+                if m not in listed:
+                    listed.add(m)
+                    src[m] = "snowball"
+    listed.add(INFERNO)
+    src[INFERNO] = "eth-labels:Inferno Drainer"
     if not args.skip_discover:
-        discover(listed, args.addresses, args.seed, used)
+        discover(listed, args.addresses, args.seed, used, args.head, args.snowball)
+    if args.discover_only:
+        return
     pool = [json.loads(l) for l in open(POOL)]
     pool = [c for c in pool if c["tx_hash"] not in used]
     find = clusters(pool, domains)
     for c in pool:
-        c["group"] = "drainer:" + find(c["listed_seed"])[:12]
-    # balanced selection: round-robin over (year, group), at most 6 txs per group
+        c["group"] = "drainer:" + find(sorted(set(c["members"]) | {c["listed_seed"]})[0])[:12]
+    inferno_root = find(INFERNO) if INFERNO in {m for c in pool for m in c["members"]} | {c["listed_seed"] for c in pool} else None
+    for c in pool:
+        if inferno_root and c["group"] == "drainer:" + inferno_root[:12]:
+            c["group"] = "drainer:inferno:" + inferno_root[:12]
+    # balanced selection: all 2024+ candidates first (<= 6 per group), then round-robin over groups
     rng = random.Random(args.seed)
     rng.shuffle(pool)
     by_key = defaultdict(list)
     for c in pool:
         by_key[c["group"]].append(c)
     order, per_group = [], Counter()
+    for c in sorted(pool, key=lambda c: -c["block"]):
+        if c["block"] >= 18_908_895 and per_group[c["group"]] < 6:  # >= 2024-01-01
+            order.append(c)
+            per_group[c["group"]] += 1
+    taken_h = {c["tx_hash"] for c in order}
     groups = list(by_key)
-    while groups and len(order) < args.target * 1.3:
+    while groups and len(order) < args.target * 1.4:
         nxt = []
         for g in groups:
-            if by_key[g] and per_group[g] < 6:
-                order.append(by_key[g].pop())
+            rest = [c for c in by_key[g] if c["tx_hash"] not in taken_h]
+            if rest and per_group[g] < 6:
+                order.append(rest[0])
+                taken_h.add(rest[0]["tx_hash"])
                 per_group[g] += 1
                 nxt.append(g)
         groups = nxt

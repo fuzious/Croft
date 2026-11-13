@@ -5,6 +5,7 @@ stored like build_dataset.replay_and_store does (data/replays/<hash>.json, sourc
 Never falls back to anvil replays: a row is kept only if its dRPC trace is ok and matched.
 """
 import json
+import os
 import re
 import sys
 import threading
@@ -24,7 +25,7 @@ bd.configure("eth")
 bd.alchemy = Alchemy("eth", key=1)  # prefer key 1 (trace_direct reads the module global)
 alchemy = bd.alchemy
 etherscan = Etherscan("eth")
-etherscan.limit = sources.RateLimiter(2.5)  # Etherscan is shared with other jobs
+etherscan.limit = sources.RateLimiter(float(os.environ.get("HARM_ES_RATE", "2.5")))  # Etherscan is shared with other jobs
 bd.etherscan = etherscan
 
 T_TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"

@@ -48,6 +48,16 @@ def main():
     k_all = int(flag[y == 1].sum()); n_all = int((y == 1).sum()); lo, hi = wilson(k_all, n_all)
     out.append(f"  all   {k_all}/{n_all} = {k_all / n_all:.1%}  [95% CI {lo:.1%}-{hi:.1%}]")
 
+    if any("cat" in r for r in rows):
+        out.append("By exploit category (exploits caught | false alarms on that category's normals):")
+        for cat in sorted({r.get("cat", "?") for r in rows}):
+            ex = [i for i, r in enumerate(rows) if r.get("cat") == cat and r["label"]]
+            nm = [i for i, r in enumerate(rows) if r.get("cat") == cat and not r["label"]]
+            ke, kn = int(flag[ex].sum()), int(flag[nm].sum())
+            el, eh = wilson(ke, len(ex)); fl, fh = wilson(kn, len(nm))
+            es = f"{ke}/{len(ex)} = {ke / len(ex):.1%} [{el:.0%}-{eh:.0%}]" if ex else "no exploits"
+            ns = f"{kn}/{len(nm)} = {kn / len(nm):.2%} [{fl:.2%}-{fh:.2%}]" if nm else "no normals"
+            out.append(f"  {cat:14s} caught {es:32s} | false alarms {ns}")
     out.append("False alarms on normals, by chain:")
     fpr_by_chain = {}
     for ch in sorted({r.get("chain", "eth") for r in rows if not r["label"]}):

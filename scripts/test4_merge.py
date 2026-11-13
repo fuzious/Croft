@@ -58,6 +58,18 @@ def main():
     cand = [h for r in ex for h in r["attack_candidates"]]
     assert not (set(cand) & seen), "attack candidate sampled as normal"
     assert len(rows) == len({r["tx_hash"] for r in rows})
+    # victim-address membership in earlier incident lists (address string only; no contents inspected)
+    lists = [p for p in DATA.glob("*.jsonl") if not p.name.startswith("test4_")
+             and ("exploit" in p.name or "rekt" in p.name or "incident" in p.name)]
+    lists_txt = "\n".join(p.read_text(errors="ignore").lower() for p in lists)
+    any_txt = "\n".join(p.read_text(errors="ignore").lower() for p in DATA.glob("*.jsonl")
+                         if not p.name.startswith("test4_"))
+    for r in ex:
+        r["victim_in_prior_incident_lists"] = r["victim"] in lists_txt
+        r["victim_in_any_prior_data"] = r["victim"] in any_txt
+    (DATA / "test4_exploits.jsonl").write_text("".join(json.dumps(r) + "\n" for r in ex))
+    print("exploit victims already in prior incident lists:", sum(r["victim_in_prior_incident_lists"] for r in ex),
+          "/ in any prior data file:", sum(r["victim_in_any_prior_data"] for r in ex))
     (DATA / "test4_normals.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
     print(f"normals: {len(rows)} rows (dropped {dict(dropped)})")
     print("by chain:", dict(Counter(r["chain"] for r in rows)))

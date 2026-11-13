@@ -195,22 +195,27 @@ Full results log: `runs/RESULTS.md`.
 | `contracts/` | Proof-of-concept on-chain gate (Foundry) |
 | `models/` | Frozen models with metadata and hashes (from `archives/models.zip`) |
 | `archives/` | Zipped `data/` and `models/` (Git LFS) |
-| `runs/` | Results log and reports (local only) |
+| `runs/` | Results log `runs/RESULTS.md` (tracked); other reports and logs stay local |
 
 ## Data and models
 
-`data/` and `models/` are not tracked directly. They ship as two zips in `archives/`, stored with Git LFS:
+`data/` and `models/` are not tracked directly. They ship as zips in `archives/`, stored with Git LFS. The v12 zips are
+overlays: they hold only files that are new or changed since the base zips, so unzip them after the base zips.
 
 | Zip | Contents |
 |---|---|
 | `archives/datasets.zip` | `data/` (exploit and normal rows, fact cards, replays, raw pulls), without the RPC cache |
 | `archives/models.zip` | `models/` (frozen classifiers, tx-hash manifests, `laya_frozen_v7` weights) |
+| `archives/datasets_v12.zip` | overlay: v12 cards, per-category holdouts, test v4, harm/drainer sets, stage-2 flags, new replays |
+| `archives/models_v12.zip` | overlay: `frozen_v12` (current classifier), `dev_v12_tx_hashes.json`, `stage2_v1.json` |
 
 ```bash
 git lfs install            # once per machine
 git lfs pull               # fetch the zips if the clone only got pointers
 unzip archives/datasets.zip   # restores ./data
 unzip archives/models.zip     # restores ./models
+unzip -o archives/datasets_v12.zip   # v12 overlay (overwrites changed files)
+unzip -o archives/models_v12.zip
 ```
 
 Each zip unpacks into the repo root under its original path. `data/cache/` (about 9 GB of Alchemy and Etherscan responses) is not included. Scripts refill it on demand, which needs API keys and takes longer.

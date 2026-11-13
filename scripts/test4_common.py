@@ -92,6 +92,8 @@ def set_trace_chains(chains):
 def upstream(chain: str, port: int) -> str:
     if chain == "bsc":  # public archive node (Alchemy BSC is throttled by other jobs sharing the keys)
         ups = [os.environ.get("TEST4_BSC_UPSTREAM", "https://bsc-mainnet.public.blastapi.io"), rpc("bsc").url]
+        if os.environ.get("TEST4_BSC_UPSTREAM_MODE") == "alchemy":
+            return ups[1]
         return ups[port % 2]
     return rpc(chain).url
 

@@ -38,7 +38,12 @@ def main():
     rows = [json.loads(l) for f in files for l in open(f)]
     seen: set[str] = set()
     rows = [r for r in rows if not (r["tx_hash"] in seen or seen.add(r["tx_hash"]))]  # one row per tx
-    builders = {c: CardBuilder.for_chain(c) for c in ("eth", "bsc", "base", "polygon", "arbitrum", "optimism")}
+    class _Builders(dict):  # one CardBuilder per chain, created on first use
+        def __missing__(self, chain):
+            self[chain] = CardBuilder.for_chain(chain)
+            return self[chain]
+
+    builders = _Builders()
 
     # Protected set per incident = listed victim + the verified contract that lost most in the exploit.
     def protected_set(row):
@@ -62,7 +67,9 @@ def main():
         cb = builders[row.get("chain", "eth")]
         try:
             protected = (row.get("protected") or protected_by_incident.get(row["incident"])
-                         or ([row["victim"]] if row.get("victim") else None) or [HARDNEG_PROTECTED[row["source"]]])
+                         or ([row["victim"]] if row.get("victim") else None)
+                         or row.get("victim_wallets")  # wallet drainers: the guard protects the victims' wallets
+                         or [HARDNEG_PROTECTED[row["source"]]])
             category = row.get("category") or (categorize(cb.etherscan, protected[-1]) if row.get("victim")
                                                else HARDNEG_CATEGORY.get(row.get("source"), "unknown"))
             card, feats, meta = cb.build(rp, protected=protected, category=category)

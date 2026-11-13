@@ -4,7 +4,8 @@ __pycache__/
 data/raw/
 contracts/out/
 contracts/cache/
-runs/
+runs/*
+!runs/RESULTS.md
 rpc.json
 data/
 models/

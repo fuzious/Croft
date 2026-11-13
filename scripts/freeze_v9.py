@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 from sklearn.model_selection import GroupKFold
 
-from eval_models import Avg, logreg
+from eval_models import Avg, hgb, logreg
 from eval_nested import EXCLUDE_FEATS, feature_matrix, group_ids, threshold_for_precision
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,10 +30,10 @@ def code_hash() -> str:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cards", required=True)
-    ap.add_argument("--model", choices=["avg", "logreg"], default="avg")
+    ap.add_argument("--model", choices=["avg", "logreg", "hgb"], default="avg")
     ap.add_argument("--tag", default="v9")
     args = ap.parse_args()
-    make = Avg if args.model == "avg" else (lambda s: logreg(s))
+    make = {"avg": Avg, "logreg": lambda s: logreg(s), "hgb": lambda s: hgb(s)}[args.model]
     rows = [json.loads(l) for l in open(args.cards)]
     assert len({r["tx_hash"] for r in rows}) == len(rows), "duplicate tx in dev"
     keys = sorted({k for r in rows for k in r["feats"]} - EXCLUDE_FEATS)
@@ -49,7 +49,8 @@ def main():
     data_blob = json.dumps([[r["tx_hash"], r["label"], [r["feats"].get(k, 0.0) for k in keys]] for r in rows],
                            sort_keys=True).encode()
     rows_set = {r["tx_hash"] for r in rows}
-    meta = {"model_name": "avg(logreg C=1, hist_gboost)" if args.model == "avg" else "logreg C=1 (signed-log, standardized)", "feature_keys": keys, "excluded_features": sorted(EXCLUDE_FEATS),
+    meta = {"model_name": {"avg": "avg(logreg C=1, hist_gboost)", "logreg": "logreg C=1 (signed-log, standardized)",
+                           "hgb": "hist gradient boosting (depth 3, 300 iters)"}[args.model], "feature_keys": keys, "excluded_features": sorted(EXCLUDE_FEATS),
             "threshold": thr, "dev_rows": len(rows), "dev_exploits": int(y.sum()),
             "card_code_sha256": code_hash(), "dev_rows_sha256": hashlib.sha256(data_blob).hexdigest(),
             "label_policy_sha256": hashlib.sha256((ROOT / "data" / "label_policy.json").read_bytes()).hexdigest()}
