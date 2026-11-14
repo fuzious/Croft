@@ -1,0 +1,12 @@
+.venv/
+.env
+rpc.json
+__pycache__/
+data/
+models/
+contracts/out/
+contracts/cache/
+runs/*
+!runs/RESULTS.md
+*.zip
+!archives/*.zip
