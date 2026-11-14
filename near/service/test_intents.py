@@ -8,6 +8,7 @@ import socket
 import threading
 import time
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -135,6 +136,61 @@ class TouchesIntentsTest(unittest.TestCase):
         tx = {"transaction": {"signer_id": "a.near", "receiver_id": "b.near"},
               "receipts": [{"receipt": {"predecessor_id": "a.near", "receiver_id": "b.near"}}]}
         self.assertFalse(intents.touches_intents(tx))
+
+
+class AssessmentTest(unittest.TestCase):
+    def tx(self, supported=True, complete=True):
+        return {"transaction": {"hash": NORMAL, "receiver_id": "intents.near" if supported else "other.near"},
+                "receipts": [], "execution_outcome": {"outcome": {
+                    "receipt_ids": [] if complete else ["missing"], "logs": [], "status": {"SuccessValue": ""}}}}
+
+    def result(self, label="low", high_rule=False):
+        return {"label": label, "rule_hits": [{"rule": "credit_kept", "severity": "high"}] if high_rule else []}
+
+    def test_assessments_respect_protocol_and_receipt_coverage(self):
+        cases = [
+            (False, True, "high", True, "unsupported"),
+            (True, True, "high", True, "malicious_pattern"),
+            (True, False, "high", True, "malicious_pattern"),
+            (True, True, "high", False, "suspicious"),
+            (True, True, "medium", False, "suspicious"),
+            (True, True, "low", False, "no_known_pattern"),
+            (True, False, "low", False, "inconclusive"),
+            (True, False, "medium", False, "inconclusive"),
+        ]
+        for supported, complete, label, high_rule, expected in cases:
+            with self.subTest(expected=expected, complete=complete):
+                out = intents.assessment(self.tx(supported, complete), self.result(label, high_rule))
+                self.assertEqual(out["assessment"], expected)
+                self.assertEqual(out["scope"]["protocol_supported"], supported)
+                self.assertEqual(out["evidence_coverage"]["receipts_complete"], complete)
+                if not complete:
+                    self.assertEqual(out["confidence"]["level"], "limited")
+
+    def test_pending_outcome_is_not_complete_evidence(self):
+        tx = self.tx()
+        tx["execution_outcome"]["outcome"]["status"] = {"Unknown": ""}
+        out = intents.assessment(tx, self.result())
+        self.assertEqual(out["assessment"], "inconclusive")
+        self.assertEqual(out["evidence_coverage"]["pending_outcomes"], 1)
+
+    def test_receipt_referenced_only_by_success_status_is_missing(self):
+        tx = self.tx()
+        tx["execution_outcome"]["outcome"]["status"] = {"SuccessReceiptId": "missing"}
+        self.assertFalse(intents.receipts_complete(tx))
+
+    def test_neutral_score_alias_preserves_assessment_for_unsupported_transaction(self):
+        tx = self.tx(supported=False)
+        result = self.result() | {"risk": 0.1, "flow": "other", "top_features": [],
+                                  "anomaly_score": 0.1, "anomaly_percentile": 0.1}
+        with patch.object(intents, "TRANSPORT", Answer({"/transactions": json.dumps({"transactions": [tx]}).encode()})), \
+                patch.object(intents, "score", return_value=result), patch.object(intents, "model_info", return_value={}):
+            client = TestClient(service.app)
+            canonical = client.post("/v1/transactions/score", json={"tx_hash": NORMAL})
+            legacy = client.post("/v1/intents/score", json={"tx_hash": NORMAL})
+        self.assertEqual(canonical.status_code, 200, canonical.text)
+        self.assertEqual(canonical.json(), legacy.json())
+        self.assertEqual(canonical.json()["assessment"], "unsupported")
 
 
 @unittest.skipUnless(MODEL.exists(), "frozen intents model not present (near/models/intents_v1.pkl)")
@@ -359,6 +415,8 @@ class OmittedReceiptTest(unittest.TestCase):
         r = self.client.post("/v1/intents/score", json={"tx_hash": DANGLING})
         self.assertEqual(r.status_code, 200, r.text)
         self.assertEqual((r.json()["label"], r.json()["receipts_complete"]), ("low", False))
+        self.assertEqual(r.json()["assessment"], "inconclusive")
+        self.assertGreater(r.json()["evidence_coverage"]["missing_receipts"], 0)
 
     def test_receiver_history_with_an_omitted_receipt_stays_readable(self):
         index = json.dumps({"account_txs": [{"transaction_hash": DANGLING}]}).encode()
@@ -373,6 +431,8 @@ class OmittedReceiptTest(unittest.TestCase):
         r = self.client.post("/v1/intents/score", json={"tx_hash": EXPLOIT})
         self.assertEqual(r.status_code, 200, r.text)
         self.assertEqual((r.json()["label"], r.json()["receipts_complete"]), ("high", False))
+        self.assertEqual(r.json()["assessment"], "malicious_pattern")
+        self.assertEqual(r.json()["confidence"]["level"], "limited")
 
 
 EMPTY_INDEX = json.dumps({"account_txs": []}).encode()
@@ -427,6 +487,7 @@ class ScoreEndpointTest(unittest.TestCase):
         man = json.loads(MODEL.with_suffix(".json").read_text())
         self.assertEqual(b["model"], {"version": "intents_v1", "sha256": man["pkl_sha256"]})
         self.assertTrue(b["touches_intents"])
+        self.assertEqual(b["assessment"], "malicious_pattern")
         self.assertTrue(b["top_features"])
 
     def test_normal_deposit_scores_low(self):
@@ -436,6 +497,7 @@ class ScoreEndpointTest(unittest.TestCase):
         self.assertEqual((b["label"], b["flow_type"], b["rule_hits"]), ("low", "deposit", []))
         self.assertIs(b["sender_matches"], True)
         self.assertIs(b["receipts_complete"], True)
+        self.assertEqual(b["assessment"], "no_known_pattern")
 
     def test_sender_mismatch_is_reported(self):
         b = self.client.post("/v1/intents/score", json={"tx_hash": NORMAL, "sender_id": "other.near"}).json()
@@ -504,8 +566,9 @@ class ScoreValidationTest(unittest.TestCase):
         self.assertEqual(self.client.post("/v1/intents/score", json={}).status_code, 422)
 
 
-SCAN_KEYS = {"account_id", "n_scored", "n_index_rows", "counts", "txs", "model"}
-SCAN_TX_KEYS = {"tx_hash", "label", "risk", "flow", "rules", "receipts_complete"}
+SCAN_KEYS = {"account_id", "n_scored", "n_index_rows", "counts", "txs", "model", "assessment_counts", "n_incomplete", "scope"}
+SCAN_TX_KEYS = {"tx_hash", "label", "risk", "flow", "rules", "receipts_complete", "assessment", "assessment_reason",
+                "evidence_coverage", "scope", "confidence"}
 
 
 class ScanEndpointTest(unittest.TestCase):
@@ -536,6 +599,8 @@ class ScanEndpointTest(unittest.TestCase):
         self.assertEqual(b["counts"]["high"], 10)
         self.assertEqual(set(b["counts"]), {"high", "medium", "low"})
         self.assertEqual(sum(b["counts"].values()), b["n_scored"])
+        self.assertEqual(sum(b["assessment_counts"].values()), b["n_scored"])
+        self.assertEqual(b["assessment_counts"]["malicious_pattern"], 10)
         for label in ("high", "medium", "low"):
             self.assertEqual(b["counts"][label], sum(t["label"] == label for t in b["txs"]), label)
         self.assertTrue(all(set(t) == SCAN_TX_KEYS for t in b["txs"]), b["txs"][0])
@@ -560,6 +625,20 @@ class ScanEndpointTest(unittest.TestCase):
         b = r.json()
         self.assertEqual((b["n_scored"], b["n_index_rows"], b["txs"]), (0, 0, []))
         self.assertEqual(b["counts"], {"high": 0, "medium": 0, "low": 0})
+        self.assertEqual(sum(b["assessment_counts"].values()), 0)
+        alias = self.client.post("/v1/protocols/scan", json={"account_id": "someone.near"})
+        self.assertEqual(alias.json(), b)
+
+    @unittest.skipUnless(MODEL.exists(), "frozen intents model not present")
+    def test_incomplete_low_is_counted_as_inconclusive_not_no_known_pattern(self):
+        index = json.dumps({"account_txs": [{"transaction_hash": DANGLING}]}).encode()
+        intents.TRANSPORT = Answer({"/account": index, "/transactions": DANGLING_BODY})
+        r = self.scan("someone.near")
+        self.assertEqual(r.status_code, 200, r.text)
+        b = r.json()
+        self.assertEqual(b["n_incomplete"], 1)
+        self.assertEqual(b["assessment_counts"]["inconclusive"], 1)
+        self.assertEqual(b["assessment_counts"]["no_known_pattern"], 0)
 
     def test_rejects_invalid_account_id(self):
         for account_id in ("Bad Account!", "a", "x" * 65, "UPPER.near", "a..near", ""):

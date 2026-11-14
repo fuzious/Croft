@@ -1,3 +1,4 @@
+// Optional payment-enforcement fixture, separate from the protocol receipt-analysis workflow.
 // A SIMULATED LLM agent: deterministic, scripted, no model involved. It reads an invoice the way a naive
 // tool-using agent would, and it obeys instructions embedded in the document (a prompt injection).
 

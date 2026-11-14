@@ -1,9 +1,9 @@
-"""NEAR Intents transaction scoring for the oracle: fetch transactions from the FastNEAR Transactions API (mainnet,
+"""Protocol transaction investigation (currently NEAR Intents): fetch transactions from the FastNEAR Transactions API (mainnet,
 free, no key) and score them with the frozen intents model (near.intents.model.score_tx, near/models/intents_v1.*).
 
-- `score_hash(tx_hash)`: one transaction, for POST /v1/intents/score.
+- `score_hash(tx_hash)`: one transaction, for POST /v1/transactions/score; includes assessment and evidence coverage.
 - `recent_activity(receiver_id)`: the receiver's most recent transactions that touch intents.near, scored, for
-  POST /v1/intents/scan; `activity_signal(receiver_id)` is the same read as the intents_activity signal of /v1/check.
+  POST /v1/protocols/scan; `activity_signal(receiver_id)` is the same read as the intents_activity signal of /v1/check.
   It reads the receiver's account index (newest first, THRESHOLDS
   ["intents_index_rows"] rows), then full transactions in batches of 20 until THRESHOLDS["intents_recent_txs"] Intents
   txs are found, using at most THRESHOLDS["intents_max_requests"] requests. Successful reads are cached per receiver
@@ -38,6 +38,7 @@ MAX_ANSWER_BYTES = 8 * 2**20            # larger FastNEAR answers are refused; t
 B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 SOURCE = "fastnear:/v0/account + /v0/transactions, near/models/intents_v1"
 CACHE_ENTRIES = 1024
+ASSESSMENTS = ("malicious_pattern", "suspicious", "no_known_pattern", "inconclusive", "unsupported")
 TRANSPORT: Transport | None = None      # set lazily to transport(); tests swap in recorded responses
 _cache: OrderedDict[str, tuple[float, dict]] = OrderedDict()
 _lock = threading.Lock()
@@ -229,8 +230,53 @@ def receipts_complete(tx: dict) -> bool:
     """True when every receipt an outcome spawned is in the tx (validated by _validate_receipt_graph). FastNEAR leaves
     out some receipts that intents.near spawns; a missing receipt can only hide evidence, so the label is a lower
     bound when this is False."""
+    return evidence_coverage(tx)["receipts_complete"]
+
+
+def evidence_coverage(tx: dict) -> dict:
     ids = {row["receipt"]["receipt_id"] for row in tx["receipts"]}
-    return all(rid in ids for outcome in _outcomes(tx) for rid in outcome["receipt_ids"])
+    outcomes = _outcomes(tx)
+    required = {rid for outcome in outcomes for rid in outcome["receipt_ids"]}
+    required.update(outcome["status"]["SuccessReceiptId"] for outcome in outcomes
+                    if "SuccessReceiptId" in outcome["status"])
+    missing = len(required - ids)
+    pending = sum(not any(key in outcome["status"] for key in ("SuccessValue", "SuccessReceiptId", "Failure"))
+                  for outcome in outcomes)
+    return {"receipts_complete": not missing and not pending, "observed_receipts": len(ids),
+            "missing_receipts": missing, "pending_outcomes": pending}
+
+
+def assessment(tx: dict, result: dict) -> dict:
+    """Interpret detector output within its supported protocol and available evidence; never certify safety."""
+    supported = touches_intents(tx)
+    coverage = evidence_coverage(tx)
+    complete = coverage["receipts_complete"]
+    high_rule = any(hit.get("severity") == "high" for hit in result["rule_hits"])
+    if not supported:
+        finding, level = "unsupported", "none"
+        reason = "No NEAR Intents interaction is visible; this detector does not assess other protocols."
+    elif high_rule:
+        finding, level = "malicious_pattern", "high" if complete else "limited"
+        reason = "Observed receipts match a high-severity known attack pattern; this does not prove malicious intent."
+        if not complete:
+            reason += " Receipt evidence is incomplete; additional behavior may be missing."
+    elif not complete:
+        finding, level = "inconclusive", "limited"
+        reason = "Receipt evidence is incomplete; the observed label cannot rule out a hidden attack pattern."
+    elif result["label"] in ("high", "medium"):
+        finding, level = "suspicious", "limited"
+        reason = "Observed receipts trigger a warning rule or anomaly threshold; review the evidence."
+    else:
+        finding, level = "no_known_pattern", "limited"
+        reason = "No known NEAR Intents attack pattern was detected in these receipts; this is not a safety guarantee."
+    basis = ("Outside the detector's supported protocol." if not supported else
+             ("A high-severity rule matched observed receipts. " if high_rule else
+              "Assessment uses only the observed rules and anomaly score. ")
+             + ("Receipt graph is complete." if complete else "Receipt graph is incomplete."))
+    return {"assessment": finding, "assessment_reason": reason, "evidence_coverage": coverage,
+            "scope": {"network": "mainnet", "supported_protocol": "NEAR Intents", "protocol_supported": supported},
+            "confidence": {"level": level, "basis": basis + " This is evidence strength, not a calibrated probability "
+                           "or proof of malicious intent."}}
 
 
 def b58decode(s: str) -> bytes:
@@ -308,6 +354,7 @@ def score_hash(tx_hash: str, sender_id: str | None = None, transport: Transport 
                "top_features": r["top_features"], "anomaly_score": round(r["anomaly_score"], 6),
                "anomaly_percentile": round(r["anomaly_percentile"], 6), "touches_intents": touches_intents(tx),
                "receipts_complete": receipts_complete(tx)}
+        out.update(assessment(tx, r))
         if sender_id is not None:
             out["sender_id"] = sender_id
             out["sender_matches"] = sender_id in _senders(tx)
@@ -319,7 +366,7 @@ def score_hash(tx_hash: str, sender_id: str | None = None, transport: Transport 
 def _brief(tx: dict, r: dict) -> dict:
     rules = [h["rule"] for h in r["rule_hits"] if h.get("severity") in ("high", "medium")]
     return {"tx_hash": tx["transaction"]["hash"], "label": r["label"], "risk": r["risk"], "flow": r["flow"],
-            "rules": rules, "receipts_complete": receipts_complete(tx)}
+            "rules": rules, "receipts_complete": receipts_complete(tx), **assessment(tx, r)}
 
 
 def clear_cache() -> None:

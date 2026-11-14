@@ -1,4 +1,4 @@
-//! Guarded payment router: the on-chain backstop for AI agents.
+//! Optional enforcement of operator-attested account verdicts for future router payments.
 //!
 //! A human funds a balance for an agent account (a direct sub-account of the human). The agent
 //! holds only a function-call key restricted to this contract's `pay` method, so it cannot move
@@ -6,6 +6,8 @@
 //! oracle about the receiver, and transfers in a private callback only when the verdict is `allow`,
 //! unexpired and the receiver is not blocked. Every other outcome restores the debit and logs a
 //! NEP-297 `payment_refused` event with the reason.
+//! Receipt-rule findings do not call this router automatically. It cannot revert a historical
+//! transaction, pause another protocol, or restrict payments made outside this contract.
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::Deserialize;
 use near_sdk::serde_json::{self, json};

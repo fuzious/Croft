@@ -1,5 +1,6 @@
-// Attester relay: ask the oracle service about an account and publish its verdict on chain with
-// security_oracle.submit_verdict, signed by an attester key.
+// Optional operator-invoked relay: ask /v1/check about an account and publish its account verdict
+// with security_oracle.submit_verdict, signed by an attester key. This does not publish transaction
+// receipt findings, auto-confirm evidence reports, or pause a protocol.
 //
 //   node src/attester_relay.js <account_id> [ttl_seconds]
 //   env: ORACLE_SERVICE_URL, NEAR_NODE_URL, NEAR_NETWORK_ID, ORACLE_CONTRACT_ID, ATTESTER_ID, ATTESTER_KEY

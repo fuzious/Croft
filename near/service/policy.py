@@ -67,7 +67,8 @@ def _intents_tx(t: dict) -> str:
 
 def _intents_reasons(s: dict) -> list[tuple[str, str]]:
     """intents_activity: `warn` when any recent Intents tx of the receiver is high, naming the tx and its rules;
-    medium txs are listed with level `allow` (info, no verdict change). It never blocks: the label rests on
+    medium txs are listed with level `allow` (info, no verdict change). Incomplete receipt evidence warns regardless
+    of the observed label. It never blocks: the label rests on
     per-transaction rules that also fire on the team's own regression tests, and on the receiver's role in a tx
     (signer, notified contract, counterparty) not being checked.
 
@@ -87,6 +88,11 @@ def _intents_reasons(s: dict) -> list[tuple[str, str]]:
     out = []
     high = [x for x in txs if x.get("label") == t["intents_warn_label"]]
     med = [x for x in txs if x.get("label") == t["intents_info_label"]]
+    incomplete = [x for x in txs if x.get("receipts_complete") is False or x.get("assessment") == "inconclusive"]
+    if incomplete:
+        out.append(("warn", f"{len(incomplete)} of the receiver's {n} recent NEAR Intents transactions have "
+                            "incomplete or inconclusive receipt evidence; unseen receipts may hide attack patterns: "
+                            + ", ".join(str(x.get("tx_hash")) for x in incomplete[:k])))
     if high:
         out.append(("warn", f"{len(high)} of the receiver's {n} most recent NEAR Intents transactions scored "
                             f"{t['intents_warn_label']}: " + "; ".join(_intents_tx(x) for x in high[:k])))

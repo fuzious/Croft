@@ -2,7 +2,7 @@
 
 [Overview](../../../README.md) · [v1 raw results](sealed_test_v1.json) · [v2 comparison](test_v1c_v2.json)
 
-**The code model is a supporting warning signal. Its score alone never blocks a payment.**
+**Source analysis supports protocol investigation; it is separate from transaction classification. Its score alone is not proof of an exploitable contract.**
 
 ## Results
 
@@ -60,5 +60,47 @@ uv run python -m unittest near.model.test_predict near.model.test_freeze_v2
 Artifacts are hash-pinned. Editing frozen feature/model code invalidates them. Sealed-test JSON and `.started`
 markers intentionally remain: they prevent accidentally treating a used test as untouched. Generated Markdown
 copies and console logs are omitted; the raw measurements remain above. A fresh accuracy claim needs fresh data.
+
+</details>
+
+<details>
+<summary>Bug-type breakdown and sampled precision</summary>
+
+Trained on 415 real NEAR bugs (250 audit findings, 163 fix commits, 2 incidents) plus 7,313 generated bug variants,
+across 15 bug types. Scored once on a sealed test from 27 repositories held out of training (two have forks in
+training).
+
+| Bug type | Real training examples | Caught at high | Caught at medium or higher |
+|---|---:|---:|---:|
+| Logic error | 149 | 4 / 120 | 11 / 120 |
+| Missing access control | 58 | 3 / 46 | 6 / 46 |
+| Storage staking | 36 | 4 / 21 | 6 / 21 |
+| Unhandled promise result | 35 | 4 / 20 | **12 / 20** |
+| Async reentrancy | 23 | 0 / 4 | 1 / 4 |
+| Gas denial of service | 21 | 1 / 16 | 3 / 16 |
+| Unsafe arithmetic | 21 | 0 / 18 | 0 / 18 |
+| Missing one-yocto check | 19 | 0 / 10 | 1 / 10 |
+| Precision and rounding | 18 | 0 / 13 | 1 / 13 |
+| Signer authentication | 11 | 1 / 3 | 1 / 3 |
+| Non-private callback | 5 | 0 / 3 | 1 / 3 |
+| Oracle price | 6 | 1 / 16 | 3 / 16 |
+| Token receiver trust | 7 | 2 / 6 | 2 / 6 |
+| Unchecked receiver | 5 | 0 / 2 | 0 / 2 |
+| Unguarded upgrade | 1 | 0 / 4 | 0 / 4 |
+| *Unclassified* | — | 0 / 1 | 1 / 1 |
+| **All real bugs** | **415** | **20 / 303** | **49 / 303** |
+
+| | High | Medium or higher |
+|---|---|---|
+| Recall, 303 real bugs | 20 / 303 = 6.6% | 49 / 303 = 16% |
+| False alarms, 3,699 clean contract functions | 32 = 0.9% | 194 = 5.2% |
+| Precision against clean contract functions (about 1 bug per 13) | 20 / 52 = 38% | 49 / 243 = 20% |
+| Precision if 1 in 100 functions were buggy (estimate) | about 7% | about 3% |
+
+Counting the fixed versions of the same bugs as false alarms too, precision is 34% at high and 18% at medium.
+
+On 13 real security incidents it never saw (4 exploits, 4 bug bounties, 5 security fixes), it flagged 3 at medium
+(both NEAR Intents deposit-notification bugs and the SWEAT callback without `#[private]`) and missed 10. One of
+the 3 is also flagged on its fixed code. That is why a code score alone never blocks a payment.
 
 </details>

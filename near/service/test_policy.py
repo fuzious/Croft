@@ -131,6 +131,14 @@ CASES = [
 
 
 class PolicyTest(unittest.TestCase):
+    def test_incomplete_intents_evidence_warns_even_when_observed_label_is_low(self):
+        for tx in ({"tx_hash": "PartialTx", "label": "low", "receipts_complete": False},
+                   {"tx_hash": "PartialTx", "label": "medium", "assessment": "inconclusive"}):
+            with self.subTest(tx=tx):
+                out = policy.decide(eoa(intents_activity=S({"txs": [tx]})), now_ns=NOW)
+                self.assertEqual(out["verdict"], "warn")
+                self.assertTrue(any("incomplete or inconclusive" in r and "PartialTx" in r for r in out["reasons"]))
+
     def test_table(self):
         for name, sig, kw, verdict, reason in CASES:
             with self.subTest(name):

@@ -1,7 +1,8 @@
-// Agent-side guard for NEAR payments: ask the security oracle before signing anything.
+// Optional future-payment adapter: ask the account-check service before signing a router payment.
+// Protocol receipt analysis is separate; transaction findings do not invoke this wrapper automatically.
 // block -> refuse to sign and log the reasons; warn -> ask a human (default deny when nobody can answer);
 // allow -> sign guarded_router.pay with the agent's function-call key (scoped to the router's `pay` method).
-// The router asks the on-chain oracle again, so a bypassed or compromised wrapper is still stopped on chain.
+// The router enforces operator-attested account verdicts even if this wrapper is bypassed.
 import { createInterface } from 'node:readline/promises';
 import { connectAccount } from './near_account.js';
 

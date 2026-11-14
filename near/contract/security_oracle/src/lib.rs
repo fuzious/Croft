@@ -1,9 +1,11 @@
-//! On-chain security oracle for NEAR accounts.
+//! Optional account-verdict registry for operator-reviewed protocol security findings.
 //!
 //! Attesters (oracle operator keys) publish a verdict per account: allow, warn or block, with a risk
 //! score, the code hash they scored and an expiry. Anyone can report an account with evidence by
 //! paying for the report's storage; an attester confirms (the account becomes blocked) or dismisses
 //! it. A blocked account always reads as `block`, whatever verdict was attested.
+//! Transaction receipt analysis is separate: findings do not automatically invoke these methods.
+//! This contract records account decisions; it cannot reverse transactions or pause other protocols.
 use near_sdk::json_types::U64;
 use near_sdk::store::{IterableSet, LookupMap, Vector};
 use near_sdk::{

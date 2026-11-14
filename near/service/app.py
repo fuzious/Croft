@@ -1,10 +1,12 @@
-"""NEAR security oracle API (`uvicorn near.service.app:app`).
+"""NEAR Protocol Security Agent API (`uvicorn near.service.app:app`).
 
-POST /v1/check    {receiver_id, agent_id?, method?, deposit_yocto?, source_files?} -> verdict allow|warn|block
-POST /v1/analyze  {source_files} -> contract risk and per-function risk
-POST /v1/report   {account_id, evidence_url, evidence_sha256?, reporter?, note?, confirm?} -> local blocklist
-POST /v1/intents/score {tx_hash, sender_id?} -> NEAR Intents transaction risk, label and rule hits (FastNEAR, mainnet)
-POST /v1/intents/scan  {account_id} -> the account's latest NEAR Intents txs, scored, and the count per label
+POST /v1/transactions/score {tx_hash, sender_id?} -> assessment, receipt evidence, scope and coverage
+POST /v1/protocols/scan {account_id} -> bounded recent Intents activity and assessment counts
+POST /v1/analyze {source_files} -> supporting contract-source risk
+Legacy /v1/intents/score and /v1/intents/scan remain compatible aliases.
+Optional response integration:
+POST /v1/check {receiver_id, agent_id?, method?, deposit_yocto?, source_files?} -> account allow|warn|block
+POST /v1/report {account_id, evidence_url, evidence_sha256?, reporter?, note?, confirm?} -> evidence report
 GET  /v1/health
 GET  /demo/      browser demo (near/demo/index.html)
 
@@ -43,7 +45,7 @@ INTENTS_DEADLINE_S = 15.0   # /v1/check waits at most this long, from its start,
 DETECTORS_SHA256 = hashlib.sha256(
     (Path(__file__).resolve().parents[1] / "analyzer" / "detectors.py").read_bytes()).hexdigest()
 CFG = signals.load_config()
-app = FastAPI(title="NEAR Security Oracle", version="1")
+app = FastAPI(title="NEAR Protocol Security Agent", version="1")
 
 
 @app.middleware("http")
@@ -261,6 +263,7 @@ def check(req: CheckRequest):
             "model": {"version": cr["version"], "sha256": cr["sha256"]}}
 
 
+@app.post("/v1/transactions/score")
 @app.post("/v1/intents/score")
 def intents_score(req: IntentsScoreRequest):
     """One FastNEAR request, so the endpoint answers within intents.TIMEOUT_S; a FastNEAR timeout is a 504."""
@@ -278,6 +281,7 @@ def intents_score(req: IntentsScoreRequest):
     return out | {"model": info}
 
 
+@app.post("/v1/protocols/scan")
 @app.post("/v1/intents/scan")
 def intents_scan(req: IntentsScanRequest):
     """The account's latest transactions that touch NEAR Intents (up to THRESHOLDS["intents_recent_txs"], newest
@@ -293,8 +297,13 @@ def intents_scan(req: IntentsScanRequest):
     except intents.ModelUnavailable as e:
         raise HTTPException(503, str(e)) from None
     counts = {label: sum(t["label"] == label for t in act["txs"]) for label in ("high", "medium", "low")}
+    assessments = {name: sum(t["assessment"] == name for t in act["txs"]) for name in intents.ASSESSMENTS}
+    incomplete = sum(not t["receipts_complete"] for t in act["txs"])
     return {"account_id": req.account_id, "n_scored": act["n_scored"], "n_index_rows": act["n_index_rows"],
-            "counts": counts, "txs": act["txs"], "model": info}
+            "counts": counts, "txs": act["txs"], "model": info, "assessment_counts": assessments,
+            "n_incomplete": incomplete,
+            "scope": {"network": "mainnet", "supported_protocol": "NEAR Intents",
+                      "summary": "A bounded sample of recent NEAR Intents transactions, not a protocol safety audit."}}
 
 
 @app.post("/v1/report")

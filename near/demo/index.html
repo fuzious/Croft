@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Paste any NEAR transaction: a protocol security agent reads its receipt graph and says whether it matches a known attack pattern, and which invariant broke.">
+<meta name="description" content="Inspect a NEAR transaction receipt graph for known attack patterns. Calibrated coverage is limited to NEAR Intents; unsupported protocols and incomplete evidence are reported explicitly.">
 <title>NEAR protocol security agent</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2300EC97'/%3E%3Cpath d='M16 6.5 8.5 9.5v6c0 4.6 3.1 8 7.5 9.5 4.4-1.5 7.5-4.9 7.5-9.5v-6L16 6.5Z' fill='none' stroke='%2304140D' stroke-width='2.2' stroke-linejoin='round'/%3E%3Ccircle cx='16' cy='15.5' r='2.6' fill='%2304140D'/%3E%3C/svg%3E">
 <style>
-/* Type scale: 12 / 13 (mono values) / 14 (body) / 16 / 20. Red (--block) is used only for the malicious verdict. */
+/* Preserve the compact transaction-inspection type scale and evidence severity colors. */
 :root{
   color-scheme:dark;
   --fs-xs:12px;--fs-mono:13px;--fs-sm:14px;--fs-md:16px;--fs-lg:20px;
@@ -106,6 +106,7 @@ textarea{min-height:260px;padding:12px;font:var(--fs-mono)/1.6 var(--mono);resiz
 .verdict p+p{color:var(--text-2);margin-top:2px}
 .verdict.high{border-color:var(--block);background:var(--block-bg)}
 .verdict.high svg,.verdict.high .verdict-word{color:var(--block)}
+.verdict.inconclusive,.verdict.unsupported{border-left-color:var(--warn)}
 .verdict.medium{border-color:var(--warn);background:var(--warn-bg)}
 .verdict.medium svg,.verdict.medium .verdict-word{color:var(--warn)}
 .verdict.low{border-left-color:var(--field-line)}
@@ -136,7 +137,7 @@ details>summary{cursor:pointer;color:var(--text-2);width:max-content;max-width:1
 details>summary:hover{color:var(--text)}
 .out details{margin-top:16px}
 
-.counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.counts{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px}
 .count{background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:12px}
 .count b{display:block;font:500 var(--fs-lg)/1.3 var(--mono);font-variant-numeric:tabular-nums}
 .count span{font-size:var(--fs-xs);color:var(--text-2)}
@@ -231,7 +232,7 @@ pre{background:var(--raised);border:1px solid var(--line);border-radius:12px;pad
       <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M16 6.5 8.5 9.5v6c0 4.6 3.1 8 7.5 9.5 4.4-1.5 7.5-4.9 7.5-9.5v-6L16 6.5Z" fill="none" stroke="var(--on-accent)" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="15.5" r="2.6" fill="var(--on-accent)"/></svg><h1>NEAR protocol security agent</h1></div>
       <div class="chips"><span class="chip" id="netChip"><span class="dot" aria-hidden="true"></span><span id="net">Connecting…</span></span><span class="chip" id="modelChip" hidden>Detector <span class="num" id="model"></span></span><span class="chip"><a href="/docs">API docs</a></span></div>
     </div>
-    <p class="lede">Paste any NEAR transaction. It reads the receipt graph and tells you whether it matches a known attack pattern, and which invariant broke.</p>
+    <p class="lede">Paste a NEAR transaction to inspect its receipt graph for known attack patterns. Calibrated coverage: NEAR Intents. Other protocols are marked unsupported.</p>
   </div>
 </header>
 <main>
@@ -243,30 +244,30 @@ pre{background:var(--raised);border:1px solid var(--line);border-radius:12px;pad
         <button class="btn" id="scoreBtn" type="submit">Check</button>
       </div><p class="field-err" id="txErr" role="alert"></p></form>
       <div class="presets" id="txPresets" aria-label="Example transactions"><span>Try</span></div>
-      <div class="out" id="scoreOut" aria-live="polite"><div class="empty">Pick an example or paste a hash to see the verdict and the rules that fired.</div></div>
+      <div class="out" id="scoreOut" aria-live="polite"><div class="empty">Pick an example or paste a hash to see the assessment, evidence coverage and rules that fired.</div></div>
     </section>
 
     <section class="card" id="scan" aria-labelledby="scan-title">
-      <div class="card-head"><h2 id="scan-title">Scan a protocol or account</h2><p class="sub">Of the account's 40 most recent transactions, scores up to 20 that touch NEAR Intents.</p></div>
+      <div class="card-head"><h2 id="scan-title">Scan a protocol or account</h2><p class="sub">Checks up to 20 NEAR Intents transactions among the account's 40 most recent. This is a bounded activity scan, not a protocol audit.</p></div>
       <form id="scanForm" novalidate><div class="row">
         <label for="account">Account or contract<input id="account" class="mono-input" value="intents.near" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="accErr"></label>
         <button class="btn" id="scanBtn" type="submit">Scan</button>
       </div><p class="field-err" id="accErr" role="alert"></p></form>
       <div class="presets" id="scanPresets" aria-label="Example accounts"><span>Try</span></div>
-      <div class="out" id="scanOut" aria-live="polite"><div class="empty">Scan an account to see how many of its recent transactions match a known attack pattern. Select a row to check it in full.</div></div>
+      <div class="out" id="scanOut" aria-live="polite"><div class="empty">Scan for observed attack patterns in recent Intents activity. Missing receipts and gaps in protocol coverage remain explicit. Select a row to inspect it.</div></div>
     </section>
   </div>
 
   <section class="card" id="record" aria-labelledby="record-title" style="margin-bottom:20px">
     <div class="card-head"><h2 id="record-title">Track record</h2><p class="sub">Recorded mainnet attacks on NEAR Intents, scored by the frozen detector.</p></div>
     <table class="record">
-      <thead><tr><th scope="col">Attack</th><th scope="col" class="n">Malicious pattern</th><th scope="col" class="n">Suspicious or higher</th></tr></thead>
+      <thead><tr><th scope="col">Attack</th><th scope="col" class="n">High-severity pattern</th><th scope="col" class="n">Suspicious or higher</th></tr></thead>
       <tbody>
-        <tr><td>Sep 29 – Oct 1 2026 exploit, about $3.8M<small>Deposit callback overflows its log; credit kept while the token refunds</small></td><td class="n" data-k="Malicious pattern">23 / 23</td><td class="n" data-k="Suspicious or higher">23 / 23</td></tr>
-        <tr><td>Apr 2026 out-of-gas attempts<small>Callback runs out of gas inside a deposit</small></td><td class="n" data-k="Malicious pattern">0 / 55</td><td class="n" data-k="Suspicious or higher">53 / 55</td></tr>
-        <tr><td>May 2026 admin fuzzing<small>Private or admin methods called by an outsider</small></td><td class="n" data-k="Malicious pattern">0 / 177</td><td class="n" data-k="Suspicious or higher">110 / 177</td></tr>
-        <tr><td>May 2026 token spoofing<small>Fake-token deposits; mostly missed because they look like normal failed intents</small></td><td class="n" data-k="Malicious pattern">0 / 182</td><td class="n" data-k="Suspicious or higher">18 / 182</td></tr>
-        <tr class="fa"><td>False alarms on 7,400 unseen normal transactions<small>80 of the 84 came from one hour when Intents was paused; all 84 came from the anomaly model, none from the rules</small></td><td class="n" data-k="Malicious pattern">0 / 7,400</td><td class="n" data-k="Suspicious or higher">84 / 7,400</td></tr>
+        <tr><td>Sep 29 – Oct 1 2026 exploit, about $3.8M<small>Deposit callback overflows its log; credit kept while the token refunds</small></td><td class="n" data-k="High-severity pattern">23 / 23</td><td class="n" data-k="Suspicious or higher">23 / 23</td></tr>
+        <tr><td>Apr 2026 out-of-gas attempts<small>Callback runs out of gas inside a deposit</small></td><td class="n" data-k="High-severity pattern">0 / 55</td><td class="n" data-k="Suspicious or higher">53 / 55</td></tr>
+        <tr><td>May 2026 admin fuzzing<small>Private or admin methods called by an outsider</small></td><td class="n" data-k="High-severity pattern">0 / 177</td><td class="n" data-k="Suspicious or higher">110 / 177</td></tr>
+        <tr><td>May 2026 token spoofing<small>Fake-token deposits; mostly missed because they look like normal failed intents</small></td><td class="n" data-k="High-severity pattern">0 / 182</td><td class="n" data-k="Suspicious or higher">18 / 182</td></tr>
+        <tr class="fa"><td>False alarms on 7,400 unseen normal transactions<small>80 of the 84 came from one hour when Intents was paused; all 84 came from the anomaly model, none from the rules</small></td><td class="n" data-k="High-severity pattern">0 / 7,400</td><td class="n" data-k="Suspicious or higher">84 / 7,400</td></tr>
       </tbody>
     </table>
     <p class="caveat"><strong>Retrospective: rules were written after these attacks.</strong> The 23 exploit transactions are one attacker repeating one technique. These are case studies, not an estimate of how many new attacks it would catch.</p>
@@ -281,7 +282,7 @@ pre{background:var(--raised);border:1px solid var(--line);border-radius:12px;pad
     </div><aside aria-label="Code model evaluation"><div id="stats"></div><p class="caption">Sealed test of v1. The optional v2 was not measurably better on test_v1c, which is not sealed. See near/model/reports/RESULTS.md.</p></aside></div></div>
   </details>
 
-  <footer class="foot"><p>Prototype, not an audit. It flags transactions that match known attack patterns after they land; it does not prevent attacks. The detector was trained, calibrated and tested on 100,098 normal NEAR Intents mainnet transactions, so results for transactions outside NEAR Intents are less reliable.</p><a href="/docs">API reference</a></footer>
+  <footer class="foot"><p>Prototype, not an audit. It flags transactions that match known attack patterns after they land; it does not prevent attacks. The detector was trained, calibrated and tested on NEAR Intents traffic. Other protocols are unsupported; incomplete graphs can hide evidence. No known pattern does not mean safe.</p><a href="/docs">API reference</a></footer>
 </main>
 <script type="module">
 const $ = id => document.getElementById(id);
@@ -310,25 +311,24 @@ const SCAN_PRESETS = [
 ];
 
 const VERDICT = {
-  high: {word: "Malicious pattern", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 2.8h7.6l5.4 5.4v7.6l-5.4 5.4H8.2l-5.4-5.4V8.2z"/><path d="m9 9 6 6m0-6-6 6"/></svg>'},
+  high: {word: "High-severity pattern", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 2.8h7.6l5.4 5.4v7.6l-5.4 5.4H8.2l-5.4-5.4V8.2z"/><path d="m9 9 6 6m0-6-6 6"/></svg>'},
   medium: {word: "Suspicious", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 2.5 20h19L12 3.5Z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>'},
   low: {word: "No known attack pattern", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.5v.01"/></svg>'},
 };
-const SHORT_WORD = {high: "Malicious pattern", medium: "Suspicious", low: "No known pattern"};
 const SEV_RANK = {high: 0, medium: 1, low: 2};
 
 // One sentence per receipt rule (near/intents/features.py RULES): the invariant the transaction broke.
 const RULE_TEXT = {
-  failed_resolve_callback: ["Deposit callback failed", "The callback that settles a deposit failed, so the contract never confirmed what it kept and what it returned."],
-  log_limit: ["Log at the 16 KB limit", "A receipt wrote a log close to NEAR's 16 KB limit or failed on it, which aborts the receipt halfway, the trick behind the Oct 2026 exploit."],
-  credit_kept: ["Credit kept after a refund", "The token was refunded to the sender while Intents still credited it, so more came out than went in."],
-  refund_exceeds_deposit: ["Refund larger than the deposit", "A receiving contract asked to refund more than it was sent, which an honest transfer never does."],
+  failed_resolve_callback: ["Deposit callback failed", "A deposit settlement callback failed. Inspect the credit and refund receipts to determine whether accounting was restored."],
+  log_limit: ["Log at the 16 KB limit", "A receipt approached or exceeded NEAR's 16 KB log limit. A limit failure can abort receipt execution; this was part of the October exploit."],
+  credit_kept: ["Credit kept after a refund", "Observed receipt events show a token refund while Intents retained a matching credit. This is evidence of a potential backing mismatch."],
+  refund_exceeds_deposit: ["Refund larger than the deposit", "A receiving contract requested a refund larger than the deposited amount. Inspect the resolver result to confirm the amount actually returned."],
   notify_receiver_in_deposit: ["Receiver notified inside a deposit", "The deposit also called a receiver contract's transfer hook, an extra code path the attacks used to run their own logic."],
   many_token_ids: ["Many token ids in one call", "One call moved a large batch of token ids with duplicates or dust amounts, a way to inflate logs and gas use."],
   private_method_direct: ["Private method called directly", "A callback that only the contract itself should call was called directly by a user's transaction."],
-  admin_method_non_role: ["Admin method by a non-role caller", "An admin or role-gated method was called by an account that does not hold that role."],
+  admin_method_non_role: ["Admin method by a non-role caller", "The rule observed an admin or role-gated call from an unexpected caller. This shows an attempt, not proof that privileged state changed."],
   callback_oog: ["Callback out of gas", "A callback ran out of gas, so the cleanup step it exists for never ran."],
-  return_value_limit: ["Return value limit hit", "A receipt failed on NEAR's size limit for return values, which aborts it halfway."],
+  return_value_limit: ["Return value limit hit", "A receipt failed on NEAR's return-value size limit. Inspect dependent callbacks for correct failure handling."],
   execute_intents_panic: ["execute_intents failed", "An execute_intents call failed; this is common in normal traffic (for example an expired quote), so it is low severity."],
   unknown_method: ["Unknown method", "A method that does not exist on the Intents contract was called, which is often a sign of probing."],
 };
@@ -413,7 +413,7 @@ function errorText(detail, status) {
     return `${FIELD_NAME[field] || cap(field || "Request")}: ${FIELD_HELP[field] || d.msg || "invalid value"}`;
   }
   if (typeof detail === "string") return cap(detail) + (status === 404 ? ". Check that it is a mainnet transaction." : "");
-  return `The oracle returned HTTP ${status}.`;
+  return `The service returned HTTP ${status}.`;
 }
 
 async function api(path, body) {
@@ -421,8 +421,8 @@ async function api(path, body) {
   try {
     r = await fetch(path, {signal: AbortSignal.timeout(60_000), ...(body ? {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify(body)} : {})});
   } catch (e) {
-    if (e.name === "TimeoutError") throw new Error("The oracle did not answer within 60 seconds. Try again.");
-    throw new Error("Oracle not reachable. Start it with: uv run uvicorn near.service.app:app");
+    if (e.name === "TimeoutError") throw new Error("The service did not answer within 60 seconds. Try again.");
+    throw new Error("Service not reachable. Start it with: uv run uvicorn near.service.app:app");
   }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(errorText(j.detail, r.status));
@@ -432,7 +432,6 @@ async function api(path, body) {
 const loading = text => `<div class="loading" role="status"><span class="spin" aria-hidden="true"></span>${esc(text)}</div>`;
 const failure = e => `<div class="err" role="alert"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.01"/></svg><span>${esc(e.message)}</span></div>`;
 const notice = html => `<div class="notice"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.01"/></svg><span>${html}</span></div>`;
-const tag = label => `<span class="tag ${esc(label)}"><i aria-hidden="true"></i>${esc(SHORT_WORD[label] || cap(label))}</span>`;
 // 64-hex implicit accounts and hashes are shortened for display; the full value stays in the title.
 const shortId = s => { s = String(s ?? ""); return /^[0-9a-f]{64}$/.test(s) ? `${s.slice(0, 8)}…${s.slice(-6)}` : s; };
 const shortHash = s => { s = String(s ?? ""); return s.length > 14 ? `${s.slice(0, 6)}…${s.slice(-4)}` : s; };
@@ -463,14 +462,32 @@ function fieldError(input, out, msg) {
   if (msg) $(input).setAttribute("aria-invalid", "true"); else $(input).removeAttribute("aria-invalid");
 }
 
-function verdictLine(j, hits) {
-  const strong = hits.filter(h => h.severity === "high" || h.severity === "medium");
-  const highs = hits.filter(h => h.severity === "high").length;
-  if (j.label === "high") return highs ? `Matches a known attack pattern: ${plural(highs, "high-severity rule")} fired.`
-    : "The anomaly model ranks it among the rarest transactions next to normal NEAR Intents traffic.";
-  if (j.label === "medium") return strong.length ? `${plural(strong.length, "medium-severity rule")} fired. Worth a closer look; not proof of an attack.`
-    : "No rule fired, but the anomaly model ranks it as unusual next to normal NEAR Intents traffic.";
-  return "Nothing matched a known attack pattern. This is not a guarantee: some attacks look like normal traffic.";
+// Conservative fallback also protects the UI when talking to an older service.
+function assessmentState(j, hits = j.rule_hits || []) {
+  const supported = j.scope?.protocol_supported ?? j.touches_intents;
+  const complete = j.evidence_coverage?.receipts_complete ?? j.receipts_complete;
+  const hasHigh = hits.some(h => h.severity === "high") || j.assessment === "malicious_pattern";
+  let key = j.assessment;
+  if (supported === false) key = "unsupported";
+  else if (supported !== true) key = "inconclusive";
+  else if (complete !== true && !hasHigh) key = "inconclusive";
+  else if (hasHigh) key = "malicious_pattern";
+  else if (!key || !["suspicious", "no_known_pattern", "inconclusive", "unsupported"].includes(key)) {
+    key = ["high", "medium"].includes(j.label) ? "suspicious" : j.label === "low" ? "no_known_pattern" : "inconclusive";
+  }
+  const states = {
+    malicious_pattern: {word: "High-severity pattern detected", tone: "high", icon: VERDICT.high.icon,
+      fallback: "Observed receipt rules match a known attack pattern. This is evidence for investigation, not proof of intent."},
+    suspicious: {word: "Suspicious activity", tone: "medium", icon: VERDICT.medium.icon,
+      fallback: "Rules or the anomaly model flagged unusual activity. This is not proof of an attack."},
+    no_known_pattern: {word: "No known attack pattern", tone: "low", icon: VERDICT.low.icon,
+      fallback: "No high or medium pattern was detected in the complete Intents receipt graph. New attacks and known misses remain possible."},
+    inconclusive: {word: "Inconclusive", tone: "inconclusive", icon: VERDICT.medium.icon,
+      fallback: "Receipt evidence or detector coverage is incomplete. An absence of alerts cannot establish that this transaction is safe."},
+    unsupported: {word: "Unsupported protocol", tone: "unsupported", icon: VERDICT.low.icon,
+      fallback: "This transaction is outside NEAR Intents, the detector's calibrated scope. Any observed rules are investigative clues, not a security assessment."},
+  };
+  return {key, ...states[key], summary: j.assessment === key && j.assessment_reason ? j.assessment_reason : states[key].fallback};
 }
 
 let scoreSeq = 0;
@@ -483,32 +500,33 @@ async function scoreTx() {
   btn.disabled = true;
   $("scoreOut").innerHTML = loading("Reading the receipt graph from FastNEAR and checking it…");
   try {
-    const j = await api("/v1/intents/score", {tx_hash: hash});
+    const j = await api("/v1/transactions/score", {tx_hash: hash});
     if (my !== scoreSeq) return;
     setModel(j.model);
-    const label = VERDICT[j.label] ? j.label : "medium";
-    const v = VERDICT[label];
     const hits = (j.rule_hits || []).slice().sort((a, b) => (SEV_RANK[a.severity] ?? 3) - (SEV_RANK[b.severity] ?? 3));
+    const state = assessmentState(j, hits);
+    const coverage = j.evidence_coverage || {};
+    const complete = coverage.receipts_complete ?? j.receipts_complete;
     const notes = [];
-    if (j.touches_intents === false) notes.push(notice("<strong>Outside NEAR Intents:</strong> rules still run, but thresholds were calibrated on Intents traffic, so this result is less reliable."));
-    if (j.receipts_complete === false) notes.push(notice("<strong>Some receipts are missing</strong> from FastNEAR, so rules that need them could not fire. Treat the label as a lower bound."));
+    if (state.key === "unsupported") notes.push(notice("<strong>No calibrated assessment:</strong> the detector supports NEAR Intents. A low raw score outside that scope does not establish safety."));
+    if (complete !== true) notes.push(notice("<strong>Incomplete receipt evidence:</strong> missing outcomes can hide attack patterns. Observed rule hits remain visible; no clean assessment can be made from missing evidence."));
     if (KNOWN_MISSES[hash]) notes.push(notice(KNOWN_MISSES[hash]));
-    const broke = hits.some(h => h.severity === "high" || h.severity === "medium");
-    const rules = hits.length ? `<h3 class="section-label">${broke ? "Which invariant broke" : "Notes"}</h3><ul class="rules">${hits.map(h => {
+    const rules = hits.length ? `<h3 class="section-label">Observed receipt evidence</h3><ul class="rules">${hits.map(h => {
         const [title, text] = RULE_TEXT[h.rule] || [h.rule, ""];
         return `<li><span class="sev ${esc(h.severity)}">${esc(cap(h.severity))}</span><div><div class="rule-title"><h3>${esc(title)}</h3><code>${esc(h.rule)}</code></div>${text ? `<p>${esc(text)}</p>` : ""}<p class="detail">${esc(h.message)}</p></div></li>`;
       }).join("")}</ul>`
       : `<p class="section-label small muted">No receipt rule fired.</p>`;
-    $("scoreOut").innerHTML = `<div class="verdict ${label}">${v.icon}<div><p class="verdict-word">${esc(v.word)}</p><p>${esc(verdictLine(j, hits))}</p></div></div>
+    $("scoreOut").innerHTML = `<div class="verdict ${state.tone}" data-assessment="${state.key}">${state.icon}<div><p class="verdict-word">${esc(state.word)}</p><p>${esc(state.summary)}</p></div></div>
       <dl class="facts">
         <dt>Signer → receiver</dt><dd><span title="${esc(j.signer_id)}">${esc(shortId(j.signer_id))}</span> → <span title="${esc(j.receiver_id)}">${esc(shortId(j.receiver_id))}</span></dd>
         <dt>Flow</dt><dd>${esc(j.flow_type)}</dd>
-        <dt>Risk</dt><dd>${esc(Number(j.risk).toFixed(4))} <small>0 to 1; suspicious from about 0.999</small></dd>
+        <dt>Coverage</dt><dd>${complete === true ? "Complete receipt graph" : "Incomplete / unknown"}${Number.isInteger(coverage.observed_receipts) ? `<br><small>${esc(coverage.observed_receipts)} observed · ${esc(coverage.missing_receipts)} missing</small>` : ""}</dd>
+        <dt>Detector scope</dt><dd>${state.key === "unsupported" ? "Unsupported protocol" : "NEAR Intents"}</dd>
       </dl>
       ${notes.length ? `<div class="notes">${notes.join("")}</div>` : ""}
       ${rules}
       <div class="links"><a href="https://nearblocks.io/txns/${encodeURIComponent(hash)}" target="_blank" rel="noopener noreferrer">View on NearBlocks</a></div>
-      <details><summary>Model details</summary><p class="small muted">Anomaly percentile <span class="num">${esc(Number(j.anomaly_percentile).toFixed(4))}</span> against normal Intents traffic · model ${esc(j.model && j.model.version)} · sha256 <span class="num">${esc(String((j.model && j.model.sha256) || "").slice(0, 12))}</span></p></details>`;
+      <details><summary>Score and confidence details</summary><p class="small muted">Raw score <span class="num">${esc(Number(j.risk).toFixed(4))}</span> is a rule/rank score, not an attack probability. ${j.confidence?.basis ? esc(j.confidence.basis) : ""}</p><p class="small muted">Anomaly percentile <span class="num">${esc(Number(j.anomaly_percentile).toFixed(4))}</span> against normal Intents traffic · model ${esc(j.model && j.model.version)} · sha256 <span class="num">${esc(String((j.model && j.model.sha256) || "").slice(0, 12))}</span></p></details>`;
   } catch (e) { if (my === scoreSeq) $("scoreOut").innerHTML = failure(e); }
   finally { if (my === scoreSeq) btn.disabled = false; }
 }
@@ -524,20 +542,25 @@ async function scan() {
   btn.disabled = true;
   $("scanOut").innerHTML = loading("Reading recent transactions from FastNEAR and checking each one (up to 20 seconds)…");
   try {
-    const j = await api("/v1/intents/scan", {account_id: id});
+    const j = await api("/v1/protocols/scan", {account_id: id});
     if (my !== scanSeq) return;
     setModel(j.model);
-    const c = j.counts || {}, txs = j.txs || [];
-    const box = (k, word) => `<div class="count ${k}${c[k] ? " hit" : ""}"><b>${esc(c[k] ?? 0)}</b><span>${esc(word)}</span></div>`;
-    const partial = txs.filter(t => t.receipts_complete === false).length;
-    const rows = txs.map(t => {
+    const txs = j.txs || [];
+    const states = txs.map(t => assessmentState(t));
+    const c = states.reduce((counts, s) => { counts[s.key] = (counts[s.key] || 0) + 1; return counts; }, {});
+    const box = (key, tone, word) => `<div class="count ${tone}${c[key] ? " hit" : ""}"><b>${esc(c[key] || 0)}</b><span>${esc(word)}</span></div>`;
+    const partial = txs.filter(t => (t.evidence_coverage?.receipts_complete ?? t.receipts_complete) !== true).length;
+    const rows = txs.map((t, index) => {
       const rules = (t.rules || []).map(ruleTitle);
+      const state = states[index];
       const why = [esc(t.flow), rules.length ? esc(rules[0]) + (rules.length > 1 ? ` +${rules.length - 1} more` : "") : "", t.receipts_complete === false ? "partial receipts" : ""].filter(Boolean).join(" · ");
-      return `<li><button type="button" class="scan-row" data-hash="${esc(t.tx_hash)}" aria-label="Check transaction ${esc(t.tx_hash)}">${tag(t.label)}<code title="${esc(t.tx_hash)}">${esc(shortHash(t.tx_hash))}</code><span class="why">${why}</span></button></li>`;
+      const rowWord = {malicious_pattern: "High-severity pattern", suspicious: "Suspicious", no_known_pattern: "No known pattern", inconclusive: "Inconclusive", unsupported: "Unsupported"}[state.key];
+      return `<li><button type="button" class="scan-row" data-hash="${esc(t.tx_hash)}" data-assessment="${state.key}" aria-label="Inspect transaction ${esc(t.tx_hash)}"><span class="tag ${state.tone}"><i aria-hidden="true"></i>${rowWord}</span><code title="${esc(t.tx_hash)}">${esc(shortHash(t.tx_hash))}</code><span class="why">${why}</span></button></li>`;
     }).join("");
-    $("scanOut").innerHTML = `<div class="counts">${box("high", "Malicious pattern")}${box("medium", "Suspicious")}${box("low", "No known pattern")}</div>
-      <p class="scan-meta">${txs.length ? `Checked ${plural(j.n_scored, "transaction")} that touch NEAR Intents, out of the account's ${esc(j.n_index_rows)} most recent, newest first. Select one to see why.` : `None of the account's ${esc(j.n_index_rows)} most recent transactions touch NEAR Intents, so there is nothing to check.`}${partial ? ` ${partial} had missing receipts; their label is a lower bound.` : ""} Cached for 5 minutes.</p>
-      ${txs.length ? `<ul class="scan-list">${rows}</ul>` : ""}`;
+    $("scanOut").innerHTML = txs.length ? `<div class="counts">${box("malicious_pattern", "high", "High pattern")}${box("suspicious", "medium", "Suspicious")}${box("no_known_pattern", "low", "No known pattern")}${box("inconclusive", "medium", "Inconclusive")}${c.unsupported ? box("unsupported", "low", "Unsupported") : ""}</div>
+      <p class="scan-meta">Inspected ${plural(j.n_scored, "transaction")} touching NEAR Intents among the account's ${esc(j.n_index_rows)} most recent. Select one for evidence.${partial ? ` ${partial} had incomplete receipt evidence.` : ""} Cached for 5 minutes. This is not a clean bill of health for the protocol.</p><ul class="scan-list">${rows}</ul>`
+      : notice(`<strong>No supported transactions found.</strong> None of the account's ${esc(j.n_index_rows)} recent indexed transactions provided NEAR Intents activity to assess. This scan does not establish that the account or protocol is safe.`);
+
   } catch (e) { if (my === scanSeq) $("scanOut").innerHTML = failure(e); }
   finally { if (my === scanSeq) btn.disabled = false; }
 }
@@ -561,7 +584,7 @@ async function analyze() {
     if (!Number(j.n_functions)) {
       $("analyzeOut").innerHTML = `<div class="empty">No contract functions found; nothing was scored.</div>`;
     } else {
-      // Code risk is a supporting signal, so it never uses the malicious-verdict red.
+      // Code risk is a supporting signal, so it does not use the high-evidence verdict color.
       const sev = ["high", "medium"].includes(j.label) ? "medium" : "low";
       $("analyzeOut").innerHTML = `<div class="result-head"><span>Contract risk</span><span class="sev ${sev}">${esc(cap(j.label))}</span><span class="meta"><span class="num">${esc(Number(j.risk).toFixed(2))}</span> · ${esc(j.n_functions)} functions · model ${esc(j.model && j.model.version)}</span></div>
         <div class="fn-list"><div class="fn-row fn-head"><span>Function</span><span>Risk</span><span>Likely class</span><span>Rule hits</span></div>
@@ -588,7 +611,7 @@ $("code").value = EXAMPLES[Object.keys(EXAMPLES)[0]];
 $("analyzeBtn").onclick = analyze;
 $("stats").innerHTML = STATS.map(s => `<div class="stat"><b>${esc(s.value)}</b>${esc(s.label)}</div>`).join("");
 api("/v1/health").then(() => { $("net").textContent = "Mainnet"; $("netChip").classList.add("ok"); })
-  .catch(() => { $("net").textContent = "Oracle not reachable"; $("netChip").classList.add("down"); });
+  .catch(() => { $("net").textContent = "Service not reachable"; $("netChip").classList.add("down"); });
 </script>
 </body>
 </html>

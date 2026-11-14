@@ -1,4 +1,4 @@
-"""Offline judge demo using recorded FastNEAR responses and the real frozen scorer.
+"""Offline protocol investigation using recorded FastNEAR responses and the real frozen scorer.
 
 Run from the repository root: uv run python -m near.demo.replay
 Requires the frozen Intents artifacts from archives/near_intents.zip. No network,
@@ -40,19 +40,20 @@ def main() -> None:
         if result["label"] != expected:
             raise RuntimeError(f"{name}: expected {expected}, got {result['label']}")
         print(json.dumps({"case": name, "tx_hash": tx_hash, "label": result["label"],
+                          "assessment": result["assessment"], "assessment_reason": result["assessment_reason"],
+                          "evidence_coverage": result["evidence_coverage"],
                           "rules": [h["rule"] for h in result["rule_hits"]]}))
 
-    activity = intents.activity_signal(EXPLOITER, transport=replay)
-    if not activity["available"]:
-        raise RuntimeError(f"Activity replay failed: {activity['error']}")
-    value = activity["value"]
+    value = intents.recent_activity(EXPLOITER, transport=replay)
     high = sum(t["label"] == "high" for t in value["txs"])
     if (high, value["n_scored"]) != (10, 20):
         raise RuntimeError(f"Expected 10 high / 20 scored; got {high} / {value['n_scored']}")
-    print(json.dumps({"case": "receiver_activity", "receiver_id": EXPLOITER,
-                      "high": high, "scored": value["n_scored"]}))
-    print("PASS: exploit high; normal low; receiver history 10/20 high.")
-    print("The receiver check warns on high activity. This replay covers the Intents signal only.")
+    print(json.dumps({"case": "account_activity", "account_id": EXPLOITER,
+                      "high": high, "scored": value["n_scored"],
+                      "assessments": {a: sum(t["assessment"] == a for t in value["txs"])
+                                      for a in sorted({t["assessment"] for t in value["txs"]})}}))
+    print("PASS: exploit high; normal low; account history 10/20 high.")
+    print("Findings support protocol investigation. Low is not proof of safety; no chain state is changed.")
 
 
 if __name__ == "__main__":

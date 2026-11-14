@@ -27,7 +27,7 @@ Zero observed high alerts has a 95% Wilson upper bound of **0.052%**, not a zero
 80 of the 84 medium alerts came from deposits during one paused-contract hour. The medium target of 0.1% was
 missed. Excluding paused traffic gives 4/7,301 alerts, but that exclusion is post hoc.
 
-**Policy:** high Intents activity warns; medium is informational. Neither blocks by itself.
+**Interpretation:** transaction findings guide protocol investigation. The optional receiver-policy integration warns on high Intents activity; transaction scoring itself does not block anything.
 
 ## What was evaluated
 
@@ -79,5 +79,48 @@ uv run python -m unittest near.intents.test_model near.service.test_intents
 `archives/near_intents.zip` supplies the frozen model and labelled data. It excludes the 239 MB normals and scouting
 seeds. Re-pulling normals does not reproduce the exact sample. `near.intents.model freeze` replaces model artifacts;
 `near.intents.evaluate run --rescore` replaces evaluation results. Preserve the shipped evidence before either.
+
+</details>
+
+<details>
+<summary>Detailed campaign breakdown and sampled precision</summary>
+
+The agent flags risk; it does not fix contracts or stop transactions. **High** is shown as *Malicious pattern*,
+**medium** as *Suspicious*, **low** as *No known attack pattern*.
+
+**How to read the numbers**
+
+- **Recall:** of the real attacks, how many it flagged.
+- **Precision:** of everything it flagged, how many were real attacks.
+- **False alarms:** of normal activity, how much it flagged by mistake.
+- **`84 / 7,400 (1.1%)`:** we took 7,400 normal Intents transactions from Oct–Nov 2026, kept out of training and
+  rule writing. It wrongly flagged 84 of them at medium and none at high. 80 of the 84 came from one hour on
+  2026-10-01, when Intents was paused and deposits failed. All 84 came from the anomaly model; the rules alone
+  flagged none.
+
+![Retrospective Intents detection: October exploit 23/23 high; April out-of-gas 53/55 medium; May admin fuzzing 110/177 medium; May token spoofing 18/182 medium.](../../../docs/assets/results.svg)
+
+### NEAR Intents transactions
+
+Rules were written after studying these attacks, so this is a look back at known attacks, not a test on new ones.
+
+| Attack type | Example | Main rules that fired | Caught at high | Caught at medium or higher |
+|---|---|---|---|---|
+| Deposit callback overflows its log, credit kept | Sep 29–Oct 1 2026 exploit, about $3.8M | failed callback, log limit, credit kept | **23 / 23** | 23 / 23 |
+| Callback runs out of gas | Apr 2026 attempts | notify in deposit, callback out of gas | 0 / 55 | **53 / 55** |
+| Private or admin method called by an outsider | May 2026 fuzzing | private method called directly, admin method | 0 / 177 | **110 / 177** |
+| Fake-token deposits | May 2026 token spoofing | private method called directly (the 18 caught); the rest look like normal failed intents | 0 / 182 | **18 / 182** |
+| *Normal traffic (false alarms)* | 7,400 unseen transactions | — | **0 / 7,400** | 84 / 7,400 |
+
+| | High | Medium or higher |
+|---|---|---|
+| Recall, all 437 attack transactions | 23 / 437 = 5% (the exploit: 23 / 23) | 204 / 437 = 47% |
+| False alarms, 7,400 normal transactions | 0 = 0% | 84 = 1.1% |
+| Precision on our test set | 23 / 23 = **100%** | 204 / 300 = 68% |
+
+Precision here uses 437 attacks against 7,417 normal transactions (the 7,400 above plus 17 team tests, 12 flagged
+at medium). 5,063 more test transactions were used while writing the rules, so they are left out. Real traffic has
+far fewer attacks, so live precision at medium is much lower. The 23 exploit transactions are one attacker
+repeating one technique; the attacker's 52 setup and cash-out transactions look normal and were not flagged.
 
 </details>

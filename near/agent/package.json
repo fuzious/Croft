@@ -2,13 +2,13 @@
   "name": "near-security-oracle-agent",
   "version": "0.1.0",
   "private": true,
-  "description": "Agent-side wrapper for the NEAR security oracle, attester relay, and prompt-injection attack demo",
+  "description": "Optional account-policy attester and scoped payment response adapters for the NEAR Protocol Security Agent",
   "type": "module",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --test 'test/*.test.js' ../demo/test_amount.mjs",
+    "test": "node --test 'test/*.test.js' ../demo/test_*.mjs",
     "demo": "node scripts/attack_demo.js"
   },
   "dependencies": {
