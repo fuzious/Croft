@@ -6,7 +6,7 @@ NEAR transactions execute across asynchronous receipts. A failed callback can le
 even after tokens are refunded. Croft follows those receipts,
 checks deposit/refund/credit events, and shows operators what happened and what evidence is missing.
 
-[Run locally](#run-locally) · [Evidence & results](near/intents/reports/RESULTS.md) · [Technical guide](near/README.md)
+[Run locally](#run-locally) · [Evidence & results](near/intents/reports/RESULTS.md) · [Technical guide](near/README.md) · [Documentation](docs.md)
 
 ## What you can do
 
