@@ -1,0 +1,1506 @@
+[
+  {
+    "tx_hash": "3k91uDpUiezxUe7hBgAR7kc3TBkToMZKGAiv6GqbtKiC",
+    "signer_id": "20e6bfe4685d99004fc2095d3a0fc6158cd810ce8f801196141e183ed6e19d65",
+    "receiver_id": "v2_1.omni.hot.tg",
+    "risk": 1.0,
+    "label": "high",
+    "rule_hits": [
+      {
+        "rule": "failed_resolve_callback",
+        "severity": "high",
+        "message": "resolve callback failed: mt_resolve_deposit (log_limit)"
+      },
+      {
+        "rule": "log_limit",
+        "severity": "high",
+        "message": "a receipt failed on the log length limit"
+      },
+      {
+        "rule": "credit_kept",
+        "severity": "high",
+        "message": "token refunded 10000000000000000000 to the sender while intents still credits 10000000000000000000 of a 10000000000000000000 deposit (credited + refunded > deposited)"
+      },
+      {
+        "rule": "refund_exceeds_deposit",
+        "severity": "medium",
+        "message": "an *_on_transfer receiver asked to refund 10^36.0x the amount it received"
+      },
+      {
+        "rule": "notify_receiver_in_deposit",
+        "severity": "medium",
+        "message": "the deposit notified a receiver contract (1 call(s) of mt_on_transfer)"
+      },
+      {
+        "rule": "many_token_ids",
+        "severity": "medium",
+        "message": "a batch of 98 token ids (96 duplicates, 97 dust amounts)"
+      },
+      {
+        "rule": "accounting_credit_exceeds_backing",
+        "severity": "high",
+        "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY deposit by 97 base units.",
+        "evidence": {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "DSfNwH18mEASbDg2qYh6NWGcjNpc1vJr2xnKthScFQCW",
+          "owner_ids": [
+            "dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757"
+          ],
+          "retained_credit_owners": [
+            "dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757"
+          ],
+          "deposit_receipt_id": "8fWiEwQUbVATPC3JxyEscVHVKmBcep1pCwJR792pZYq7",
+          "token_id": "nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY",
+          "refund_receipt_id": "7y7VKm4tM3rEspHGidoyVPp9oV2UAcLktwuCyamx5emD",
+          "deposited": "97",
+          "minted": "97",
+          "burned": "0",
+          "refunded": "97",
+          "credit_retained": "97",
+          "excess": "97",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        },
+        "source": "accounting"
+      },
+      {
+        "rule": "accounting_credit_exceeds_backing",
+        "severity": "high",
+        "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g deposit by 10000000000000000000 base units.",
+        "evidence": {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "DSfNwH18mEASbDg2qYh6NWGcjNpc1vJr2xnKthScFQCW",
+          "owner_ids": [
+            "dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757"
+          ],
+          "retained_credit_owners": [
+            "dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757"
+          ],
+          "deposit_receipt_id": "8fWiEwQUbVATPC3JxyEscVHVKmBcep1pCwJR792pZYq7",
+          "token_id": "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+          "refund_receipt_id": "7y7VKm4tM3rEspHGidoyVPp9oV2UAcLktwuCyamx5emD",
+          "deposited": "10000000000000000000",
+          "minted": "10000000000000000000",
+          "burned": "0",
+          "refunded": "10000000000000000000",
+          "credit_retained": "10000000000000000000",
+          "excess": "10000000000000000000",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        },
+        "source": "accounting"
+      }
+    ],
+    "flow_type": "deposit",
+    "top_features": [
+      {
+        "feature": "fail_log_limit",
+        "value": 1.0,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.0
+      },
+      {
+        "feature": "max_log_ratio",
+        "value": 0.79864501953125,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.01654052734375
+      },
+      {
+        "feature": "total_log_kb_log",
+        "value": 3.549555540084839,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.5110208988189697
+      },
+      {
+        "feature": "max_token_ids_per_event_log",
+        "value": 4.595119953155518,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.6931471824645996
+      },
+      {
+        "feature": "max_dup_token_ids_log",
+        "value": 4.574710845947266,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.0
+      }
+    ],
+    "anomaly_score": 0.699064,
+    "anomaly_percentile": 0.999843,
+    "touches_intents": true,
+    "receipts_complete": true,
+    "baseline": {
+      "label": "high",
+      "risk": 1.0,
+      "rule_hits": [
+        {
+          "rule": "failed_resolve_callback",
+          "severity": "high",
+          "message": "resolve callback failed: mt_resolve_deposit (log_limit)"
+        },
+        {
+          "rule": "log_limit",
+          "severity": "high",
+          "message": "a receipt failed on the log length limit"
+        },
+        {
+          "rule": "credit_kept",
+          "severity": "high",
+          "message": "token refunded 10000000000000000000 to the sender while intents still credits 10000000000000000000 of a 10000000000000000000 deposit (credited + refunded > deposited)"
+        },
+        {
+          "rule": "refund_exceeds_deposit",
+          "severity": "medium",
+          "message": "an *_on_transfer receiver asked to refund 10^36.0x the amount it received"
+        },
+        {
+          "rule": "notify_receiver_in_deposit",
+          "severity": "medium",
+          "message": "the deposit notified a receiver contract (1 call(s) of mt_on_transfer)"
+        },
+        {
+          "rule": "many_token_ids",
+          "severity": "medium",
+          "message": "a batch of 98 token ids (96 duplicates, 97 dust amounts)"
+        }
+      ]
+    },
+    "accounting": {
+      "version": "accounting_v1",
+      "status": "checked",
+      "coverage": {
+        "receipts_complete": true,
+        "observed_receipts": 10,
+        "missing_receipts": 0,
+        "pending_outcomes": 0,
+        "checked_deposit_flows": 1,
+        "unchecked_deposit_flows": 0,
+        "malformed_events": 0
+      },
+      "checks": [
+        {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "DSfNwH18mEASbDg2qYh6NWGcjNpc1vJr2xnKthScFQCW",
+          "owner_ids": [
+            "dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757"
+          ],
+          "retained_credit_owners": [
+            "dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757"
+          ],
+          "deposit_receipt_id": "8fWiEwQUbVATPC3JxyEscVHVKmBcep1pCwJR792pZYq7",
+          "token_id": "nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY",
+          "refund_receipt_id": "7y7VKm4tM3rEspHGidoyVPp9oV2UAcLktwuCyamx5emD",
+          "deposited": "97",
+          "minted": "97",
+          "burned": "0",
+          "refunded": "97",
+          "credit_retained": "97",
+          "excess": "97",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        },
+        {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "DSfNwH18mEASbDg2qYh6NWGcjNpc1vJr2xnKthScFQCW",
+          "owner_ids": [
+            "dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757"
+          ],
+          "retained_credit_owners": [
+            "dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757"
+          ],
+          "deposit_receipt_id": "8fWiEwQUbVATPC3JxyEscVHVKmBcep1pCwJR792pZYq7",
+          "token_id": "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+          "refund_receipt_id": "7y7VKm4tM3rEspHGidoyVPp9oV2UAcLktwuCyamx5emD",
+          "deposited": "10000000000000000000",
+          "minted": "10000000000000000000",
+          "burned": "0",
+          "refunded": "10000000000000000000",
+          "credit_retained": "10000000000000000000",
+          "excess": "10000000000000000000",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        }
+      ],
+      "findings": [
+        {
+          "rule": "accounting_credit_exceeds_backing",
+          "severity": "high",
+          "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY deposit by 97 base units.",
+          "evidence": {
+            "kind": "deposit_backing",
+            "status": "excess_credit",
+            "protocol_id": "intents.near",
+            "receiver_receipt_id": "DSfNwH18mEASbDg2qYh6NWGcjNpc1vJr2xnKthScFQCW",
+            "owner_ids": [
+              "dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757"
+            ],
+            "retained_credit_owners": [
+              "dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757"
+            ],
+            "deposit_receipt_id": "8fWiEwQUbVATPC3JxyEscVHVKmBcep1pCwJR792pZYq7",
+            "token_id": "nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY",
+            "refund_receipt_id": "7y7VKm4tM3rEspHGidoyVPp9oV2UAcLktwuCyamx5emD",
+            "deposited": "97",
+            "minted": "97",
+            "burned": "0",
+            "refunded": "97",
+            "credit_retained": "97",
+            "excess": "97",
+            "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+          }
+        },
+        {
+          "rule": "accounting_credit_exceeds_backing",
+          "severity": "high",
+          "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g deposit by 10000000000000000000 base units.",
+          "evidence": {
+            "kind": "deposit_backing",
+            "status": "excess_credit",
+            "protocol_id": "intents.near",
+            "receiver_receipt_id": "DSfNwH18mEASbDg2qYh6NWGcjNpc1vJr2xnKthScFQCW",
+            "owner_ids": [
+              "dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757"
+            ],
+            "retained_credit_owners": [
+              "dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757"
+            ],
+            "deposit_receipt_id": "8fWiEwQUbVATPC3JxyEscVHVKmBcep1pCwJR792pZYq7",
+            "token_id": "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+            "refund_receipt_id": "7y7VKm4tM3rEspHGidoyVPp9oV2UAcLktwuCyamx5emD",
+            "deposited": "10000000000000000000",
+            "minted": "10000000000000000000",
+            "burned": "0",
+            "refunded": "10000000000000000000",
+            "credit_retained": "10000000000000000000",
+            "excess": "10000000000000000000",
+            "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+          }
+        }
+      ],
+      "limitations": [
+        "Checks successful emitted events in this transaction, not independently verified balances or protocol solvency.",
+        "Token identity is its emitting contract; event consistency does not establish token value or honest token code.",
+        "Only linked FT/MT deposit flows are checked; withdrawals, native assets and opening balances are not reconciled."
+      ]
+    },
+    "history": {
+      "status": "not_requested",
+      "scope": "bounded_earlier_transactions",
+      "target_participants": [
+        "dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757"
+      ],
+      "coverage": {
+        "input_transactions": 0,
+        "inspected_transactions": 0,
+        "input_truncated": false,
+        "eligible_prior_transactions": 0,
+        "related_transactions": 0,
+        "excluded": {
+          "duplicate": 0,
+          "unknown_order": 0,
+          "not_strictly_earlier": 0,
+          "outside_window": 0,
+          "incomplete": 0,
+          "unrelated": 0
+        },
+        "max_transactions": 100,
+        "window_seconds": 86400,
+        "complete_history": false,
+        "requested": false
+      },
+      "related_transactions": [],
+      "findings": [],
+      "limitations": [
+        "Only supplied earlier transactions within one day are inspected; this is not complete account history.",
+        "Shared accounts establish context, not ownership, malicious intent or a trace of stolen funds."
+      ],
+      "reason": "Earlier activity was not requested."
+    },
+    "detector": {
+      "version": "transaction-evidence-v2",
+      "source_sha256": {
+        "intents/accounting.py": "6fb77c771bb49a9ff66a5202cdfec04922a956b363e6173252af8096cdd94373",
+        "intents/history.py": "e07955e18354ea8e8c65dc8371c7ec1357052241250545bdd9eccdf8c28d67d6",
+        "intents/taxonomy.py": "c4c465eb1c82bfb522ecfbebba663c668020978adf7568f186dbb1cd5e1c9c8e",
+        "intents/fixtures/attack_taxonomy.json": "22938b2e99256c870253400edf376cb7a11cffb2599b5838dd5a35671f1cb3b2",
+        "service/intents.py": "bee97f19caeb759c273a5d40a98ad9adf5a9400d1363e2c0c0547a0e7a8390fd"
+      },
+      "score_basis": "Maximum of the baseline rank score and evidence weights (high 1, medium 0.5); not an attack probability. Use assessment and evidence, not risk alone."
+    },
+    "attack_categories": [
+      {
+        "id": "callback_accounting",
+        "label": "Callback accounting",
+        "rules": [
+          "accounting_credit_exceeds_backing",
+          "credit_kept",
+          "failed_resolve_callback",
+          "refund_exceeds_deposit"
+        ],
+        "evidence_basis": "Observed pattern category; not a verified root cause or proof of malicious intent."
+      },
+      {
+        "id": "resource_exhaustion",
+        "label": "Callback resource exhaustion",
+        "rules": [
+          "log_limit",
+          "many_token_ids"
+        ],
+        "evidence_basis": "Observed pattern category; not a verified root cause or proof of malicious intent."
+      }
+    ],
+    "assessment": "malicious_pattern",
+    "assessment_reason": "Observed receipts match a high-severity known attack pattern; this does not prove malicious intent.",
+    "evidence_coverage": {
+      "receipts_complete": true,
+      "observed_receipts": 10,
+      "missing_receipts": 0,
+      "pending_outcomes": 0
+    },
+    "scope": {
+      "network": "mainnet",
+      "supported_protocol": "NEAR Intents",
+      "protocol_supported": true
+    },
+    "confidence": {
+      "level": "high",
+      "basis": "A high-severity rule matched observed receipts. Receipt graph is complete. This is evidence strength, not a calibrated probability or proof of malicious intent."
+    },
+    "demo_provenance": "Historical FastNEAR recording, 2026-11-14; scored offline with the frozen detector.",
+    "model": {
+      "version": "intents_v1",
+      "sha256": "fca745debe47da83e2608432322a4c681475755b19ff64aa23e4d88a05b247cb"
+    }
+  },
+  {
+    "tx_hash": "GAQKwHdTaLPyvvAMCGfmcyPcR8rptuXu1mCRwz7UCQEG",
+    "signer_id": "20e6bfe4685d99004fc2095d3a0fc6158cd810ce8f801196141e183ed6e19d65",
+    "receiver_id": "v2_1.omni.hot.tg",
+    "risk": 1.0,
+    "label": "high",
+    "rule_hits": [
+      {
+        "rule": "failed_resolve_callback",
+        "severity": "high",
+        "message": "resolve callback failed: mt_resolve_deposit (log_limit)"
+      },
+      {
+        "rule": "log_limit",
+        "severity": "high",
+        "message": "a receipt failed on the log length limit"
+      },
+      {
+        "rule": "credit_kept",
+        "severity": "high",
+        "message": "token refunded 18080082660383136740355 to the sender while intents still credits 18080082660383136740355 of a 18080082660383136740355 deposit (credited + refunded > deposited)"
+      },
+      {
+        "rule": "refund_exceeds_deposit",
+        "severity": "medium",
+        "message": "an *_on_transfer receiver asked to refund 10^36.0x the amount it received"
+      },
+      {
+        "rule": "notify_receiver_in_deposit",
+        "severity": "medium",
+        "message": "the deposit notified a receiver contract (1 call(s) of mt_on_transfer)"
+      },
+      {
+        "rule": "many_token_ids",
+        "severity": "medium",
+        "message": "a batch of 98 token ids (96 duplicates, 97 dust amounts)"
+      },
+      {
+        "rule": "accounting_credit_exceeds_backing",
+        "severity": "high",
+        "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY deposit by 97 base units.",
+        "evidence": {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "4d23RiWYRiku4HUShuFdK14LdjzwNNVayJbopqUW5X1q",
+          "owner_ids": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "retained_credit_owners": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "deposit_receipt_id": "Gnx8HUc7JsfjEUw5XKnp25hP4CyJqW14uQpVHGZxKL9W",
+          "token_id": "nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY",
+          "refund_receipt_id": "96yQuu26QRvjM2cxGzXhVyAMxwWAxeBNrrKZ5EBLzxUS",
+          "deposited": "97",
+          "minted": "97",
+          "burned": "0",
+          "refunded": "97",
+          "credit_retained": "97",
+          "excess": "97",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        },
+        "source": "accounting"
+      },
+      {
+        "rule": "accounting_credit_exceeds_backing",
+        "severity": "high",
+        "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g deposit by 18080082660383136740355 base units.",
+        "evidence": {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "4d23RiWYRiku4HUShuFdK14LdjzwNNVayJbopqUW5X1q",
+          "owner_ids": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "retained_credit_owners": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "deposit_receipt_id": "Gnx8HUc7JsfjEUw5XKnp25hP4CyJqW14uQpVHGZxKL9W",
+          "token_id": "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+          "refund_receipt_id": "96yQuu26QRvjM2cxGzXhVyAMxwWAxeBNrrKZ5EBLzxUS",
+          "deposited": "18080082660383136740355",
+          "minted": "18080082660383136740355",
+          "burned": "0",
+          "refunded": "18080082660383136740355",
+          "credit_retained": "18080082660383136740355",
+          "excess": "18080082660383136740355",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        },
+        "source": "accounting"
+      }
+    ],
+    "flow_type": "deposit",
+    "top_features": [
+      {
+        "feature": "fail_log_limit",
+        "value": 1.0,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.0
+      },
+      {
+        "feature": "max_log_ratio",
+        "value": 0.798828125,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.01654052734375
+      },
+      {
+        "feature": "total_log_kb_log",
+        "value": 3.5498082637786865,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.5110208988189697
+      },
+      {
+        "feature": "max_token_ids_per_event_log",
+        "value": 4.595119953155518,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.6931471824645996
+      },
+      {
+        "feature": "max_dup_token_ids_log",
+        "value": 4.574710845947266,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.0
+      }
+    ],
+    "anomaly_score": 0.699737,
+    "anomaly_percentile": 0.999843,
+    "touches_intents": true,
+    "receipts_complete": true,
+    "baseline": {
+      "label": "high",
+      "risk": 1.0,
+      "rule_hits": [
+        {
+          "rule": "failed_resolve_callback",
+          "severity": "high",
+          "message": "resolve callback failed: mt_resolve_deposit (log_limit)"
+        },
+        {
+          "rule": "log_limit",
+          "severity": "high",
+          "message": "a receipt failed on the log length limit"
+        },
+        {
+          "rule": "credit_kept",
+          "severity": "high",
+          "message": "token refunded 18080082660383136740355 to the sender while intents still credits 18080082660383136740355 of a 18080082660383136740355 deposit (credited + refunded > deposited)"
+        },
+        {
+          "rule": "refund_exceeds_deposit",
+          "severity": "medium",
+          "message": "an *_on_transfer receiver asked to refund 10^36.0x the amount it received"
+        },
+        {
+          "rule": "notify_receiver_in_deposit",
+          "severity": "medium",
+          "message": "the deposit notified a receiver contract (1 call(s) of mt_on_transfer)"
+        },
+        {
+          "rule": "many_token_ids",
+          "severity": "medium",
+          "message": "a batch of 98 token ids (96 duplicates, 97 dust amounts)"
+        }
+      ]
+    },
+    "accounting": {
+      "version": "accounting_v1",
+      "status": "checked",
+      "coverage": {
+        "receipts_complete": true,
+        "observed_receipts": 10,
+        "missing_receipts": 0,
+        "pending_outcomes": 0,
+        "checked_deposit_flows": 1,
+        "unchecked_deposit_flows": 0,
+        "malformed_events": 0
+      },
+      "checks": [
+        {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "4d23RiWYRiku4HUShuFdK14LdjzwNNVayJbopqUW5X1q",
+          "owner_ids": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "retained_credit_owners": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "deposit_receipt_id": "Gnx8HUc7JsfjEUw5XKnp25hP4CyJqW14uQpVHGZxKL9W",
+          "token_id": "nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY",
+          "refund_receipt_id": "96yQuu26QRvjM2cxGzXhVyAMxwWAxeBNrrKZ5EBLzxUS",
+          "deposited": "97",
+          "minted": "97",
+          "burned": "0",
+          "refunded": "97",
+          "credit_retained": "97",
+          "excess": "97",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        },
+        {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "4d23RiWYRiku4HUShuFdK14LdjzwNNVayJbopqUW5X1q",
+          "owner_ids": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "retained_credit_owners": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "deposit_receipt_id": "Gnx8HUc7JsfjEUw5XKnp25hP4CyJqW14uQpVHGZxKL9W",
+          "token_id": "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+          "refund_receipt_id": "96yQuu26QRvjM2cxGzXhVyAMxwWAxeBNrrKZ5EBLzxUS",
+          "deposited": "18080082660383136740355",
+          "minted": "18080082660383136740355",
+          "burned": "0",
+          "refunded": "18080082660383136740355",
+          "credit_retained": "18080082660383136740355",
+          "excess": "18080082660383136740355",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        }
+      ],
+      "findings": [
+        {
+          "rule": "accounting_credit_exceeds_backing",
+          "severity": "high",
+          "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY deposit by 97 base units.",
+          "evidence": {
+            "kind": "deposit_backing",
+            "status": "excess_credit",
+            "protocol_id": "intents.near",
+            "receiver_receipt_id": "4d23RiWYRiku4HUShuFdK14LdjzwNNVayJbopqUW5X1q",
+            "owner_ids": [
+              "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+            ],
+            "retained_credit_owners": [
+              "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+            ],
+            "deposit_receipt_id": "Gnx8HUc7JsfjEUw5XKnp25hP4CyJqW14uQpVHGZxKL9W",
+            "token_id": "nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY",
+            "refund_receipt_id": "96yQuu26QRvjM2cxGzXhVyAMxwWAxeBNrrKZ5EBLzxUS",
+            "deposited": "97",
+            "minted": "97",
+            "burned": "0",
+            "refunded": "97",
+            "credit_retained": "97",
+            "excess": "97",
+            "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+          }
+        },
+        {
+          "rule": "accounting_credit_exceeds_backing",
+          "severity": "high",
+          "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g deposit by 18080082660383136740355 base units.",
+          "evidence": {
+            "kind": "deposit_backing",
+            "status": "excess_credit",
+            "protocol_id": "intents.near",
+            "receiver_receipt_id": "4d23RiWYRiku4HUShuFdK14LdjzwNNVayJbopqUW5X1q",
+            "owner_ids": [
+              "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+            ],
+            "retained_credit_owners": [
+              "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+            ],
+            "deposit_receipt_id": "Gnx8HUc7JsfjEUw5XKnp25hP4CyJqW14uQpVHGZxKL9W",
+            "token_id": "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+            "refund_receipt_id": "96yQuu26QRvjM2cxGzXhVyAMxwWAxeBNrrKZ5EBLzxUS",
+            "deposited": "18080082660383136740355",
+            "minted": "18080082660383136740355",
+            "burned": "0",
+            "refunded": "18080082660383136740355",
+            "credit_retained": "18080082660383136740355",
+            "excess": "18080082660383136740355",
+            "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+          }
+        }
+      ],
+      "limitations": [
+        "Checks successful emitted events in this transaction, not independently verified balances or protocol solvency.",
+        "Token identity is its emitting contract; event consistency does not establish token value or honest token code.",
+        "Only linked FT/MT deposit flows are checked; withdrawals, native assets and opening balances are not reconciled."
+      ]
+    },
+    "history": {
+      "status": "not_requested",
+      "scope": "bounded_earlier_transactions",
+      "target_participants": [
+        "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+      ],
+      "coverage": {
+        "input_transactions": 0,
+        "inspected_transactions": 0,
+        "input_truncated": false,
+        "eligible_prior_transactions": 0,
+        "related_transactions": 0,
+        "excluded": {
+          "duplicate": 0,
+          "unknown_order": 0,
+          "not_strictly_earlier": 0,
+          "outside_window": 0,
+          "incomplete": 0,
+          "unrelated": 0
+        },
+        "max_transactions": 100,
+        "window_seconds": 86400,
+        "complete_history": false,
+        "requested": false
+      },
+      "related_transactions": [],
+      "findings": [],
+      "limitations": [
+        "Only supplied earlier transactions within one day are inspected; this is not complete account history.",
+        "Shared accounts establish context, not ownership, malicious intent or a trace of stolen funds."
+      ],
+      "reason": "Earlier activity was not requested."
+    },
+    "detector": {
+      "version": "transaction-evidence-v2",
+      "source_sha256": {
+        "intents/accounting.py": "6fb77c771bb49a9ff66a5202cdfec04922a956b363e6173252af8096cdd94373",
+        "intents/history.py": "e07955e18354ea8e8c65dc8371c7ec1357052241250545bdd9eccdf8c28d67d6",
+        "intents/taxonomy.py": "c4c465eb1c82bfb522ecfbebba663c668020978adf7568f186dbb1cd5e1c9c8e",
+        "intents/fixtures/attack_taxonomy.json": "22938b2e99256c870253400edf376cb7a11cffb2599b5838dd5a35671f1cb3b2",
+        "service/intents.py": "bee97f19caeb759c273a5d40a98ad9adf5a9400d1363e2c0c0547a0e7a8390fd"
+      },
+      "score_basis": "Maximum of the baseline rank score and evidence weights (high 1, medium 0.5); not an attack probability. Use assessment and evidence, not risk alone."
+    },
+    "attack_categories": [
+      {
+        "id": "callback_accounting",
+        "label": "Callback accounting",
+        "rules": [
+          "accounting_credit_exceeds_backing",
+          "credit_kept",
+          "failed_resolve_callback",
+          "refund_exceeds_deposit"
+        ],
+        "evidence_basis": "Observed pattern category; not a verified root cause or proof of malicious intent."
+      },
+      {
+        "id": "resource_exhaustion",
+        "label": "Callback resource exhaustion",
+        "rules": [
+          "log_limit",
+          "many_token_ids"
+        ],
+        "evidence_basis": "Observed pattern category; not a verified root cause or proof of malicious intent."
+      }
+    ],
+    "assessment": "malicious_pattern",
+    "assessment_reason": "Observed receipts match a high-severity known attack pattern; this does not prove malicious intent.",
+    "evidence_coverage": {
+      "receipts_complete": true,
+      "observed_receipts": 10,
+      "missing_receipts": 0,
+      "pending_outcomes": 0
+    },
+    "scope": {
+      "network": "mainnet",
+      "supported_protocol": "NEAR Intents",
+      "protocol_supported": true
+    },
+    "confidence": {
+      "level": "high",
+      "basis": "A high-severity rule matched observed receipts. Receipt graph is complete. This is evidence strength, not a calibrated probability or proof of malicious intent."
+    },
+    "demo_provenance": "Historical FastNEAR recording, 2026-11-14; scored offline with the frozen detector.",
+    "model": {
+      "version": "intents_v1",
+      "sha256": "fca745debe47da83e2608432322a4c681475755b19ff64aa23e4d88a05b247cb"
+    }
+  },
+  {
+    "tx_hash": "bMdkzhZf7tQZbXNnXcAnuJaLyTxaCq8W9BnTh28EaDr",
+    "signer_id": "20e6bfe4685d99004fc2095d3a0fc6158cd810ce8f801196141e183ed6e19d65",
+    "receiver_id": "v2_1.omni.hot.tg",
+    "risk": 1.0,
+    "label": "high",
+    "rule_hits": [
+      {
+        "rule": "failed_resolve_callback",
+        "severity": "high",
+        "message": "resolve callback failed: mt_resolve_deposit (log_limit)"
+      },
+      {
+        "rule": "log_limit",
+        "severity": "high",
+        "message": "a receipt failed on the log length limit"
+      },
+      {
+        "rule": "credit_kept",
+        "severity": "high",
+        "message": "token refunded 99744000000000000000000 to the sender while intents still credits 99744000000000000000000 of a 99744000000000000000000 deposit (credited + refunded > deposited)"
+      },
+      {
+        "rule": "refund_exceeds_deposit",
+        "severity": "medium",
+        "message": "an *_on_transfer receiver asked to refund 10^36.0x the amount it received"
+      },
+      {
+        "rule": "notify_receiver_in_deposit",
+        "severity": "medium",
+        "message": "the deposit notified a receiver contract (1 call(s) of mt_on_transfer)"
+      },
+      {
+        "rule": "many_token_ids",
+        "severity": "medium",
+        "message": "a batch of 98 token ids (96 duplicates, 97 dust amounts)"
+      },
+      {
+        "rule": "accounting_credit_exceeds_backing",
+        "severity": "high",
+        "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY deposit by 97 base units.",
+        "evidence": {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "4SG7mCawznW3EXjXfPaVht4ZbFFgfqHtERrZppG57WA5",
+          "owner_ids": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "retained_credit_owners": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "deposit_receipt_id": "DRHfRM3iPTMSV3yUP1Tct6qmCmjGLLwVmDsgHCE3wDgH",
+          "token_id": "nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY",
+          "refund_receipt_id": "AS7Fn2v2Db9owJZh84eA4pLjMwwmFPGyc7oqZVMMXVHm",
+          "deposited": "97",
+          "minted": "97",
+          "burned": "0",
+          "refunded": "97",
+          "credit_retained": "97",
+          "excess": "97",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        },
+        "source": "accounting"
+      },
+      {
+        "rule": "accounting_credit_exceeds_backing",
+        "severity": "high",
+        "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g deposit by 99744000000000000000000 base units.",
+        "evidence": {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "4SG7mCawznW3EXjXfPaVht4ZbFFgfqHtERrZppG57WA5",
+          "owner_ids": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "retained_credit_owners": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "deposit_receipt_id": "DRHfRM3iPTMSV3yUP1Tct6qmCmjGLLwVmDsgHCE3wDgH",
+          "token_id": "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+          "refund_receipt_id": "AS7Fn2v2Db9owJZh84eA4pLjMwwmFPGyc7oqZVMMXVHm",
+          "deposited": "99744000000000000000000",
+          "minted": "99744000000000000000000",
+          "burned": "0",
+          "refunded": "99744000000000000000000",
+          "credit_retained": "99744000000000000000000",
+          "excess": "99744000000000000000000",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        },
+        "source": "accounting"
+      }
+    ],
+    "flow_type": "deposit",
+    "top_features": [
+      {
+        "feature": "fail_log_limit",
+        "value": 1.0,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.0
+      },
+      {
+        "feature": "max_log_ratio",
+        "value": 0.798828125,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.01654052734375
+      },
+      {
+        "feature": "total_log_kb_log",
+        "value": 3.5498082637786865,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.5110208988189697
+      },
+      {
+        "feature": "max_token_ids_per_event_log",
+        "value": 4.595119953155518,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.6931471824645996
+      },
+      {
+        "feature": "max_dup_token_ids_log",
+        "value": 4.574710845947266,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.0
+      }
+    ],
+    "anomaly_score": 0.699737,
+    "anomaly_percentile": 0.999843,
+    "touches_intents": true,
+    "receipts_complete": true,
+    "baseline": {
+      "label": "high",
+      "risk": 1.0,
+      "rule_hits": [
+        {
+          "rule": "failed_resolve_callback",
+          "severity": "high",
+          "message": "resolve callback failed: mt_resolve_deposit (log_limit)"
+        },
+        {
+          "rule": "log_limit",
+          "severity": "high",
+          "message": "a receipt failed on the log length limit"
+        },
+        {
+          "rule": "credit_kept",
+          "severity": "high",
+          "message": "token refunded 99744000000000000000000 to the sender while intents still credits 99744000000000000000000 of a 99744000000000000000000 deposit (credited + refunded > deposited)"
+        },
+        {
+          "rule": "refund_exceeds_deposit",
+          "severity": "medium",
+          "message": "an *_on_transfer receiver asked to refund 10^36.0x the amount it received"
+        },
+        {
+          "rule": "notify_receiver_in_deposit",
+          "severity": "medium",
+          "message": "the deposit notified a receiver contract (1 call(s) of mt_on_transfer)"
+        },
+        {
+          "rule": "many_token_ids",
+          "severity": "medium",
+          "message": "a batch of 98 token ids (96 duplicates, 97 dust amounts)"
+        }
+      ]
+    },
+    "accounting": {
+      "version": "accounting_v1",
+      "status": "checked",
+      "coverage": {
+        "receipts_complete": true,
+        "observed_receipts": 10,
+        "missing_receipts": 0,
+        "pending_outcomes": 0,
+        "checked_deposit_flows": 1,
+        "unchecked_deposit_flows": 0,
+        "malformed_events": 0
+      },
+      "checks": [
+        {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "4SG7mCawznW3EXjXfPaVht4ZbFFgfqHtERrZppG57WA5",
+          "owner_ids": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "retained_credit_owners": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "deposit_receipt_id": "DRHfRM3iPTMSV3yUP1Tct6qmCmjGLLwVmDsgHCE3wDgH",
+          "token_id": "nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY",
+          "refund_receipt_id": "AS7Fn2v2Db9owJZh84eA4pLjMwwmFPGyc7oqZVMMXVHm",
+          "deposited": "97",
+          "minted": "97",
+          "burned": "0",
+          "refunded": "97",
+          "credit_retained": "97",
+          "excess": "97",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        },
+        {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "4SG7mCawznW3EXjXfPaVht4ZbFFgfqHtERrZppG57WA5",
+          "owner_ids": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "retained_credit_owners": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "deposit_receipt_id": "DRHfRM3iPTMSV3yUP1Tct6qmCmjGLLwVmDsgHCE3wDgH",
+          "token_id": "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+          "refund_receipt_id": "AS7Fn2v2Db9owJZh84eA4pLjMwwmFPGyc7oqZVMMXVHm",
+          "deposited": "99744000000000000000000",
+          "minted": "99744000000000000000000",
+          "burned": "0",
+          "refunded": "99744000000000000000000",
+          "credit_retained": "99744000000000000000000",
+          "excess": "99744000000000000000000",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        }
+      ],
+      "findings": [
+        {
+          "rule": "accounting_credit_exceeds_backing",
+          "severity": "high",
+          "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY deposit by 97 base units.",
+          "evidence": {
+            "kind": "deposit_backing",
+            "status": "excess_credit",
+            "protocol_id": "intents.near",
+            "receiver_receipt_id": "4SG7mCawznW3EXjXfPaVht4ZbFFgfqHtERrZppG57WA5",
+            "owner_ids": [
+              "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+            ],
+            "retained_credit_owners": [
+              "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+            ],
+            "deposit_receipt_id": "DRHfRM3iPTMSV3yUP1Tct6qmCmjGLLwVmDsgHCE3wDgH",
+            "token_id": "nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY",
+            "refund_receipt_id": "AS7Fn2v2Db9owJZh84eA4pLjMwwmFPGyc7oqZVMMXVHm",
+            "deposited": "97",
+            "minted": "97",
+            "burned": "0",
+            "refunded": "97",
+            "credit_retained": "97",
+            "excess": "97",
+            "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+          }
+        },
+        {
+          "rule": "accounting_credit_exceeds_backing",
+          "severity": "high",
+          "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g deposit by 99744000000000000000000 base units.",
+          "evidence": {
+            "kind": "deposit_backing",
+            "status": "excess_credit",
+            "protocol_id": "intents.near",
+            "receiver_receipt_id": "4SG7mCawznW3EXjXfPaVht4ZbFFgfqHtERrZppG57WA5",
+            "owner_ids": [
+              "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+            ],
+            "retained_credit_owners": [
+              "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+            ],
+            "deposit_receipt_id": "DRHfRM3iPTMSV3yUP1Tct6qmCmjGLLwVmDsgHCE3wDgH",
+            "token_id": "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+            "refund_receipt_id": "AS7Fn2v2Db9owJZh84eA4pLjMwwmFPGyc7oqZVMMXVHm",
+            "deposited": "99744000000000000000000",
+            "minted": "99744000000000000000000",
+            "burned": "0",
+            "refunded": "99744000000000000000000",
+            "credit_retained": "99744000000000000000000",
+            "excess": "99744000000000000000000",
+            "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+          }
+        }
+      ],
+      "limitations": [
+        "Checks successful emitted events in this transaction, not independently verified balances or protocol solvency.",
+        "Token identity is its emitting contract; event consistency does not establish token value or honest token code.",
+        "Only linked FT/MT deposit flows are checked; withdrawals, native assets and opening balances are not reconciled."
+      ]
+    },
+    "history": {
+      "status": "not_requested",
+      "scope": "bounded_earlier_transactions",
+      "target_participants": [
+        "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+      ],
+      "coverage": {
+        "input_transactions": 0,
+        "inspected_transactions": 0,
+        "input_truncated": false,
+        "eligible_prior_transactions": 0,
+        "related_transactions": 0,
+        "excluded": {
+          "duplicate": 0,
+          "unknown_order": 0,
+          "not_strictly_earlier": 0,
+          "outside_window": 0,
+          "incomplete": 0,
+          "unrelated": 0
+        },
+        "max_transactions": 100,
+        "window_seconds": 86400,
+        "complete_history": false,
+        "requested": false
+      },
+      "related_transactions": [],
+      "findings": [],
+      "limitations": [
+        "Only supplied earlier transactions within one day are inspected; this is not complete account history.",
+        "Shared accounts establish context, not ownership, malicious intent or a trace of stolen funds."
+      ],
+      "reason": "Earlier activity was not requested."
+    },
+    "detector": {
+      "version": "transaction-evidence-v2",
+      "source_sha256": {
+        "intents/accounting.py": "6fb77c771bb49a9ff66a5202cdfec04922a956b363e6173252af8096cdd94373",
+        "intents/history.py": "e07955e18354ea8e8c65dc8371c7ec1357052241250545bdd9eccdf8c28d67d6",
+        "intents/taxonomy.py": "c4c465eb1c82bfb522ecfbebba663c668020978adf7568f186dbb1cd5e1c9c8e",
+        "intents/fixtures/attack_taxonomy.json": "22938b2e99256c870253400edf376cb7a11cffb2599b5838dd5a35671f1cb3b2",
+        "service/intents.py": "bee97f19caeb759c273a5d40a98ad9adf5a9400d1363e2c0c0547a0e7a8390fd"
+      },
+      "score_basis": "Maximum of the baseline rank score and evidence weights (high 1, medium 0.5); not an attack probability. Use assessment and evidence, not risk alone."
+    },
+    "attack_categories": [
+      {
+        "id": "callback_accounting",
+        "label": "Callback accounting",
+        "rules": [
+          "accounting_credit_exceeds_backing",
+          "credit_kept",
+          "failed_resolve_callback",
+          "refund_exceeds_deposit"
+        ],
+        "evidence_basis": "Observed pattern category; not a verified root cause or proof of malicious intent."
+      },
+      {
+        "id": "resource_exhaustion",
+        "label": "Callback resource exhaustion",
+        "rules": [
+          "log_limit",
+          "many_token_ids"
+        ],
+        "evidence_basis": "Observed pattern category; not a verified root cause or proof of malicious intent."
+      }
+    ],
+    "assessment": "malicious_pattern",
+    "assessment_reason": "Observed receipts match a high-severity known attack pattern; this does not prove malicious intent.",
+    "evidence_coverage": {
+      "receipts_complete": true,
+      "observed_receipts": 10,
+      "missing_receipts": 0,
+      "pending_outcomes": 0
+    },
+    "scope": {
+      "network": "mainnet",
+      "supported_protocol": "NEAR Intents",
+      "protocol_supported": true
+    },
+    "confidence": {
+      "level": "high",
+      "basis": "A high-severity rule matched observed receipts. Receipt graph is complete. This is evidence strength, not a calibrated probability or proof of malicious intent."
+    },
+    "demo_provenance": "Historical FastNEAR recording, 2026-11-14; scored offline with the frozen detector.",
+    "model": {
+      "version": "intents_v1",
+      "sha256": "fca745debe47da83e2608432322a4c681475755b19ff64aa23e4d88a05b247cb"
+    }
+  },
+  {
+    "tx_hash": "6Rgww9eZ5AhwkTLDvfyBNFUBJCec97ExR4Wa8aW4U1ic",
+    "signer_id": "20e6bfe4685d99004fc2095d3a0fc6158cd810ce8f801196141e183ed6e19d65",
+    "receiver_id": "v2_1.omni.hot.tg",
+    "risk": 1.0,
+    "label": "high",
+    "rule_hits": [
+      {
+        "rule": "failed_resolve_callback",
+        "severity": "high",
+        "message": "resolve callback failed: mt_resolve_deposit (log_limit)"
+      },
+      {
+        "rule": "log_limit",
+        "severity": "high",
+        "message": "a receipt failed on the log length limit"
+      },
+      {
+        "rule": "credit_kept",
+        "severity": "high",
+        "message": "token refunded 999936000000000000000000 to the sender while intents still credits 999936000000000000000000 of a 999936000000000000000000 deposit (credited + refunded > deposited)"
+      },
+      {
+        "rule": "refund_exceeds_deposit",
+        "severity": "medium",
+        "message": "an *_on_transfer receiver asked to refund 10^36.0x the amount it received"
+      },
+      {
+        "rule": "notify_receiver_in_deposit",
+        "severity": "medium",
+        "message": "the deposit notified a receiver contract (1 call(s) of mt_on_transfer)"
+      },
+      {
+        "rule": "many_token_ids",
+        "severity": "medium",
+        "message": "a batch of 98 token ids (96 duplicates, 97 dust amounts)"
+      },
+      {
+        "rule": "accounting_credit_exceeds_backing",
+        "severity": "high",
+        "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY deposit by 97 base units.",
+        "evidence": {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "3oB8dw3HQdicLRjU9dAsV8fjodcscrZjPgkNcYQqy7gU",
+          "owner_ids": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "retained_credit_owners": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "deposit_receipt_id": "3kfXbFWUYw3oRuimyzx697UH8mBin6DgvpxNbLSmMvg4",
+          "token_id": "nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY",
+          "refund_receipt_id": "7h8RYnZpo1YeBgFjgmLg1JaxnGFAryyR6cDa9yqzFCUB",
+          "deposited": "97",
+          "minted": "97",
+          "burned": "0",
+          "refunded": "97",
+          "credit_retained": "97",
+          "excess": "97",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        },
+        "source": "accounting"
+      },
+      {
+        "rule": "accounting_credit_exceeds_backing",
+        "severity": "high",
+        "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g deposit by 999936000000000000000000 base units.",
+        "evidence": {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "3oB8dw3HQdicLRjU9dAsV8fjodcscrZjPgkNcYQqy7gU",
+          "owner_ids": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "retained_credit_owners": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "deposit_receipt_id": "3kfXbFWUYw3oRuimyzx697UH8mBin6DgvpxNbLSmMvg4",
+          "token_id": "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+          "refund_receipt_id": "7h8RYnZpo1YeBgFjgmLg1JaxnGFAryyR6cDa9yqzFCUB",
+          "deposited": "999936000000000000000000",
+          "minted": "999936000000000000000000",
+          "burned": "0",
+          "refunded": "999936000000000000000000",
+          "credit_retained": "999936000000000000000000",
+          "excess": "999936000000000000000000",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        },
+        "source": "accounting"
+      }
+    ],
+    "flow_type": "deposit",
+    "top_features": [
+      {
+        "feature": "fail_log_limit",
+        "value": 1.0,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.0
+      },
+      {
+        "feature": "max_log_ratio",
+        "value": 0.79888916015625,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.01654052734375
+      },
+      {
+        "feature": "total_log_kb_log",
+        "value": 3.5498924255371094,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.5110208988189697
+      },
+      {
+        "feature": "max_token_ids_per_event_log",
+        "value": 4.595119953155518,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.6931471824645996
+      },
+      {
+        "feature": "max_dup_token_ids_log",
+        "value": 4.574710845947266,
+        "tail_p": 9.020792927698339e-05,
+        "typical": 0.0
+      }
+    ],
+    "anomaly_score": 0.699737,
+    "anomaly_percentile": 0.999843,
+    "touches_intents": true,
+    "receipts_complete": true,
+    "baseline": {
+      "label": "high",
+      "risk": 1.0,
+      "rule_hits": [
+        {
+          "rule": "failed_resolve_callback",
+          "severity": "high",
+          "message": "resolve callback failed: mt_resolve_deposit (log_limit)"
+        },
+        {
+          "rule": "log_limit",
+          "severity": "high",
+          "message": "a receipt failed on the log length limit"
+        },
+        {
+          "rule": "credit_kept",
+          "severity": "high",
+          "message": "token refunded 999936000000000000000000 to the sender while intents still credits 999936000000000000000000 of a 999936000000000000000000 deposit (credited + refunded > deposited)"
+        },
+        {
+          "rule": "refund_exceeds_deposit",
+          "severity": "medium",
+          "message": "an *_on_transfer receiver asked to refund 10^36.0x the amount it received"
+        },
+        {
+          "rule": "notify_receiver_in_deposit",
+          "severity": "medium",
+          "message": "the deposit notified a receiver contract (1 call(s) of mt_on_transfer)"
+        },
+        {
+          "rule": "many_token_ids",
+          "severity": "medium",
+          "message": "a batch of 98 token ids (96 duplicates, 97 dust amounts)"
+        }
+      ]
+    },
+    "accounting": {
+      "version": "accounting_v1",
+      "status": "checked",
+      "coverage": {
+        "receipts_complete": true,
+        "observed_receipts": 10,
+        "missing_receipts": 0,
+        "pending_outcomes": 0,
+        "checked_deposit_flows": 1,
+        "unchecked_deposit_flows": 0,
+        "malformed_events": 0
+      },
+      "checks": [
+        {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "3oB8dw3HQdicLRjU9dAsV8fjodcscrZjPgkNcYQqy7gU",
+          "owner_ids": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "retained_credit_owners": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "deposit_receipt_id": "3kfXbFWUYw3oRuimyzx697UH8mBin6DgvpxNbLSmMvg4",
+          "token_id": "nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY",
+          "refund_receipt_id": "7h8RYnZpo1YeBgFjgmLg1JaxnGFAryyR6cDa9yqzFCUB",
+          "deposited": "97",
+          "minted": "97",
+          "burned": "0",
+          "refunded": "97",
+          "credit_retained": "97",
+          "excess": "97",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        },
+        {
+          "kind": "deposit_backing",
+          "status": "excess_credit",
+          "protocol_id": "intents.near",
+          "receiver_receipt_id": "3oB8dw3HQdicLRjU9dAsV8fjodcscrZjPgkNcYQqy7gU",
+          "owner_ids": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "retained_credit_owners": [
+            "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+          ],
+          "deposit_receipt_id": "3kfXbFWUYw3oRuimyzx697UH8mBin6DgvpxNbLSmMvg4",
+          "token_id": "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+          "refund_receipt_id": "7h8RYnZpo1YeBgFjgmLg1JaxnGFAryyR6cDa9yqzFCUB",
+          "deposited": "999936000000000000000000",
+          "minted": "999936000000000000000000",
+          "burned": "0",
+          "refunded": "999936000000000000000000",
+          "credit_retained": "999936000000000000000000",
+          "excess": "999936000000000000000000",
+          "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+        }
+      ],
+      "findings": [
+        {
+          "rule": "accounting_credit_exceeds_backing",
+          "severity": "high",
+          "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY deposit by 97 base units.",
+          "evidence": {
+            "kind": "deposit_backing",
+            "status": "excess_credit",
+            "protocol_id": "intents.near",
+            "receiver_receipt_id": "3oB8dw3HQdicLRjU9dAsV8fjodcscrZjPgkNcYQqy7gU",
+            "owner_ids": [
+              "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+            ],
+            "retained_credit_owners": [
+              "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+            ],
+            "deposit_receipt_id": "3kfXbFWUYw3oRuimyzx697UH8mBin6DgvpxNbLSmMvg4",
+            "token_id": "nep245:v2_1.omni.hot.tg:4444119_EnfNtEaQwr1AZTRgmH3dEhqGy1rqBWAU8gbAP1eKhErvrNk3cQQ7ConB8nnW9mhdHwm14Haihc5QwzhnJWLodt3ZVa3TY",
+            "refund_receipt_id": "7h8RYnZpo1YeBgFjgmLg1JaxnGFAryyR6cDa9yqzFCUB",
+            "deposited": "97",
+            "minted": "97",
+            "burned": "0",
+            "refunded": "97",
+            "credit_retained": "97",
+            "excess": "97",
+            "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+          }
+        },
+        {
+          "rule": "accounting_credit_exceeds_backing",
+          "severity": "high",
+          "message": "Observed credit + refund exceeds the linked nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g deposit by 999936000000000000000000 base units.",
+          "evidence": {
+            "kind": "deposit_backing",
+            "status": "excess_credit",
+            "protocol_id": "intents.near",
+            "receiver_receipt_id": "3oB8dw3HQdicLRjU9dAsV8fjodcscrZjPgkNcYQqy7gU",
+            "owner_ids": [
+              "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+            ],
+            "retained_credit_owners": [
+              "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+            ],
+            "deposit_receipt_id": "3kfXbFWUYw3oRuimyzx697UH8mBin6DgvpxNbLSmMvg4",
+            "token_id": "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+            "refund_receipt_id": "7h8RYnZpo1YeBgFjgmLg1JaxnGFAryyR6cDa9yqzFCUB",
+            "deposited": "999936000000000000000000",
+            "minted": "999936000000000000000000",
+            "burned": "0",
+            "refunded": "999936000000000000000000",
+            "credit_retained": "999936000000000000000000",
+            "excess": "999936000000000000000000",
+            "reason": "Verifier credit plus the token refund exceeds the linked deposit."
+          }
+        }
+      ],
+      "limitations": [
+        "Checks successful emitted events in this transaction, not independently verified balances or protocol solvency.",
+        "Token identity is its emitting contract; event consistency does not establish token value or honest token code.",
+        "Only linked FT/MT deposit flows are checked; withdrawals, native assets and opening balances are not reconciled."
+      ]
+    },
+    "history": {
+      "status": "not_requested",
+      "scope": "bounded_earlier_transactions",
+      "target_participants": [
+        "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"
+      ],
+      "coverage": {
+        "input_transactions": 0,
+        "inspected_transactions": 0,
+        "input_truncated": false,
+        "eligible_prior_transactions": 0,
+        "related_transactions": 0,
+        "excluded": {
+          "duplicate": 0,
+          "unknown_order": 0,
+          "not_strictly_earlier": 0,
+          "outside_window": 0,
+          "incomplete": 0,
+          "unrelated": 0
+        },
+        "max_transactions": 100,
+        "window_seconds": 86400,
+        "complete_history": false,
+        "requested": false
+      },
+      "related_transactions": [],
+      "findings": [],
+      "limitations": [
+        "Only supplied earlier transactions within one day are inspected; this is not complete account history.",
+        "Shared accounts establish context, not ownership, malicious intent or a trace of stolen funds."
+      ],
+      "reason": "Earlier activity was not requested."
+    },
+    "detector": {
+      "version": "transaction-evidence-v2",
+      "source_sha256": {
+        "intents/accounting.py": "6fb77c771bb49a9ff66a5202cdfec04922a956b363e6173252af8096cdd94373",
+        "intents/history.py": "e07955e18354ea8e8c65dc8371c7ec1357052241250545bdd9eccdf8c28d67d6",
+        "intents/taxonomy.py": "c4c465eb1c82bfb522ecfbebba663c668020978adf7568f186dbb1cd5e1c9c8e",
+        "intents/fixtures/attack_taxonomy.json": "22938b2e99256c870253400edf376cb7a11cffb2599b5838dd5a35671f1cb3b2",
+        "service/intents.py": "bee97f19caeb759c273a5d40a98ad9adf5a9400d1363e2c0c0547a0e7a8390fd"
+      },
+      "score_basis": "Maximum of the baseline rank score and evidence weights (high 1, medium 0.5); not an attack probability. Use assessment and evidence, not risk alone."
+    },
+    "attack_categories": [
+      {
+        "id": "callback_accounting",
+        "label": "Callback accounting",
+        "rules": [
+          "accounting_credit_exceeds_backing",
+          "credit_kept",
+          "failed_resolve_callback",
+          "refund_exceeds_deposit"
+        ],
+        "evidence_basis": "Observed pattern category; not a verified root cause or proof of malicious intent."
+      },
+      {
+        "id": "resource_exhaustion",
+        "label": "Callback resource exhaustion",
+        "rules": [
+          "log_limit",
+          "many_token_ids"
+        ],
+        "evidence_basis": "Observed pattern category; not a verified root cause or proof of malicious intent."
+      }
+    ],
+    "assessment": "malicious_pattern",
+    "assessment_reason": "Observed receipts match a high-severity known attack pattern; this does not prove malicious intent.",
+    "evidence_coverage": {
+      "receipts_complete": true,
+      "observed_receipts": 10,
+      "missing_receipts": 0,
+      "pending_outcomes": 0
+    },
+    "scope": {
+      "network": "mainnet",
+      "supported_protocol": "NEAR Intents",
+      "protocol_supported": true
+    },
+    "confidence": {
+      "level": "high",
+      "basis": "A high-severity rule matched observed receipts. Receipt graph is complete. This is evidence strength, not a calibrated probability or proof of malicious intent."
+    },
+    "demo_provenance": "Historical FastNEAR recording, 2026-11-14; scored offline with the frozen detector.",
+    "model": {
+      "version": "intents_v1",
+      "sha256": "fca745debe47da83e2608432322a4c681475755b19ff64aa23e4d88a05b247cb"
+    }
+  }
+]

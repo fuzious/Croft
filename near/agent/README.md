@@ -1,6 +1,6 @@
 # Optional response adapters
 
-The **Protocol Security Agent** starts with a transaction hash: receipt rules produce findings for an operator
+The **Security Oracle** starts with a transaction hash: receipt rules produce findings for an operator
 to investigate. These adapters are an optional next step for restricting **future payments** after review.
 They do not analyze receipts, reverse a completed transaction, or pause a protocol.
 

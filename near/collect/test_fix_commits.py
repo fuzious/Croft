@@ -12,7 +12,7 @@ class MatchKeywordsTest(unittest.TestCase):
         self.assertIn("fix_yocto", match_keywords("fix: assert one yocto on transfer"))
 
     def test_ignores_noise(self):
-        self.assertEqual(match_keywords("add hackathon submission readme"), [])
+        self.assertEqual(match_keywords("add project overview readme"), [])
         self.assertEqual(match_keywords("fix typo in docs"), [])
         self.assertEqual(match_keywords("bump version"), [])
 

@@ -1,4 +1,4 @@
-"""NEAR Protocol Security Agent API (`uvicorn near.service.app:app`).
+"""Security Oracle API (`uvicorn near.service.app:app`).
 
 POST /v1/transactions/score {tx_hash, sender_id?, include_history?} -> assessment, accounting, history and coverage
 POST /v1/protocols/scan {account_id} -> bounded recent Intents activity and assessment counts
@@ -32,7 +32,7 @@ from pydantic import BaseModel, Field, field_validator
 from near.analyzer import detect, extract_functions
 from near.analyzer.detectors import SEVERITY
 
-from . import blocklist, intents, policy, signals, source
+from . import blocklist, intents, policy, reviews, signals, source
 from .policy import THRESHOLDS
 from .signals import sig
 
@@ -45,7 +45,7 @@ INTENTS_DEADLINE_S = 15.0   # /v1/check waits at most this long, from its start,
 DETECTORS_SHA256 = hashlib.sha256(
     (Path(__file__).resolve().parents[1] / "analyzer" / "detectors.py").read_bytes()).hexdigest()
 CFG = signals.load_config()
-app = FastAPI(title="NEAR Protocol Security Agent", version="1")
+app = FastAPI(title="Security Oracle", version="1")
 
 
 @app.middleware("http")
@@ -61,6 +61,8 @@ async def refuse_large_bodies(request: Request, call_next):
 
 
 app.mount("/demo", StaticFiles(directory=Path(__file__).resolve().parents[1] / "demo", html=True), name="demo")
+app.mount("/human", StaticFiles(directory=Path(__file__).resolve().parents[1] / "human", html=True), name="human")
+app.include_router(reviews.router)
 _risk_cache: dict = {}
 
 
@@ -259,6 +261,8 @@ def check(req: CheckRequest):
         s["code_risk"] = (sig(None, "n/a: no contract code") if is_contract is False else
                           sig(None, "code risk", False, "no source to score"))
     d = policy.decide(s, req.deposit_yocto, CFG["network"], now)
+    for tx in (s["intents_activity"].get("value") or {}).get("txs", []):
+        reviews.enqueue(tx, req.receiver_id)
     return {"verdict": d["verdict"], "score": d["score"], "reasons": d["reasons"], "receiver_id": req.receiver_id,
             "network": CFG["network"], "signals": s,
             "model": {"version": cr["version"], "sha256": cr["sha256"]}}
@@ -280,7 +284,9 @@ def intents_score(req: IntentsScoreRequest):
         raise HTTPException(404, str(e)) from None
     except intents.ModelUnavailable as e:   # frozen model missing or refused by its hash checks
         raise HTTPException(503, str(e)) from None
-    return out | {"model": info}
+    out = out | {"model": info}
+    reviews.enqueue(out)
+    return out
 
 
 @app.post("/v1/protocols/scan")
@@ -301,6 +307,8 @@ def intents_scan(req: IntentsScanRequest):
     counts = {label: sum(t["label"] == label for t in act["txs"]) for label in ("high", "medium", "low")}
     assessments = {name: sum(t["assessment"] == name for t in act["txs"]) for name in intents.ASSESSMENTS}
     incomplete = sum(not t["receipts_complete"] for t in act["txs"])
+    for tx in act["txs"]:
+        reviews.enqueue(tx, req.account_id)
     return {"account_id": req.account_id, "n_scored": act["n_scored"], "n_index_rows": act["n_index_rows"],
             "counts": counts, "txs": act["txs"], "model": info, "assessment_counts": assessments,
             "n_incomplete": incomplete, "detector": intents.detector_info(),

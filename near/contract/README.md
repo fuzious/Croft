@@ -1,6 +1,6 @@
 # Optional on-chain response layer
 
-The **Protocol Security Agent** analyzes a transaction hash and returns receipt-rule findings for operator review.
+The **Security Oracle** analyzes a transaction hash and returns receipt-rule findings for operator review.
 These contracts optionally record **account-level** decisions and restrict **future payments through this router**.
 They do not analyze receipts, revert completed transactions, or pause arbitrary protocols.
 

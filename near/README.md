@@ -1,4 +1,4 @@
-# Run the Protocol Security Agent
+# Run the Security Oracle
 
 [Overview](../README.md) · [Detection evidence](intents/reports/RESULTS.md) · [Optional response contracts](contract/README.md)
 
@@ -17,12 +17,12 @@ uv run uvicorn near.service.app:app --port 8000
 Open **<http://localhost:8000/demo/>**. No wallet or keys needed. Live transaction reads use FastNEAR mainnet;
 network failures and rate limits are shown as errors, not clean results.
 
-## Demo flow
+## Investigation workflow
 
 1. **Inspect a transaction:** paste a NEAR mainnet hash or select an exploit/normal preset.
 2. **Read the evidence:** assessment, attack categories, deposit accounting, receipt coverage and earlier activity.
 3. **Scan a protocol:** enter `intents.near` or the exploiter account, then open a transaction from the results.
-4. **Show the limit:** “Not flagged: rejected overdraw probe” is a failed probe, not evidence of a successful exploit.
+4. **Interpret coverage:** “Not flagged: rejected overdraw probe” is a failed probe, not evidence of a successful exploit.
 
 The April preset has callback out-of-gas evidence. Across that campaign, **41 of 53 detections** only mean
 “deposit used Notify”; they do not establish that an out-of-gas attack occurred. Wallet drainers are not covered.
@@ -36,6 +36,15 @@ uv run python -m near.demo.replay
 
 Expected final check: `PASS: exploit high; normal low; account history 10/20 high.`
 This runs the frozen scorer, prints artifact hashes and makes no network requests.
+
+## Human review
+
+Open **<http://localhost:8000/human/>** to review suspicious and high-severity findings from transaction
+inspections and account scans. Search and filter the queue, inspect the original evidence, and save a
+confirmation or dismissal with a review note. Cases persist locally across service restarts.
+
+The demo requires no authentication and supports explicitly loading labelled historical cases.
+Review decisions do not change on-chain policy. [Dashboard details](human/README.md).
 
 ## API
 

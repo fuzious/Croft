@@ -1,6 +1,6 @@
-# NEAR Protocol Security Agent
+# Security Oracle
 
-A security investigation agent for **NEAR Intents** transactions: submit a mainnet transaction hash or scan an
+Security Oracle investigates **NEAR Intents** transactions: submit a mainnet transaction hash or scan an
 account's recent activity. It reads receipt graphs, reconciles deposit/refund events, and connects earlier activity
 to explain what looks suspicious.
 
@@ -91,7 +91,7 @@ The served detector (rules + anomaly model) raised **0 high** and **84 Suspiciou
 transactions; 80 came from one paused-contract hour. The anomaly model added no campaign detections. A retrained
 model was **rejected** for false alarms; `intents_v1` and its rules are what is served.
 
-## Try it
+## Quick start
 
 Needs Python 3.12+ and [uv](https://docs.astral.sh/uv/); no Git LFS.
 
@@ -108,13 +108,20 @@ uv run uvicorn near.service.app:app --port 8000
 # Open http://localhost:8000/demo/
 ```
 
-| Demo input | What to show |
+| Example input | Available evidence |
 |---|---|
 | October exploit | High-severity callback, log and retained-credit evidence |
 | Normal deposit | No known pattern, with coverage shown |
 | April callback attempt | Out-of-gas callback evidence; medium severity |
 | Not flagged: rejected overdraw probe | A failed probe with no detected attack pattern |
 | `intents.near` or exploiter account | Recent transactions; open a row to inspect evidence |
+
+## Human review
+
+Suspicious and high-severity transaction findings are automatically queued in the
+[Human Oracle dashboard](http://localhost:8000/human/). Reviewers can inspect evidence, search and filter cases,
+and confirm, dismiss or reopen findings with a saved note. The local demo requires no authentication;
+review decisions do not execute on-chain actions. [Setup and behavior](near/human/README.md).
 
 ## Optional integrations
 
@@ -124,17 +131,5 @@ uv run uvicorn near.service.app:app --port 8000
   The supplied router enforces that policy on future native NEAR payments routed through it. It cannot undo the
   inspected transaction, pause an arbitrary protocol, or turn a transaction label directly into an account block.
   [Contracts](near/contract/README.md) · [Response client](near/agent/README.md)
-
-<details>
-<summary>Project provenance</summary>
-
-- **Pre-hackathon code:** the EVM security oracle (first committed 2026-10-15) predates the hackathon and lives on
-  the `main` branch. `near/` reuses its method (grouped CV, frozen model with hashes, sealed test scored once) but
-  none of its code. Everything under `near/` was built during the hackathon. The 2026-11-14 commit f567294 in
-  this branch's history is an EVM state sync, not part of the submission.
-- **AI-generated code:** most code, data tooling and docs under `near/` were written with Claude Code, directed and
-  reviewed by the author. Label re-checks and fix-commit triage were also done by AI agents.
-
-</details>
 
 [Setup & API](near/README.md) · [License: BUSL-1.1](LICENSE)

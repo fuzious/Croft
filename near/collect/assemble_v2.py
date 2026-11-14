@@ -570,7 +570,7 @@ def write_report(c: dict) -> str:
           "kept at weight 0.6 rather than dropped, so some noise remains.",
           "- Removing not_vulnerable / wrong_function positives shrinks the real positive set; train_v2 real "
           "positives are fewer but cleaner. test_v1c is not comparable number-for-number with test_v1.",
-          "- About half of the v2 fix commits are 2026 hackathon / testnet code with self- or AI-review fixes; "
+          "- About half of the v2 fix commits are 2026 experimental or testnet code with project-level review fixes; "
           "they are weighted by triage confidence only.",
           "- Mixed commits label every triaged fn the commit changed; function-level labels there are less precise.",
           "- The leak screen compares code text; an edited copy of a test project below 0.8 Jaccard can remain.", ""]

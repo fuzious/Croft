@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark"><meta name="theme-color" content="#0F3B38"><title>Human Review · Security Oracle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Chivo+Mono:wght@400;500;600&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%2300EC97'/%3E%3Cpath d='M12 6 7 12l5 6 5-6z' fill='none' stroke='%230F3B38' stroke-width='1.8' stroke-linejoin='round'/%3E%3Ccircle cx='12' cy='6' r='2.3' fill='%230F3B38'/%3E%3Ccircle cx='7' cy='12' r='2.3' fill='%230F3B38'/%3E%3Ccircle cx='17' cy='12' r='2.3' fill='%230F3B38'/%3E%3Ccircle cx='12' cy='18' r='2.4' fill='%2300EC97' stroke='%230F3B38' stroke-width='1.8'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css"><script src="app.js" defer></script>
+</head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="/human/"><span class="brand-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5" fill="#00EC97"/><path d="M12 6 7 12l5 6 5-6z" fill="none" stroke="#0F3B38" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="6" r="2.3" fill="#0F3B38"/><circle cx="7" cy="12" r="2.3" fill="#0F3B38"/><circle cx="17" cy="12" r="2.3" fill="#0F3B38"/><circle cx="12" cy="18" r="2.4" fill="#00EC97" stroke="#0F3B38" stroke-width="1.8"/></svg></span><span>Security Oracle<small>Human review</small></span></a>
+  <div class="sidebar-network"><span><i></i> NEAR MAINNET</span><span class="muted">01</span></div>
+  <div class="nav-label">WORKSPACE</div>
+  <nav aria-label="Main navigation"><a class="active" href="/human/" aria-current="page"><span>▦</span> Review queue <b id="navCount">0</b></a><a href="/demo/"><span>⌕</span> Transaction inspector <span>↗</span></a><a href="/docs"><span>≡</span> API reference <span>↗</span></a></nav>
+  <div class="sidebar-bottom"><div class="demo-tag">DEMO WORKSPACE</div><p>Human judgment.<br>Evidence first.</p><small>Review decisions are saved locally.<br>No on-chain actions are executed.</small><div class="operator"><span>HO</span><div>Demo operator<small>No authentication required</small></div></div></div>
+</aside>
+<div class="workspace">
+  <header class="topbar"><div><span class="muted">Workspace</span><span class="slash">/</span>Human review</div><div class="top-status"><span id="sync">Connecting…</span><span class="demo-tag">DEMO · NO AUTH</span></div></header>
+  <main>
+    <div class="heading"><div><div class="eyebrow">THE HUMAN LAYER</div><h1>Review queue</h1><p>Investigate flagged activity. Add context. Make the call.</p></div><div class="heading-actions"><button id="loadDemo" class="button">Load demo cases <span>↗</span></button><a class="button primary" href="/demo/">Inspect transaction <span>＋</span></a></div></div>
+    <div id="message" role="status" aria-live="polite" hidden></div>
+    <section class="metrics" aria-label="Queue summary">
+      <div class="metric"><span>AWAITING REVIEW <i class="amber-dot"></i></span><strong id="pendingCount">—</strong><small>Findings needing a human decision</small></div>
+      <div class="metric"><span>HIGH PRIORITY <i class="red-dot"></i></span><strong id="highCount">—</strong><small>Pending high-severity patterns</small></div>
+      <div class="metric"><span>CONFIRMED <i class="blue-dot"></i></span><strong id="confirmedCount">—</strong><small>Flagged findings upheld by a reviewer</small></div>
+      <div class="metric"><span>DISMISSED <i class="green-dot"></i></span><strong id="dismissedCount">—</strong><small>Findings closed with a review note</small></div>
+    </section>
+    <section class="queue" aria-label="Review cases">
+      <div class="queue-title"><div><span class="queue-icon">▤</span><h2>Flagged transactions</h2><span id="totalCount" class="count">0</span></div><span class="muted feed-label">AUTO-QUEUED FROM INSPECTIONS & SCANS</span></div>
+      <div class="toolbar"><div class="tabs" role="group" aria-label="Review status"><button data-status="pending" aria-pressed="true">Pending <span id="tabCount">0</span></button><button data-status="reviewed" aria-pressed="false">Reviewed</button><button data-status="all" aria-pressed="false">All cases</button></div><div class="filters"><input id="search" type="search" aria-label="Search transaction or account" placeholder="Search hash or account…"><select id="severity" aria-label="Filter priority"><option value="all">All priorities</option><option value="high">High priority</option><option value="medium">Suspicious</option></select><button class="refresh" id="refresh" aria-label="Refresh queue" title="Refresh queue">↻</button></div></div>
+      <div class="table-wrap"><table><thead><tr><th>TRANSACTION / ACCOUNT</th><th>FINDING</th><th>PRIORITY</th><th>STATUS</th><th>QUEUED</th><th><span class="sr-only">Open review</span></th></tr></thead><tbody id="rows"><tr><td colspan="6" class="empty">Loading review queue…</td></tr></tbody></table></div>
+      <div class="queue-footer"><span id="showing">Connecting to the review queue</span><span><i></i> Refreshes every 15 seconds</span></div>
+    </section>
+    <div class="explanation"><span>↳</span><p><strong>Automation flags. Humans decide.</strong> Suspicious and high-severity findings arrive here automatically. A review records your assessment; it does not block an account or change a transaction.</p></div>
+    <footer><span>SECURITY ORACLE</span><span>HUMAN ORACLE / DEMO</span></footer>
+  </main>
+</div>
+<dialog id="reviewDialog" aria-labelledby="reviewTitle">
+  <div class="drawer-top"><span class="eyebrow">CASE REVIEW</span><button id="closeReview" class="refresh" aria-label="Close review">×</button></div>
+  <div id="caseDetail"></div>
+  <form id="decisionForm"><label for="note">Review note <span class="muted">Required</span></label><textarea id="note" rows="4" maxlength="2000" required placeholder="What did you find? Record the evidence behind your decision."></textarea><p class="decision-hint">Confirming upholds the finding. Dismissing closes it. Neither action changes on-chain policy.</p><div id="decisionError" role="alert"></div><div class="decision-actions"><button class="button" type="submit" name="decision" value="pending">Reopen</button><button class="button" type="submit" name="decision" value="dismissed">Dismiss finding</button><button class="button primary" type="submit" name="decision" value="confirmed">Confirm finding</button></div></form>
+</dialog>
+</body></html>
