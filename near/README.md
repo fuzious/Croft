@@ -102,4 +102,15 @@ Training data: fetch and unpack `archives/near_datasets.zip`. Reproduction detai
 [Intents evaluation](intents/reports/RESULTS.md) · [code-model evaluation](model/reports/RESULTS.md).
 Do not refreeze over the shipped artifacts unless you intend to replace them.
 
+The November 14 experiments retained the served models. To reproduce in fresh output directories:
+
+```bash
+uv run python -m near.model.train_candidate --output-dir /tmp/near-code-experiment
+uv run python -m near.intents.train_candidate --output-dir /tmp/near-intents-experiment
+```
+
+Code training needs `train_v2.jsonl` and its source repositories or matching feature cache (`--cache-dir`).
+Intents training needs the original normals and feature cache; these are local research data, not included in the
+demo archive. The commands refuse to overwrite an existing experiment report.
+
 </details>

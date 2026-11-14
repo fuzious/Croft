@@ -22,6 +22,26 @@ No v2-versus-v1 test difference was statistically distinguishable across 27 repo
 code above its own fix is at chance once code length is controlled. These models learn risky code patterns,
 not reliable proof of a specific bug.
 
+<details>
+<summary>November 14 retraining: candidate rejected</summary>
+
+Four fixed recipes tested real-bug weighting, fewer generated examples and stronger fixed-code negatives.
+Formatting-duplicate repositories stayed together across fitting, calibration, selection and validation.
+
+| Final development validation | Retrained baseline | Selected candidate |
+|---|---:|---:|
+| Real bugs, high | 2/107 | 4/107 |
+| Real bugs, medium+ | 16/107 | 12/107 |
+| Clean functions, high alerts | 78/9,177 | 97/9,177 |
+| Fixed versions, high alerts | 0/101 | 3/101 |
+
+The high-recall gain was **1.87 percentage points**, with a grouped 95% interval of **0 to 5.46 points**.
+Warning recall fell. The candidate failed the predeclared acceptance checks; served weights are unchanged.
+This compares two models fitted on the same training subset, **not** the deployed model or a fresh sealed test.
+[Protocol, split hashes and measurements](training_candidate.json) · [Trainer](../train_candidate.py)
+
+</details>
+
 ## Models and evaluation
 
 | | v1 | v2 (optional) |

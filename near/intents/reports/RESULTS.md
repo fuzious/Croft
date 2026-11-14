@@ -29,6 +29,24 @@ missed. Excluding paused traffic gives 4/7,301 alerts, but that exclusion is pos
 
 **Interpretation:** transaction findings guide protocol investigation. The optional receiver-policy integration warns on high Intents activity; transaction scoring itself does not block anything.
 
+<details>
+<summary>November 14 retraining: candidate rejected</summary>
+
+Trained three forests: global, per-flow, and per-flow with receipt-failure groups. Fit, threshold calibration and
+selection used separate time windows. Selection chose the global model before retrospective scoring.
+
+| Same 7,400 historical normal transactions | Current model | Candidate |
+|---|---:|---:|
+| High alerts | 0 | 0 |
+| Medium+ alerts | 84 | 92 |
+| Additional campaign detections | — | 0 |
+
+The candidate failed the noise-reduction check; served weights are unchanged. These are previously examined
+transactions, not a fresh test. The four attacker-adjacent training rows remain a documented data limitation.
+[Protocol, coverage and measurements](training_candidate.json) · [Trainer](../train_candidate.py)
+
+</details>
+
 ## What was evaluated
 
 | Slice | Period | Transactions |

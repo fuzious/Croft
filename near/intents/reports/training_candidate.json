@@ -1,0 +1,527 @@
+{
+  "status": "complete",
+  "started_at": "2026-11-14T17:25:02+00:00",
+  "protocol": {
+    "candidate_list": [
+      "global",
+      "per_flow",
+      "per_flow_outcome"
+    ],
+    "fit": "normal transactions through 2026-05; no labelled campaigns",
+    "threshold_calibration": "2026-06 and 2026-07 normals; preserve rule alerts, same high/medium rate budgets",
+    "selection": "2026-08 and 2026-09 normals: fewest high alerts, then medium+ alerts, then failed-normal medium+ alerts, then simpler model",
+    "eligibility": "nonconstant train scores; finite calibrated thresholds below score ceiling 1",
+    "forests": {
+      "trees": 300,
+      "max_samples": 2048,
+      "seed": 0,
+      "threads": 4,
+      "minimum_group_rows": 256
+    },
+    "after_selection_only": "October/November normals and labelled campaigns; retrospective development comparison, not unseen-attack accuracy",
+    "adoption_gate": "Lower clean collector retrospective medium+ false alarms, no additional high false alarms, and no lost campaign detections; root review required. Improved unseen-attack detection is not established."
+  },
+  "script_sha256": "88f3a10eb80312290cbc5584ca9343796b045a5770c2beee820b3b72be44226c",
+  "baseline_sha256": "fca745debe47da83e2608432322a4c681475755b19ff64aa23e4d88a05b247cb",
+  "data_hashes": {
+    "cache": "19e72e5879645f6fb16d547f7a5922a5f265b8cbd45fe29b470ecc85711bb909",
+    "normals": "7a7ecb374fb03fffa1bbf5f71a26fa611336d938899e59e149178cc286b33aea",
+    "labelled": "f6557a7580dd7693be272d2c8e3c685da0fb7a512a8548729fba8995c7174d16"
+  },
+  "split_counts": {
+    "fit": 69863,
+    "calibrate": 7600,
+    "select": 10172,
+    "retrospective": 12463
+  },
+  "split_id_hashes": {
+    "fit": "d3226174ccdfdc7975728d83be820dbf6663ffe2c7da8290c704f387be7de204",
+    "calibrate": "3eac92cdaa07fed744cd0bfe2bead68c9a6b17aa444c3c17d5c9113af9fcfea2",
+    "select": "d96da7b15eab363501a4731e7566801523e009abdf3ace6c481f23c4d240c94d",
+    "retrospective": "8dadc5645cdde95c7f8d8d5f187778690f6ee891b67c45d7c142ad4653eeae66"
+  },
+  "candidates": {
+    "global": {
+      "eligible": true,
+      "fit_score_seconds": 0.993,
+      "group_train_rows": {
+        "*": 69863
+      },
+      "thresholds": {
+        "combined": {
+          "high": 0.7353436986390677,
+          "medium": 0.654010300158475
+        },
+        "anomaly_only": {
+          "high": 0.7353436986390677,
+          "medium": 0.65387032517384
+        }
+      },
+      "calibration": {
+        "n": 7600,
+        "high": 0,
+        "medium_plus": 7,
+        "low": 7593
+      },
+      "selection": {
+        "n": 10172,
+        "high": 1,
+        "medium_plus": 42,
+        "low": 10130
+      },
+      "selection_failed": {
+        "n": 1852,
+        "high": 1,
+        "medium_plus": 1,
+        "low": 1851
+      }
+    },
+    "per_flow": {
+      "eligible": true,
+      "fit_score_seconds": 1.792,
+      "group_train_rows": {
+        "*": 69863,
+        "deposit": 22170,
+        "execute_intents": 42000,
+        "other": 5345,
+        "withdrawal": 348
+      },
+      "thresholds": {
+        "combined": {
+          "high": 0.7598592425664037,
+          "medium": 0.6883987245461018
+        },
+        "anomaly_only": {
+          "high": 0.7598592425664037,
+          "medium": 0.6883987245461018
+        }
+      },
+      "calibration": {
+        "n": 7600,
+        "high": 0,
+        "medium_plus": 7,
+        "low": 7593
+      },
+      "selection": {
+        "n": 10172,
+        "high": 2,
+        "medium_plus": 94,
+        "low": 10078
+      },
+      "selection_failed": {
+        "n": 1852,
+        "high": 1,
+        "medium_plus": 59,
+        "low": 1793
+      }
+    },
+    "per_flow_outcome": {
+      "eligible": true,
+      "fit_score_seconds": 2.811,
+      "group_train_rows": {
+        "*": 69863,
+        "deposit": 22170,
+        "execute_intents": 42000,
+        "other": 5345,
+        "withdrawal": 348,
+        "deposit:0": 21830,
+        "deposit:1": 340,
+        "execute_intents:0": 40606,
+        "execute_intents:1": 1394,
+        "other:0": 5180,
+        "withdrawal:0": 309
+      },
+      "thresholds": {
+        "combined": {
+          "high": 0.7800283964695637,
+          "medium": 0.7468746923264952
+        },
+        "anomaly_only": {
+          "high": 0.7800283964695637,
+          "medium": 0.7468746923264952
+        }
+      },
+      "calibration": {
+        "n": 7600,
+        "high": 0,
+        "medium_plus": 7,
+        "low": 7593
+      },
+      "selection": {
+        "n": 10172,
+        "high": 6,
+        "medium_plus": 69,
+        "low": 10103
+      },
+      "selection_failed": {
+        "n": 1852,
+        "high": 1,
+        "medium_plus": 1,
+        "low": 1851
+      }
+    }
+  },
+  "selected": "global",
+  "selected_at": "2026-11-14T17:25:08+00:00",
+  "artifact": {
+    "path": "near/models/intents_candidate.pkl",
+    "sha256": "0ac1bd150a3ed331859a9039296e89154747e86402dd46c0510599f57e40b8f7",
+    "bytes": 50689384
+  },
+  "retrospective_normals": {
+    "rules_only": {
+      "all": {
+        "n": 12463,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 12463
+      },
+      "collector": {
+        "n": 7400,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 7400
+      }
+    },
+    "baseline": {
+      "all": {
+        "n": 12463,
+        "high": 0,
+        "medium_plus": 85,
+        "low": 12378
+      },
+      "collector": {
+        "n": 7400,
+        "high": 0,
+        "medium_plus": 84,
+        "low": 7316
+      }
+    },
+    "candidate": {
+      "all": {
+        "n": 12463,
+        "high": 0,
+        "medium_plus": 96,
+        "low": 12367
+      },
+      "collector": {
+        "n": 7400,
+        "high": 0,
+        "medium_plus": 92,
+        "low": 7308
+      }
+    }
+  },
+  "campaigns": {
+    "baseline": {
+      "apr_oog_attempts / attempt": {
+        "n": 55,
+        "high": 0,
+        "medium_plus": 53,
+        "low": 2
+      },
+      "apr_oog_attempts / setup": {
+        "n": 24,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 24
+      },
+      "may_admin_fuzzing / attempt": {
+        "n": 177,
+        "high": 0,
+        "medium_plus": 110,
+        "low": 67
+      },
+      "may_admin_fuzzing / setup": {
+        "n": 33,
+        "high": 0,
+        "medium_plus": 6,
+        "low": 27
+      },
+      "may_token_spoof / attempt": {
+        "n": 182,
+        "high": 0,
+        "medium_plus": 18,
+        "low": 164
+      },
+      "may_token_spoof / setup": {
+        "n": 6,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 6
+      },
+      "oct_exploit / cashout": {
+        "n": 38,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 38
+      },
+      "oct_exploit / exploit": {
+        "n": 23,
+        "high": 23,
+        "medium_plus": 23,
+        "low": 0
+      },
+      "oct_exploit / setup": {
+        "n": 14,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 14
+      },
+      "rhea_funding / setup_funding_via_intents": {
+        "n": 1,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 1
+      },
+      "team_regression / team_regression_test": {
+        "n": 17,
+        "high": 0,
+        "medium_plus": 12,
+        "low": 5
+      }
+    },
+    "candidate": {
+      "apr_oog_attempts / attempt": {
+        "n": 55,
+        "high": 0,
+        "medium_plus": 53,
+        "low": 2
+      },
+      "apr_oog_attempts / setup": {
+        "n": 24,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 24
+      },
+      "may_admin_fuzzing / attempt": {
+        "n": 177,
+        "high": 0,
+        "medium_plus": 110,
+        "low": 67
+      },
+      "may_admin_fuzzing / setup": {
+        "n": 33,
+        "high": 0,
+        "medium_plus": 6,
+        "low": 27
+      },
+      "may_token_spoof / attempt": {
+        "n": 182,
+        "high": 0,
+        "medium_plus": 18,
+        "low": 164
+      },
+      "may_token_spoof / setup": {
+        "n": 6,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 6
+      },
+      "oct_exploit / cashout": {
+        "n": 38,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 38
+      },
+      "oct_exploit / exploit": {
+        "n": 23,
+        "high": 23,
+        "medium_plus": 23,
+        "low": 0
+      },
+      "oct_exploit / setup": {
+        "n": 14,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 14
+      },
+      "rhea_funding / setup_funding_via_intents": {
+        "n": 1,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 1
+      },
+      "team_regression / team_regression_test": {
+        "n": 17,
+        "high": 0,
+        "medium_plus": 12,
+        "low": 5
+      }
+    }
+  },
+  "adoption": {
+    "meets_retrospective_gate": false,
+    "lost_campaign_detections": 0,
+    "added_campaign_detections": 0,
+    "deployed": false,
+    "recommendation": "retain baseline; candidate did not meet the prespecified gate",
+    "limits": "No untouched final test remains. Rules preserve known campaign recall by construction. Lower normal alerts does not demonstrate improved unseen-attack detection. Rules-only remains an essential comparison."
+  },
+  "completed_at": "2026-11-14T17:25:08+00:00",
+  "wall_seconds": 6.201,
+  "postselection_audit": {
+    "audited_at": "2026-11-14T17:26:46+00:00",
+    "scope": "Post-selection integrity and coverage audit only; does not change candidates, thresholds, selection, or evaluation.",
+    "runtime": {
+      "python": "3.12.8",
+      "numpy": "2.5.4",
+      "scikit_learn": "1.9.1",
+      "scipy": "1.18.1",
+      "threadpoolctl": "3.7.0",
+      "platform": "macOS-27.0.1-arm64-arm-64bit"
+    },
+    "raw_hashes_match_cache": true,
+    "baseline_unchanged": true,
+    "candidate_reload": "load_artifact succeeds; supplemental candidate_script_sha256 checked separately",
+    "split_sources": {
+      "fit": {
+        "fastnear": 69863
+      },
+      "calibrate": {
+        "fastnear": 7600
+      },
+      "select": {
+        "fastnear": 7500,
+        "fastnear-seed:exploitwin_3000": 2601,
+        "fastnear-seed:exploitwin_depfail": 71
+      },
+      "retrospective": {
+        "fastnear": 7400,
+        "fastnear-seed:exploitwin_depfail": 63,
+        "fastnear-seed:oct_normal_2000": 2000,
+        "fastnear-seed:oct_normal_b_2000": 2000,
+        "fastnear-seed:recent_1000": 1000
+      }
+    },
+    "split_flows": {
+      "fit": {
+        "deposit": 22170,
+        "execute_intents": 42000,
+        "other": 5345,
+        "withdrawal": 348
+      },
+      "calibrate": {
+        "deposit": 2595,
+        "execute_intents": 4917,
+        "other": 88
+      },
+      "select": {
+        "deposit": 3092,
+        "execute_intents": 6941,
+        "other": 139
+      },
+      "retrospective": {
+        "deposit": 2912,
+        "execute_intents": 9422,
+        "other": 73,
+        "withdrawal": 56
+      }
+    },
+    "known_labelled_training_overlap": [],
+    "training_overlap_limit": "No exact labelled IDs overlap fitting rows. The existing near/intents/reports/RESULTS.md documents four training normals signed by an attacker-adjacent setup account. Same fitting rows as baseline were retained under the prespecified protocol; this is not a claim of uncontaminated training.",
+    "selected_train_tail_coverage": {
+      "deposit": {
+        "n": 22170,
+        "high": 0,
+        "medium_plus": 10
+      },
+      "execute_intents": {
+        "n": 42000,
+        "high": 1,
+        "medium_plus": 89
+      },
+      "other": {
+        "n": 5345,
+        "high": 0,
+        "medium_plus": 10
+      },
+      "withdrawal": {
+        "n": 348,
+        "high": 0,
+        "medium_plus": 0
+      }
+    },
+    "calibration_coverage_limit": "June/July calibration contains no withdrawals. Finite forest thresholds below 1 establish only theoretical reachability; observed training tail coverage is shown per flow. No prospective guarantee.",
+    "campaign_rules_only": {
+      "apr_oog_attempts / attempt": {
+        "n": 55,
+        "high": 0,
+        "medium_plus": 53,
+        "low": 2
+      },
+      "apr_oog_attempts / setup": {
+        "n": 24,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 24
+      },
+      "may_admin_fuzzing / attempt": {
+        "n": 177,
+        "high": 0,
+        "medium_plus": 110,
+        "low": 67
+      },
+      "may_admin_fuzzing / setup": {
+        "n": 33,
+        "high": 0,
+        "medium_plus": 6,
+        "low": 27
+      },
+      "may_token_spoof / attempt": {
+        "n": 182,
+        "high": 0,
+        "medium_plus": 18,
+        "low": 164
+      },
+      "may_token_spoof / setup": {
+        "n": 6,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 6
+      },
+      "oct_exploit / cashout": {
+        "n": 38,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 38
+      },
+      "oct_exploit / exploit": {
+        "n": 23,
+        "high": 23,
+        "medium_plus": 23,
+        "low": 0
+      },
+      "oct_exploit / setup": {
+        "n": 14,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 14
+      },
+      "rhea_funding / setup_funding_via_intents": {
+        "n": 1,
+        "high": 0,
+        "medium_plus": 0,
+        "low": 1
+      },
+      "team_regression / team_regression_test": {
+        "n": 17,
+        "high": 0,
+        "medium_plus": 12,
+        "low": 5
+      }
+    },
+    "fixture_smoke": {
+      "exploit_2GQ2zQ": "high",
+      "normal_execute_intents": "low"
+    },
+    "tests": {
+      "command": "python -m unittest near.intents.test_train_candidate -v",
+      "passed": 8
+    },
+    "run_script_sha256": "88f3a10eb80312290cbc5584ca9343796b045a5770c2beee820b3b72be44226c",
+    "final_distributed_trainer_sha256": "867a8b5203a079da22f357591f8c59451c4bb18c44a12da17095ea3863165f80",
+    "post_run_trainer_change": "Added --output-dir CLI for separate report/artifact destinations and removed unused pickle import. Fitting, scoring, thresholding, selection and retrospective logic unchanged. No new full-data fitting run after this change.",
+    "reproduce_command": "uv run python -m near.intents.train_candidate --output-dir /tmp/near-intents-experiment"
+  }
+}
