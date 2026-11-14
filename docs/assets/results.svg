@@ -1,25 +1,46 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="880" height="330" viewBox="0 0 880 330" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
-  <rect width="880" height="330" rx="16" fill="#072621"/>
-  <text x="40" y="52" fill="#1FE38A" font-size="13" letter-spacing="2" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">MEASURED ON NEAR INTENTS HISTORY</text>
-  <text x="40" y="86" fill="#F2F5F3" font-size="26" font-weight="700">Catches the known exploits. Stays quiet on normal traffic.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="212" viewBox="0 0 1200 212" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <rect width="1200" height="212" rx="16" fill="#FAF8F4"/>
 
-  <!-- row 1 -->
-  <text x="40" y="146" fill="#F2F5F3" font-size="17" font-weight="600">Real exploit transactions</text>
-  <text x="40" y="168" fill="#8FA9A2" font-size="14">flagged by the accounting check</text>
-  <rect x="340" y="140" width="350" height="22" rx="11" fill="#11392f"/>
-  <rect x="340" y="140" width="350" height="22" rx="11" fill="#1FE38A"/>
-  <text x="840" y="158" fill="#F2F5F3" font-size="20" font-weight="700" text-anchor="end">23 / 23</text>
+  <!-- EVM panel -->
+  <rect x="16" y="16" width="578" height="150" rx="14" fill="#FFFFFF" stroke="#EAE6DF"/>
+  <text x="40" y="50"><tspan fill="#2F4F86" font-size="18" font-weight="800">EVM</tspan><tspan dx="10" fill="#6B7280" font-size="13">sealed tests the models never saw</tspan></text>
 
-  <!-- row 2 -->
-  <text x="40" y="216" fill="#F2F5F3" font-size="17" font-weight="600">Exploits replayed in a sandbox</text>
-  <text x="40" y="238" fill="#8FA9A2" font-size="14">credit defects flagged</text>
-  <rect x="340" y="210" width="350" height="22" rx="11" fill="#11392f"/>
-  <rect x="340" y="210" width="350" height="22" rx="11" fill="#1FE38A"/>
-  <text x="840" y="228" fill="#F2F5F3" font-size="20" font-weight="700" text-anchor="end">712 / 712</text>
+  <circle cx="62" cy="112" r="20" fill="none" stroke="#E3EAF4" stroke-width="7"/>
+  <circle cx="62" cy="112" r="20" fill="none" stroke="#2F4F86" stroke-width="7" stroke-linecap="round" stroke-dasharray="119.25 125.66" transform="rotate(-90 62 112)"/>
+  <text x="96" y="108" fill="#2F4F86" font-size="26" font-weight="800">94.9%</text>
+  <text x="96" y="128" fill="#4B5563" font-size="12">exploits caught</text>
+  <text x="96" y="145" fill="#4B5563" font-size="12">186 of 196</text>
 
-  <!-- row 3 -->
-  <text x="40" y="286" fill="#F2F5F3" font-size="17" font-weight="600">Held-out normal transactions</text>
-  <text x="40" y="308" fill="#8FA9A2" font-size="14">raising a high alert</text>
-  <rect x="340" y="280" width="350" height="22" rx="11" fill="#11392f"/>
-  <text x="840" y="298" fill="#F2F5F3" font-size="20" font-weight="700" text-anchor="end">0 / 7,400</text>
+  <circle cx="248" cy="112" r="20" fill="none" stroke="#E3EAF4" stroke-width="7"/>
+  <circle cx="248" cy="112" r="20" fill="none" stroke="#2F4F86" stroke-width="7" stroke-linecap="round" stroke-dasharray="119.88 125.66" transform="rotate(-90 248 112)"/>
+  <text x="282" y="108" fill="#2F4F86" font-size="26" font-weight="800">95.4%</text>
+  <text x="282" y="128" fill="#4B5563" font-size="12">precision</text>
+  <text x="282" y="145" fill="#4B5563" font-size="12">flags that were real</text>
+
+  <circle cx="434" cy="112" r="20" fill="none" stroke="#E3EAF4" stroke-width="7"/>
+  <circle cx="434" cy="92" r="4.5" fill="#D86C55"/>
+  <text x="468" y="108" fill="#2F4F86" font-size="26" font-weight="800">0.25%</text>
+  <text x="468" y="128" fill="#4B5563" font-size="12">false alarms</text>
+  <text x="468" y="145" fill="#4B5563" font-size="12">9 of 3,640 normal</text>
+
+  <!-- NEAR panel -->
+  <rect x="606" y="16" width="578" height="150" rx="14" fill="#FFFFFF" stroke="#EAE6DF"/>
+  <text x="630" y="50"><tspan fill="#2F4F86" font-size="18" font-weight="800">NEAR</tspan><tspan dx="10" fill="#6B7280" font-size="13">held-out history and sandbox demo</tspan></text>
+
+  <circle cx="652" cy="112" r="20" fill="none" stroke="#E3EAF4" stroke-width="7"/>
+  <text x="686" y="108" fill="#2F4F86" font-size="26" font-weight="800">0</text>
+  <text x="686" y="128" fill="#4B5563" font-size="12">high alerts on</text>
+  <text x="686" y="145" fill="#4B5563" font-size="12">7,400 clean test txs</text>
+
+  <circle cx="838" cy="112" r="20" fill="none" stroke="#4A8A3C" stroke-width="7"/>
+  <text x="872" y="108" fill="#2F4F86" font-size="26" font-weight="800">23/23</text>
+  <text x="872" y="128" fill="#4B5563" font-size="12">October exploit txs</text>
+  <text x="872" y="145" fill="#4B5563" font-size="12">flagged in hindsight</text>
+
+  <circle cx="1024" cy="112" r="20" fill="none" stroke="#4A8A3C" stroke-width="7"/>
+  <text x="1058" y="108" fill="#2F4F86" font-size="26" font-weight="800">12/12</text>
+  <text x="1058" y="128" fill="#4B5563" font-size="12">attack-demo</text>
+  <text x="1058" y="145" fill="#4B5563" font-size="12">checks passed</text>
+
+  <text x="24" y="194" font-size="14.5" fill="#374151"><tspan fill="#2F4F86" font-weight="700">EVM on chains it never trained on</tspan> (Polygon, Arbitrum, Optimism): 31 of 32 exploits caught, 0 of 918 false alarms</text>
 </svg>

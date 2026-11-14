@@ -24,10 +24,11 @@ Croft shows the receipts that prove it and sends the case to a reviewer.
 
 ## Results
 
-![Croft results on NEAR Intents history](docs/assets/results.svg)
+![Croft results on EVM sealed tests and NEAR Intents history](docs/assets/results.svg)
 
-The rules were written after studying these incidents, so this shows coverage of known attacks, not a promise
-for new ones. All numbers and their limits: [RESULTS.md](near/intents/reports/RESULTS.md).
+EVM: frozen v12 classifier plus a review stage on sealed test sets; unseen chains use frozen v10. NEAR rules were
+written after studying the October incidents, so 23/23 is coverage in hindsight, not a promise for new attacks.
+Numbers and limits: [EVM](eth/runs/RESULTS.md) · [NEAR](near/intents/reports/RESULTS.md).
 
 ## With and without Croft
 
