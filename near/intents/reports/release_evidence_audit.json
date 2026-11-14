@@ -1,0 +1,387 @@
+{
+  "schema_version": 1,
+  "audit_kind": "Frozen detector inference and existing audit evidence; no fitting, threshold changes or new data generation.",
+  "sources": {
+    "near/data/intents/labelled.jsonl.gz": "f6557a7580dd7693be272d2c8e3c685da0fb7a512a8548729fba8995c7174d16",
+    "near/data/intents/all_labelled_txs.jsonl": "85d26167a753c5281a2f86c2876e08f0ea3bba00f0593edc3fca2aba22701b9e",
+    "near/intents/features.py": "3f8110f88717a8557f8cba6183cf2535b236bf5a2ec06776ee0ea90cd233115d",
+    "near/intents/accounting.py": "6fb77c771bb49a9ff66a5202cdfec04922a956b363e6173252af8096cdd94373",
+    "near/intents/history.py": "e07955e18354ea8e8c65dc8371c7ec1357052241250545bdd9eccdf8c28d67d6",
+    "near/intents/model.py": "046e0a52fe0deefcf3636de0c6f36969766c8c9dc6690082c1286e5dc0b662d4",
+    "near/intents/train_transactions.py": "e13600a9e017481b792c8b51ab3a0e65d92ccbf5cfa1ca1152bbf6a7257083d2",
+    "near/models/transactions_v2_features.pkl": "a2113e702399dab1e330a6f5004b52b0df9b8ec7f2a9f7c67627baa869b25efb",
+    "near/models/transactions_v2_research.audit.npz": "26d340633ca16486cbef4b72556b4665166c08befbd1aca94f254d76b17cf1ae",
+    "near/models/transactions_v2_research.pkl": "64787e3d04225ca41b91babaac8a5a2b9e35cf5aea6d2b494211cec6ecb56b1e",
+    "near/intents/reports/transactions_v2.json": "0e940228050e0460c0f9e18f8e87e100c08b56cee45397e3ba10275baf43c82b"
+  },
+  "prior_audit_sources": {
+    "/tmp/claude-501/-Users-aman-Desktop-coding-security-oracle/009fb2b9-14f8-4379-ac60-ddae68ac44a1/scratchpad/fable_plan/lead-planner/holdout_check.py": "972dbe4b22a4d6049d1749bbe0f904e834a13edc92027bc126bf136600291bdf",
+    "/tmp/claude-501/-Users-aman-Desktop-coding-security-oracle/009fb2b9-14f8-4379-ac60-ddae68ac44a1/scratchpad/fable_plan/taxonomy/mechanism_table.py": "5137dc1d19a10acb2d59356b9b5624d6d7952d3993b7d1f477d946cbd408c691",
+    "/tmp/claude-501/-Users-aman-Desktop-coding-security-oracle/009fb2b9-14f8-4379-ac60-ddae68ac44a1/scratchpad/fable_plan/taxonomy/mechanism_table.json": "09ed37f457b63785ce4cbcc863b81fb578b6d17fa42d7fc631bd0c2c5fa395cc"
+  },
+  "prior_audit_output": {
+    "transcript": "/Users/aman/.claude/projects/-Users-aman-Desktop-coding-security-oracle/009fb2b9-14f8-4379-ac60-ddae68ac44a1/subagents/workflows/wf_69e46d3e-a64/agent-a962b8d2ea6161fcb.jsonl",
+    "transcript_sha256": "103c30a4e8bd51a720b42796ea2e51a1bc596711f270fd1bc5b53c828f00d589",
+    "tool_result_uuid": "67f2b639-30ab-483b-b23d-15b4f586d7cd",
+    "timestamp": "2026-11-14T18:27:42.218Z",
+    "output_sha256": "650b522f9f206d8ddb276c7bbe30997b459f9548ebd96493b058b4c53d2edff1",
+    "text": "fit 69469 cal 7594 sel 10096 collector 7400 collector failed 1566 real 430 Counter({'token_spoofing': 178, 'access_control': 174, 'resource_exhaustion': 55, 'callback_accounting': 23})\ndeterministic new alerts on normals (evidence>=2 but rule<2): 0 | on collector: 0\naccounting_status on collector: Counter({'unsupported': 5586, 'checked': 1635, 'inconclusive': 179})\naccounting_status on all normals: Counter({'unsupported': 69778, 'checked': 25336, 'inconclusive': 4984})\nfamily held out: access_control            train_pos=256 thr=(0.4396,0.4396) held-out n=174 rules/deterministic m+=110 combined m+=145 learned-added=35 | same model on 7,400 normals: alerts=88 (high 88), failed stratum 86/1566 | cal alerts 0 sel alerts 2 [2s]\nfamily held out: callback_accounting       train_pos=407 thr=(0.9432,0.9233) held-out n=23 rules/deterministic m+=23 combined m+=23 learned-added=0 | same model on 7,400 normals: alerts=0 (high 0), failed stratum 0/1566 | cal alerts 5 sel alerts 1 [2s]\nfamily held out: resource_exhaustion       train_pos=375 thr=(0.9539,0.9539) held-out n=55 rules/deterministic m+=53 combined m+=53 learned-added=0 | same model on 7,400 normals: alerts=6 (high 6), failed stratum 6/1566 | cal alerts 0 sel alerts 1 [2s]\nfamily held out: token_spoofing            train_pos=252 thr=(0.1937,0.1937) held-out n=178 rules/deterministic m+=18 combined m+=132 learned-added=114 | same model on 7,400 normals: alerts=594 (high 594), failed stratum 594/1566 | cal alerts 0 sel alerts 0 [2s]\nfamily-held-out total 353 / 430\nattacker held out: May fuzzer (2 families) train_pos= 78 thr=(0.0018,0.0004) held-out n=352 rules/deterministic m+=128 combined m+=140 learned-added=12 | same model on 7,400 normals: alerts=125 (high 122), failed stratum 96/1566 | cal alerts 4 sel alerts 0 [1s]\nattacker held out: October exploiter       train_pos=407 thr=(0.9432,0.9233) held-out n=23 rules/deterministic m+=23 combined m+=23 learned-added=0 | same model on 7,400 normals: alerts=0 (high 0), failed stratum 0/1566 | cal alerts 5 sel alerts 1 [2s]\nattacker held out: April actor             train_pos=375 thr=(0.9539,0.9539) held-out n=55 rules/deterministic m+=53 combined m+=53 learned-added=0 | same model on 7,400 normals: alerts=6 (high 6), failed stratum 6/1566 | cal alerts 0 sel alerts 1 [2s]\nattacker-held-out total 216 / 430"
+  },
+  "fold_metrics": [
+    {
+      "fold": "family held out: access_control",
+      "candidate": "real_hgb",
+      "training_positive_rows": 256,
+      "positive_n": 174,
+      "deterministic_medium_plus": 110,
+      "combined_medium_plus": 145,
+      "learned_added": 35,
+      "collector_n": 7400,
+      "collector_medium_plus": 88,
+      "collector_high": 88,
+      "reported_thresholds_rounded_4dp": {
+        "high": 0.4396,
+        "medium": 0.4396
+      },
+      "model_weights_sha256": null,
+      "threshold_exact": null,
+      "verification": "Prior auditor tool output recovered; not refit or independently re-scored in this release audit.",
+      "positive_counts_independently_verified_in_saved_audit_npz": true
+    },
+    {
+      "fold": "family held out: callback_accounting",
+      "candidate": "real_hgb",
+      "training_positive_rows": 407,
+      "positive_n": 23,
+      "deterministic_medium_plus": 23,
+      "combined_medium_plus": 23,
+      "learned_added": 0,
+      "collector_n": 7400,
+      "collector_medium_plus": 0,
+      "collector_high": 0,
+      "reported_thresholds_rounded_4dp": {
+        "high": 0.9432,
+        "medium": 0.9233
+      },
+      "model_weights_sha256": null,
+      "threshold_exact": null,
+      "verification": "Prior auditor tool output recovered; not refit or independently re-scored in this release audit.",
+      "positive_counts_independently_verified_in_saved_audit_npz": true
+    },
+    {
+      "fold": "family held out: resource_exhaustion",
+      "candidate": "real_hgb",
+      "training_positive_rows": 375,
+      "positive_n": 55,
+      "deterministic_medium_plus": 53,
+      "combined_medium_plus": 53,
+      "learned_added": 0,
+      "collector_n": 7400,
+      "collector_medium_plus": 6,
+      "collector_high": 6,
+      "reported_thresholds_rounded_4dp": {
+        "high": 0.9539,
+        "medium": 0.9539
+      },
+      "model_weights_sha256": null,
+      "threshold_exact": null,
+      "verification": "Prior auditor tool output recovered; not refit or independently re-scored in this release audit.",
+      "positive_counts_independently_verified_in_saved_audit_npz": true
+    },
+    {
+      "fold": "family held out: token_spoofing",
+      "candidate": "real_hgb",
+      "training_positive_rows": 252,
+      "positive_n": 178,
+      "deterministic_medium_plus": 18,
+      "combined_medium_plus": 132,
+      "learned_added": 114,
+      "collector_n": 7400,
+      "collector_medium_plus": 594,
+      "collector_high": 594,
+      "reported_thresholds_rounded_4dp": {
+        "high": 0.1937,
+        "medium": 0.1937
+      },
+      "model_weights_sha256": null,
+      "threshold_exact": null,
+      "verification": "Prior auditor tool output recovered; not refit or independently re-scored in this release audit.",
+      "positive_counts_independently_verified_in_saved_audit_npz": true
+    },
+    {
+      "fold": "attacker held out: May fuzzer (2 families)",
+      "candidate": "real_hgb",
+      "training_positive_rows": 78,
+      "positive_n": 352,
+      "deterministic_medium_plus": 128,
+      "combined_medium_plus": 140,
+      "learned_added": 12,
+      "collector_n": 7400,
+      "collector_medium_plus": 125,
+      "collector_high": 122,
+      "reported_thresholds_rounded_4dp": {
+        "high": 0.0018,
+        "medium": 0.0004
+      },
+      "model_weights_sha256": null,
+      "threshold_exact": null,
+      "verification": "Prior auditor tool output recovered; not refit or independently re-scored in this release audit."
+    },
+    {
+      "fold": "attacker held out: October exploiter",
+      "candidate": "real_hgb",
+      "training_positive_rows": 407,
+      "positive_n": 23,
+      "deterministic_medium_plus": 23,
+      "combined_medium_plus": 23,
+      "learned_added": 0,
+      "collector_n": 7400,
+      "collector_medium_plus": 0,
+      "collector_high": 0,
+      "reported_thresholds_rounded_4dp": {
+        "high": 0.9432,
+        "medium": 0.9233
+      },
+      "model_weights_sha256": null,
+      "threshold_exact": null,
+      "verification": "Prior auditor tool output recovered; not refit or independently re-scored in this release audit."
+    },
+    {
+      "fold": "attacker held out: April actor",
+      "candidate": "real_hgb",
+      "training_positive_rows": 375,
+      "positive_n": 55,
+      "deterministic_medium_plus": 53,
+      "combined_medium_plus": 53,
+      "learned_added": 0,
+      "collector_n": 7400,
+      "collector_medium_plus": 6,
+      "collector_high": 6,
+      "reported_thresholds_rounded_4dp": {
+        "high": 0.9539,
+        "medium": 0.9539
+      },
+      "model_weights_sha256": null,
+      "threshold_exact": null,
+      "verification": "Prior auditor tool output recovered; not refit or independently re-scored in this release audit."
+    }
+  ],
+  "fold_limitations": [
+    "Family total 353/430 pools four refits. Normal alert counts must stay alongside each fold, not alongside a pooled total.",
+    "Attacker total 216/430 pools three refits. 125/7400 medium-plus alerts (122 high) belong to the held-out May model; October and April folds have 0 and 6 respectively.",
+    "Prior audit printed thresholds to four decimal places and did not save these refitted model weights. Exact threshold and model hashes are unavailable; no refits were run to recreate them.",
+    "The two May families share a funder. Family holdout therefore measures transfer within a funding-linked actor cluster, not demonstrated unseen-attacker generalization."
+  ],
+  "full_fit_candidate": {
+    "candidate": "real_hgb",
+    "thresholds": {
+      "high": 0.9523540401997058,
+      "medium": 0.9523540401997058
+    },
+    "collector_n": 7400,
+    "collector_high": 14,
+    "collector_medium_plus": 14,
+    "use": "Rejected full-fit model only; these false-alert counts do not belong to the family or attacker folds."
+  },
+  "common_funder": {
+    "account": "f59f52d31ed269ade019a55ac4046a4e2fd7e0a3d6e585c4afc4777aab71f834",
+    "evidence": [
+      {
+        "tx_hash": "4ghEQFqbYGGR7sftgu3YXApG22LGpxJzJPfHrPi2xHKA",
+        "signer_id": "f59f52d31ed269ade019a55ac4046a4e2fd7e0a3d6e585c4afc4777aab71f834",
+        "receiver_id": "f54d146a847e26bb6fcde0a4c99ad820fb446b1e048dd4f3094c699e841972a5",
+        "actions": [
+          {
+            "Transfer": {
+              "deposit": "100000000000000000000000"
+            }
+          }
+        ]
+      },
+      {
+        "tx_hash": "9TwDdZ9nNZDU9pgxmT9GiBxtZpTD2t6g8RiRjFdR4rpu",
+        "signer_id": "f59f52d31ed269ade019a55ac4046a4e2fd7e0a3d6e585c4afc4777aab71f834",
+        "receiver_id": "near",
+        "actions": [
+          {
+            "FunctionCall": {
+              "method_name": "create_account",
+              "args": "eyJuZXdfYWNjb3VudF9pZCI6InRlc3QxNzc5NTc5NDgwNzU2Lm5lYXIiLCJuZXdfcHVibGljX2tleSI6IjZOTllEblc2ZUpOemZ2UTY2Z3BQNERxelV5QURKTnVEOVZOeFFzRGp1VHJnIn0=",
+              "gas": 100000000000000,
+              "deposit": "100000000000000000000000"
+            }
+          }
+        ]
+      }
+    ],
+    "interpretation": "Observed common funding supports grouping the two May campaigns as one actor cluster; shared human operator identity is not proved."
+  },
+  "april": {
+    "attempts": 55,
+    "medium_plus": 53,
+    "notify_only_medium_plus": 41
+  },
+  "presets": {
+    "2b4V5vJJmVA7mLXtQR99SA24ssbStTTBW7WcxW6k3qru": {
+      "rule_hits": [
+        {
+          "rule": "notify_receiver_in_deposit",
+          "severity": "medium",
+          "message": "the deposit notified a receiver contract (1 call(s) of mt_on_transfer)"
+        }
+      ],
+      "failures": [
+        {
+          "ActionError": {
+            "index": 0,
+            "kind": {
+              "FunctionCallError": {
+                "CompilationError": {
+                  "CodeDoesNotExist": {
+                    "account_id": "75223451ec3b5bf3ab48a83691729377e4bd16721422f2e8c78b192cf850e343"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Ete7rqrC1EFpj2ZFK4BY2vqDHtTUXmiHqfwsg1mR3k5i": {
+      "rule_hits": [
+        {
+          "rule": "notify_receiver_in_deposit",
+          "severity": "medium",
+          "message": "the deposit notified a receiver contract (1 call(s) of mt_on_transfer)"
+        },
+        {
+          "rule": "callback_oog",
+          "severity": "medium",
+          "message": "callback ran out of gas: callback_oog_payload_raw"
+        }
+      ],
+      "failures": [
+        {
+          "ActionError": {
+            "index": 0,
+            "kind": {
+              "FunctionCallError": {
+                "ExecutionError": "Exceeded the prepaid gas."
+              }
+            }
+          }
+        }
+      ]
+    },
+    "F5cgTm3kN8XBseeqWhScwure4ARBXUPqVV5JgU9mPvze": {
+      "rule_hits": [
+        {
+          "rule": "execute_intents_panic",
+          "severity": "low",
+          "message": "execute_intents failed (panic)"
+        }
+      ],
+      "failures": [
+        {
+          "ActionError": {
+            "index": 0,
+            "kind": {
+              "FunctionCallError": {
+                "ExecutionError": "Smart contract panicked: insufficient balance or overflow"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "mechanisms": {
+    "method": "Entry method plus contract rejection reason using prior mechanism_table.py; current frozen rules plus accounting findings; medium-plus threshold.",
+    "rows": [
+      {
+        "mechanism": "M1 notify deposit: resolve callback fails on log limit, credit kept",
+        "n": 23,
+        "medium_plus": 23,
+        "high": 23
+      },
+      {
+        "mechanism": "M2 notify deposit with starved callback gas",
+        "n": 53,
+        "medium_plus": 53,
+        "high": 0
+      },
+      {
+        "mechanism": "M3 direct token-hook call (*_on_transfer) by a non-token signer",
+        "n": 90,
+        "medium_plus": 90,
+        "high": 0
+      },
+      {
+        "mechanism": "M4 direct private callback (*_resolve_*, do_*)",
+        "n": 9,
+        "medium_plus": 9,
+        "high": 0
+      },
+      {
+        "mechanism": "M5 admin / role-gated method",
+        "n": 29,
+        "medium_plus": 29,
+        "high": 0
+      },
+      {
+        "mechanism": "M6a signed intent rejected: signature / key / nonce / deadline",
+        "n": 70,
+        "medium_plus": 0,
+        "high": 0
+      },
+      {
+        "mechanism": "M6b signed intent rejected: balance / invariant / invalid intent",
+        "n": 43,
+        "medium_plus": 0,
+        "high": 0
+      },
+      {
+        "mechanism": "M6c signed intent rejected: malformed payload",
+        "n": 36,
+        "medium_plus": 0,
+        "high": 0
+      },
+      {
+        "mechanism": "M6d signed intent accepted (no failed receipt)",
+        "n": 21,
+        "medium_plus": 0,
+        "high": 0
+      },
+      {
+        "mechanism": "M6e signed intent rejected: other",
+        "n": 24,
+        "medium_plus": 0,
+        "high": 0
+      },
+      {
+        "mechanism": "M7 ordinary deposit / withdrawal / transfer / key call by the campaign signer",
+        "n": 39,
+        "medium_plus": 0,
+        "high": 0
+      }
+    ],
+    "summary": [
+      {
+        "group": "Receipt-visible mechanisms M1-M5",
+        "n": 204,
+        "medium_plus": 204
+      },
+      {
+        "group": "Signed-intent probes M6",
+        "n": 194,
+        "medium_plus": 0
+      },
+      {
+        "group": "Other campaign calls M7",
+        "n": 39,
+        "medium_plus": 0
+      }
+    ],
+    "label_correction": "The 233 misses comprise 194 signed-intent probes and39 ordinary campaign calls. Do not label all233 signed-intent fuzzing. April M2 groups Notify deposits;41/53 alerts have only generic Notify evidence."
+  }
+}

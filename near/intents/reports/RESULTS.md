@@ -1,174 +1,137 @@
 # Intents detector: evidence
 
-[Overview](../../../README.md) · [Raw evaluation](evaluation.json) · [Paused-traffic diagnostic](paused_diagnostic.json)
+[Overview](../../../README.md) · [Accounting validation](accounting_validation.json) · [Release audit](release_evidence_audit.json)
 
-**In the served baseline evaluation, rules supplied every campaign detection. The anomaly model added none.**
+**The accounting check agrees with recorded sandbox state and known exploit labels. This is not unseen-attack accuracy.**
+The served `intents_v1` model and rules are unchanged. No new fits, features, thresholds or sandbox families were added for this release.
 
-## Accounting, history and family training
+## Accounting first
 
-The served detector now adds exact deposit/refund event accounting, strictly earlier participant history, and
-[11 attack categories](../fixtures/attack_taxonomy.json). These checks added **no alerts on the 7,400 historical
-normal transactions**. The frozen ML model remains active.
+| Evidence set | High accounting findings |
+|---|---:|
+| Sandbox: measured credit defects | **712 / 712** |
+| Sandbox: other unpatched executions | **0 / 2,953** |
+| Sandbox: patched verifier | **0 / 349** |
+| Known real exploits | **23 / 23** |
+| Sampled historical normals | **0 / 100,098** |
 
-| New research experiment | Existing baseline / rules | Selected learned model |
-|---|---:|---:|
-| Real cases flagged, family-held-out development tests | 204/430 | **353/430** |
-| High alerts on historical normal transactions | 0/7,400 | **14/7,400** |
-| High alerts on held-out sandbox benign flows | 0/40 | **26/40** |
+Across **4,014 sandbox executions**, there are 712 positive state measurements, 2,113 zero measurements and
+**1,189 without direct state measurements**. No measured state label disagrees with the check. The 0/3,302 other
+executions include unsuccessful probes and unmeasured flows; they are not all independently proved state-negative.
 
-**Candidate rejected.** Higher development recall came with high-severity false alarms. Generated benign flows
-were also perfectly distinguishable from sampled real traffic in a separate source-classification check.
-No thresholds were retuned after these results. This is development evidence, not a new sealed accuracy claim.
+Of the historical normals, **25,336 were checked, 4,984 inconclusive and 69,778 unsupported**. No finding is not
+proof of safety. These are existing, correlated samples, not fresh tests. The real exploits repeat one technique
+by one actor. Production accounting reconciles successful events; it does not independently read opening/closing
+balances or establish token authenticity or protocol solvency.
 
-Training used four fixed configurations with separate calibration/selection windows, category holdouts, and
-held-out sandbox methods, receiver modes and actors. Four attacker-adjacent normal rows were excluded. Seven of
-the original 437 attack-labelled transactions never reach Intents; they retain their labels outside the classifier's
-430-case scope. Historical measurements below retain their original denominators.
-
-| Added data | What it establishes |
-|---|---|
-| **273 sandbox executions**: 6 measured exploits, 132 attempts, 135 benign | Four observable families; 91 rows per split, with shared generator/WASM limitations |
-| **3 sourced exploit transactions**: Rhea and Skyward | Two additional families, currently outside Intents coverage |
-| **500 fresh transactions**, labels unknown | No alerts observed; a correlated 112-second sample, not a false-positive-rate estimate |
-
-[Training results](transactions_v2.json) · [Sandbox provenance](synthetic_families_v2.json) ·
-[Real case sources](../fixtures/cases_v2/manifest.json) · [Run or reproduce](../../README.md)
-
-## Results
-
-| Campaign | High | Medium | Missed |
-|---|---:|---:|---:|
-| October exploit | **23** | 0 | 0 |
-| April out-of-gas attempts | 0 | 53 | 2 |
-| May admin fuzzing | 0 | 110 | 67 |
-| May token spoofing | 0 | 18 | 164 |
-| Team regression tests (negatives) | 0 | **12 false alarms** | 5 |
-
-The 23 exploits repeat one technique by one actor. Rules were written after observing these campaigns;
-these are retrospective case studies, **not unseen-attack accuracy**. Setup and cashout transactions have ordinary
-shapes and are not detected.
-
-| Clean test normals (7,400 transactions) | High alerts | Medium or higher |
-|---|---:|---:|
-| Rules only | 0 | 0 |
-| Rules + anomaly model | **0** | **84 (1.14%)** |
-
-Zero observed high alerts has a 95% Wilson upper bound of **0.052%**, not a zero population false-positive rate.
-80 of the 84 medium alerts came from deposits during one paused-contract hour. The medium target of 0.1% was
-missed. Excluding paused traffic gives 4/7,301 alerts, but that exclusion is post hoc.
-
-**Interpretation:** transaction findings guide protocol investigation. The optional receiver-policy integration warns on high Intents activity; transaction scoring itself does not block anything.
-
-<details>
-<summary>November 14 retraining: candidate rejected</summary>
-
-Trained three forests: global, per-flow, and per-flow with receipt-failure groups. Fit, threshold calibration and
-selection used separate time windows. Selection chose the global model before retrospective scoring.
-
-| Same 7,400 historical normal transactions | Current model | Candidate |
-|---|---:|---:|
-| High alerts | 0 | 0 |
-| Medium+ alerts | 84 | 92 |
-| Additional campaign detections | — | 0 |
-
-The candidate failed the noise-reduction check; served weights are unchanged. These are previously examined
-transactions, not a fresh test. The four attacker-adjacent training rows remain a documented data limitation.
-[Protocol, coverage and measurements](training_candidate.json) · [Trainer](../train_candidate.py)
-
-</details>
-
-## What was evaluated
-
-| Slice | Period | Transactions |
-|---|---|---:|
-| Train | Nov 2024–May 2026 | 69,863 |
-| Calibration | Jun–Sep 2026 | 17,772 |
-| Test | Oct–Nov 2026 | 12,463 |
-
-IsolationForest uses 63 receipt-graph features alongside 12 rules. No labelled campaign trained the anomaly model.
-Use `label` for decisions: `risk` includes an anomaly percentile and is not a probability of attack.
-
-## Limits that matter
-
-- **Clean sample:** only 7,400 test rows are independent of rule development. The other 5,063 test rows and 2,672
-  calibration rows were scouting seeds used while developing rules. Samples arrive in consecutive pages;
-  correlated transactions make independent-sample confidence intervals optimistic.
-- **Feature design saw the exploit.** Replacing 11 rule-like features with training medians removes the anomaly
-  model's October detection. Its value against unseen attacks is unproven.
-- **Sparse calibration:** no withdrawals, only 227 other-flow transactions, and one permitted high alert.
-  A 1-in-10,000 high false-alarm rate is not established by this sample.
-- **Historical false alarms:** rules flagged 327/69,863 training normals at medium. One training and one calibration
-  normal triggered high rules; neither was investigated. Quiet test months do not guarantee quiet future traffic.
-- **Training contamination:** four training normals were signed by an attacker-adjacent setup account. Future
-  collection excludes these signers; the shipped model was not retrained.
-- **Receiver coverage:** only 40 recent index rows / 20 Intents transactions, cached five minutes. History can be
-  pushed out of the window; merely appearing in a suspicious receipt can cause a warning.
-
-<details>
-<summary>Evaluation history and reproduction</summary>
-
-Model selection changed once after calibration revealed a candidate's score ceiling was unusable; see
-[initial selection](freeze_first_pass.json). The test was scored twice following a nonfunctional code-hash change:
-[first run](evaluation_sealed_run1.json) and [current run](evaluation.json) have the same measurements.
-Paused-traffic analysis, source splits and feature ablation were performed after seeing test results.
-
-A synthetic-data head was **not adopted**: it added zero detections and promoted 80 normal transactions to high.
-Its adoption decision also read the test set. See [head results](head_evaluation.json),
-[domain check](head_domain_check.json) and [sandbox setup](../synthetic/README.md).
-
-The former 97,000-transactions/day planning estimate was unverified. Do not extrapolate the sample into an
-operational daily-alert claim; bursty paused traffic dominates the pooled rate.
+Re-run without training, using the original local data listed and hashed in the report:
 
 ```bash
-uv run python -m near.demo.replay
-uv run python -m unittest near.intents.test_model near.service.test_intents
+uv run python -m near.intents.validate_accounting --out /tmp/accounting-validation.json
 ```
 
-`archives/near_intents.zip` supplies the frozen model and labelled data. It excludes the 239 MB normals and scouting
-seeds. Re-pulling normals does not reproduce the exact sample. `near.intents.model freeze` replaces model artifacts;
-`near.intents.evaluate run --rescore` replaces evaluation results. Preserve the shipped evidence before either.
+The complete research datasets are not bundled with the demo. [Validator](../validate_accounting.py) ·
+[Input hashes, state measurements and coverage](accounting_validation.json)
 
-</details>
+## What the served detector recognizes
+
+**11-category taxonomy; served rules cover 3:** callback accounting, access-control abuse and resource exhaustion.
+Wallet drainers are **not covered**. Accounting and bounded earlier-participant history add evidence, but no
+additional campaign detections or alerts on the 7,400 historical clean test transactions.
+
+| Receipt mechanism in the 437 campaign-labelled transactions | Rules + accounting, medium or higher |
+|---|---:|
+| Receipt-visible callback / Notify / private / admin patterns | **204 / 204** |
+| Signed-intent probes | **0 / 194** |
+| Other campaign calls: deposit, withdrawal, transfer or key calls | **0 / 39** |
+
+The 233 misses are **signed-intent and other campaign calls**, not all signed-intent fuzzing. These groups were
+defined retrospectively. On the same 7,400 normal transactions, rules + accounting raised **0 medium-or-higher
+alerts**. Adding the served anomaly model raised **84 medium alerts and 0 high alerts**, without more campaign detections.
+
+| Retrospective campaign | High | Medium | Not flagged |
+|---|---:|---:|---:|
+| October exploit | 23 | 0 | 0 |
+| April out-of-gas attempts | 0 | 53 | 2 |
+| May admin fuzzing | 0 | 110 | 67 |
+| May token-spoofing-labelled campaign | 0 | 18 | 164 |
+| Team regression controls | 0 | 12 false alarms | 5 |
+
+**41 of the 53 April detections only mean “deposit used Notify”.** They do not establish an out-of-gas attack.
+The April demo now uses `Ete7rqrC1EFpj2ZFK4BY2vqDHtTUXmiHqfwsg1mR3k5i`, which also has callback out-of-gas evidence.
+The 18 May token-campaign detections are direct private-method probes, not token-authenticity checks.
+The former token-spoof preset is **“Not flagged: rejected overdraw probe”**; its failure says insufficient balance
+or overflow, not that a successful spoof occurred.
+
+All campaign rows use the frozen served detector: **0 high / 84 medium-or-higher alerts on 7,400 normals**.
+Rules were written after seeing these campaigns. The anomaly model supplied no extra detections; 80 of its 84
+medium alerts came from one paused-contract hour. Zero observed high alerts has a 95% Wilson upper bound of
+0.052%, with transaction correlation making this interval optimistic.
+
+## Research candidate: rejected
+
+The previous **204→353/430** family-holdout result pools four refits. The two May families share a funder:
+it measures **same-attacker-cluster transfer**, not demonstrated unseen-attacker generalization. Each row below
+pairs recall with alerts from that exact refit and its thresholds; do not pair the total with the full-fit model's 14 alerts.
+
+| Family held out | Rules → candidate, medium+ | High alerts / 7,400 normals | Medium+ alerts / 7,400 |
+|---|---:|---:|---:|
+| Access control | 110 → 145 / 174 | **88** | 88 |
+| Callback accounting | 23 → 23 / 23 | **0** | 0 |
+| Resource exhaustion | 53 → 53 / 55 | **6** | 6 |
+| Token spoofing | 18 → 132 / 178 | **594** | 594 |
+
+Holding out the funding-linked attacker cluster reduces the pooled improvement to **204→216/430**:
+
+| Actor held out | Rules → candidate, medium+ | High alerts / 7,400 normals | Medium+ alerts / 7,400 |
+|---|---:|---:|---:|
+| May cluster, both families | 128 → 140 / 352 | **122** | **125** |
+| October exploiter | 23 → 23 / 23 | 0 | 0 |
+| April actor | 53 → 53 / 55 | 6 | 6 |
+
+These normal counts cannot be pooled into one deployed-model rate. The prior auditor's saved tool output supplies
+the fold alert counts and rounded thresholds; the fold weights were not saved. We did not refit them for this
+release. Family positive counts also match the saved per-row predictions. [Audit and provenance](release_evidence_audit.json).
+
+The separate full-fit candidate raised **14 high alerts / 7,400 normals** and **26 high alerts / 40 generated benign
+controls**. A source classifier perfectly separated sampled generated and real benign traffic. The candidate
+remains rejected and is never selected by the API. [Original experiment](transactions_v2.json).
+
+## Data boundaries
+
+| Added evidence | What it supports |
+|---|---|
+| 273 sandbox transactions: 6 measured exploits, 132 attempts, 135 benign | A **variant holdout of four scripted recipes**, sharing generator and verifier builds |
+| 3 sourced Rhea / Skyward exploits | Two protocol families outside current Intents coverage |
+| 500 fresh transactions, unknown labels | Zero observed alerts in a correlated 112-second window; no accuracy or false-positive-rate claim |
+
+Seven of the original 437 attack-labelled rows do not reach Intents. Their labels remain intact, outside the
+research classifier's 430-row scope. Four attacker-adjacent normal rows were excluded from research fitting;
+the shipped model was not retrained. [Sandbox provenance](synthetic_families_v2.json) ·
+[External case sources](../fixtures/cases_v2/manifest.json).
 
 <details>
-<summary>Detailed campaign breakdown and sampled precision</summary>
+<summary>Historical evaluation and limitations</summary>
 
-The agent flags risk; it does not fix contracts or stop transactions. **High** is shown as *Malicious pattern*,
-**medium** as *Suspicious*, **low** as *No known attack pattern*.
+- Baseline normal windows: train 69,863 (Nov 2024–May 2026), calibration 17,772 (Jun–Sep 2026), test 12,463
+  (Oct–Nov 2026). Only 7,400 test rows were independent of rule development; 5,063 test and 2,672 calibration
+  rows were scouting seeds. [Original evaluation](evaluation.json).
+- IsolationForest uses 63 receipt features beside 12 rules. Feature design saw the exploit. `risk` is not an attack
+  probability; unseen-attack value remains unproven. Calibration had no withdrawals and only 227 other-flow rows.
+- Historical rules raised medium alerts on 327 training normals and high alerts on one training and one calibration
+  normal; those two highs were not investigated. Quiet test months do not establish a future population rate.
+- The earlier parameter-only candidate raised 92 medium+ alerts / 7,400 versus the served model's 84, with 0 high
+  alerts and no extra campaign detections. It was also rejected. [Report](training_candidate.json).
+- A synthetic head was rejected after adding no detections and promoting 80 normals to high. Its adoption decision
+  read the test set. [Head evaluation](head_evaluation.json) · [Domain check](head_domain_check.json).
+- Model selection changed after calibration exposed an unusable score ceiling. The sealed test was scored twice
+  after a nonfunctional code-hash change, with identical measurements. [Initial selection](freeze_first_pass.json) ·
+  [First evaluation](evaluation_sealed_run1.json). Paused-traffic analysis and feature ablation were post hoc.
+- Account scans inspect at most 20 Intents transactions from 40 recent index rows, cached five minutes. History is
+  bounded; missing evidence remains explicit. Findings do not undo transactions, pause protocols or automatically
+  publish account blocks.
 
-**How to read the numbers**
-
-- **Recall:** of the real attacks, how many it flagged.
-- **Precision:** of everything it flagged, how many were real attacks.
-- **False alarms:** of normal activity, how much it flagged by mistake.
-- **`84 / 7,400 (1.1%)`:** we took 7,400 normal Intents transactions from Oct–Nov 2026, kept out of training and
-  rule writing. It wrongly flagged 84 of them at medium and none at high. 80 of the 84 came from one hour on
-  2026-10-01, when Intents was paused and deposits failed. All 84 came from the anomaly model; the rules alone
-  flagged none.
-
-![Retrospective Intents detection: October exploit 23/23 high; April out-of-gas 53/55 medium; May admin fuzzing 110/177 medium; May token spoofing 18/182 medium.](../../../docs/assets/results.svg)
-
-### NEAR Intents transactions
-
-Rules were written after studying these attacks, so this is a look back at known attacks, not a test on new ones.
-
-| Attack type | Example | Main rules that fired | Caught at high | Caught at medium or higher |
-|---|---|---|---|---|
-| Deposit callback overflows its log, credit kept | Sep 29–Oct 1 2026 exploit, about $3.8M | failed callback, log limit, credit kept | **23 / 23** | 23 / 23 |
-| Callback runs out of gas | Apr 2026 attempts | notify in deposit, callback out of gas | 0 / 55 | **53 / 55** |
-| Private or admin method called by an outsider | May 2026 fuzzing | private method called directly, admin method | 0 / 177 | **110 / 177** |
-| Fake-token deposits | May 2026 token spoofing | private method called directly (the 18 caught); the rest look like normal failed intents | 0 / 182 | **18 / 182** |
-| *Normal traffic (false alarms)* | 7,400 unseen transactions | — | **0 / 7,400** | 84 / 7,400 |
-
-| | High | Medium or higher |
-|---|---|---|
-| Recall, all 437 attack transactions | 23 / 437 = 5% (the exploit: 23 / 23) | 204 / 437 = 47% |
-| False alarms, 7,400 normal transactions | 0 = 0% | 84 = 1.1% |
-| Precision on our test set | 23 / 23 = **100%** | 204 / 300 = 68% |
-
-Precision here uses 437 attacks against 7,417 normal transactions (the 7,400 above plus 17 team tests, 12 flagged
-at medium). 5,063 more test transactions were used while writing the rules, so they are left out. Real traffic has
-far fewer attacks, so live precision at medium is much lower. The 23 exploit transactions are one attacker
-repeating one technique; the attacker's 52 setup and cash-out transactions look normal and were not flagged.
+The demo archive supplies the frozen model and labelled records; it omits the full normal/scouting datasets.
+The validator refuses to overwrite an existing report. Preserve the shipped evidence when running research tools.
 
 </details>

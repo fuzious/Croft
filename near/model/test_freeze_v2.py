@@ -174,10 +174,12 @@ class V2ArtifactTest(unittest.TestCase):
         self.assertNotIn("classical_risk", out)
 
 
-@unittest.skipUnless(HAS_V2_LLM, "v2 LLM checkpoint not unpacked (archives/near_llm_v2.zip)")
 class FrozenV2Test(unittest.TestCase):
     """The frozen v2 model end to end (loads the merged LLM, a few seconds)."""
 
+    @unittest.skipUnless(HAS_V2_LLM and all((predict.MODELS_DIR / f"frozen_near_v2.{ext}").is_file()
+                                          for ext in ("pkl", "json")),
+                         "unpack archives/near_models.zip and archives/near_llm_v2.zip for v2 integration")
     def test_score_source_takes_max_over_counted_functions(self):
         res = predict.score_source({"src/lib.rs": SRC}, art=predict.load(predict.MODELS_DIR / "frozen_near_v2.pkl"))
         fns = {f["fn"]: f for f in res["functions"]}
@@ -190,6 +192,8 @@ class FrozenV2Test(unittest.TestCase):
         self.assertIsNone(fns["helper"]["risk"])  # not counted: classical score only, LLM not run
         self.assertIsNotNone(fns["helper"]["classical_risk"])
 
+    @unittest.skipUnless(predict.FROZEN_V1.is_file() and predict.FROZEN_V1.with_suffix(".json").is_file(),
+                         "unpack archives/near_models.zip for code-model integration tests")
     def test_v1_stays_loadable(self):
         res = predict.score_source({"src/lib.rs": SRC}, art=predict.load(predict.FROZEN_V1))
         self.assertEqual(res["model"]["version"], "frozen_near_v1")

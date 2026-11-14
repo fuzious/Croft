@@ -20,6 +20,8 @@ from near.service.test_policy import eoa
 
 FIX = Path(__file__).parent / "fixtures" / "fastnear_recorded.json.gz"
 MODEL = Path(__file__).resolve().parents[1] / "models" / "intents_v1.pkl"
+HAS_MODEL = MODEL.is_file() and MODEL.with_suffix(".json").is_file()
+MODEL_SKIP = "unpack archives/near_intents.zip for frozen-model integration tests"
 EXPLOIT = "3k91uDpUiezxUe7hBgAR7kc3TBkToMZKGAiv6GqbtKiC"
 NORMAL = "8tTzvGLMV7x1swmF2A5m3zDugCimdwmDrTXDTvKsJvj"
 UNKNOWN = "11111111111111111111111111111112"
@@ -193,7 +195,6 @@ class AssessmentTest(unittest.TestCase):
         self.assertEqual(canonical.json()["assessment"], "unsupported")
 
 
-@unittest.skipUnless(MODEL.exists(), "frozen intents model not present (near/models/intents_v1.pkl)")
 class ActivityTest(unittest.TestCase):
     def setUp(self):
         intents.clear_cache()
@@ -201,6 +202,7 @@ class ActivityTest(unittest.TestCase):
     def tearDown(self):
         intents.clear_cache()
 
+    @unittest.skipUnless(HAS_MODEL, MODEL_SKIP)
     def test_exploiter_recent_intents_txs_include_high_exploit_txs(self):
         replay = Replay()
         s = intents.activity_signal(EXPLOITER, transport=replay)
@@ -217,6 +219,7 @@ class ActivityTest(unittest.TestCase):
         self.assertEqual(len(high), 10)
         self.assertEqual(v["txs"][0]["tx_hash"], "5d1VV4tyFh3xWomy2tWJbG9qfLDaRdbksjedUZ3A3j3o")  # newest first
 
+    @unittest.skipUnless(HAS_MODEL, MODEL_SKIP)
     def test_second_check_is_served_from_cache(self):
         intents.activity_signal(EXPLOITER, transport=Replay())
         replay = Replay()
@@ -365,6 +368,7 @@ class UnexpectedBodyTest(unittest.TestCase):
         self.assertEqual(len(txs), 1)
         self.assertEqual(len(txs[0]["receipts"]), len(full["receipts"]))
 
+    @patch.object(intents, "model_info", new=lambda: {})
     def test_malformed_transaction_response_is_502_not_not_found(self):
         saved = intents.TRANSPORT
         self.addCleanup(setattr, intents, "TRANSPORT", saved)
@@ -374,6 +378,7 @@ class UnexpectedBodyTest(unittest.TestCase):
                 r = TestClient(service.app).post("/v1/intents/score", json={"tx_hash": NORMAL})
                 self.assertEqual(r.status_code, 502, r.text)
 
+    @patch.object(intents, "model_info", new=lambda: {})
     def test_missing_receipt_evidence_cannot_turn_an_exploit_into_low_risk(self):
         saved = intents.TRANSPORT
         self.addCleanup(setattr, intents, "TRANSPORT", saved)
@@ -397,7 +402,7 @@ DANGLING = "J9RYnzQb4QBdz3MU8WwAXNydVJjtvyNn6QGcU1cNPDuY"
 DANGLING_BODY = gzip.decompress((FIX.parent / "fastnear_dangling_receipt.json.gz").read_bytes())
 
 
-@unittest.skipUnless(MODEL.exists(), "frozen intents model not present (near/models/intents_v1.pkl)")
+@unittest.skipUnless(HAS_MODEL, MODEL_SKIP)
 class OmittedReceiptTest(unittest.TestCase):
     """FastNEAR leaves out some receipts that intents.near spawns (5 of the first 30,000 recorded normal txs, among
     them the real mainnet tx J9RYnz... in fixtures/fastnear_dangling_receipt.json.gz). Such a tx is still scored, and
@@ -466,7 +471,6 @@ class CacheTest(unittest.TestCase):
         self.assertEqual(self.read("a.near"), 1)
 
 
-@unittest.skipUnless(MODEL.exists(), "frozen intents model not present (near/models/intents_v1.pkl)")
 class ScoreEndpointTest(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(service.app)
@@ -476,6 +480,7 @@ class ScoreEndpointTest(unittest.TestCase):
     def tearDown(self):
         intents.TRANSPORT = self.saved
 
+    @unittest.skipUnless(HAS_MODEL, MODEL_SKIP)
     def test_exploit_tx_scores_high_with_its_rules(self):
         r = self.client.post("/v1/intents/score", json={"tx_hash": EXPLOIT})
         self.assertEqual(r.status_code, 200, r.text)
@@ -490,6 +495,7 @@ class ScoreEndpointTest(unittest.TestCase):
         self.assertEqual(b["assessment"], "malicious_pattern")
         self.assertTrue(b["top_features"])
 
+    @unittest.skipUnless(HAS_MODEL, MODEL_SKIP)
     def test_normal_deposit_scores_low(self):
         r = self.client.post("/v1/intents/score", json={"tx_hash": NORMAL, "sender_id": "bridge-mng.near"})
         self.assertEqual(r.status_code, 200, r.text)
@@ -499,21 +505,25 @@ class ScoreEndpointTest(unittest.TestCase):
         self.assertIs(b["receipts_complete"], True)
         self.assertEqual(b["assessment"], "no_known_pattern")
 
+    @unittest.skipUnless(HAS_MODEL, MODEL_SKIP)
     def test_sender_mismatch_is_reported(self):
         b = self.client.post("/v1/intents/score", json={"tx_hash": NORMAL, "sender_id": "other.near"}).json()
         self.assertIs(b["sender_matches"], False)
 
+    @patch.object(intents, "model_info", new=lambda: {})
     def test_unknown_hash_is_404(self):
         r = self.client.post("/v1/intents/score", json={"tx_hash": UNKNOWN})
         self.assertEqual(r.status_code, 404)
         self.assertIn("not found", r.json()["detail"])
 
+    @patch.object(intents, "model_info", new=lambda: {})
     def test_fastnear_down_is_502_with_reason(self):
         intents.TRANSPORT = intents.transport(CLOSED_PORT, timeout=2.0)
         r = self.client.post("/v1/intents/score", json={"tx_hash": EXPLOIT})
         self.assertEqual(r.status_code, 502)
         self.assertIn("FastNEAR", r.json()["detail"])
 
+    @patch.object(intents, "model_info", new=lambda: {})
     def test_fastnear_timeout_is_504_within_the_timeout(self):
         server = TrickleServer(gap=0.25)
         self.addCleanup(server.close)
@@ -524,6 +534,7 @@ class ScoreEndpointTest(unittest.TestCase):
         self.assertEqual(r.status_code, 504, r.text)
         self.assertIn("FastNEAR did not answer within 1 s", r.json()["detail"])
 
+    @unittest.skipUnless(HAS_MODEL, MODEL_SKIP)
     def test_tx_of_a_shape_the_model_cannot_score_is_502_with_a_short_reason(self):
         junk = "JUNK" * 500
         for i, tx in enumerate((
@@ -585,7 +596,7 @@ class ScanEndpointTest(unittest.TestCase):
     def scan(self, account_id):
         return self.client.post("/v1/intents/scan", json={"account_id": account_id})
 
-    @unittest.skipUnless(MODEL.exists(), "frozen intents model not present (near/models/intents_v1.pkl)")
+    @unittest.skipUnless(HAS_MODEL, MODEL_SKIP)
     def test_exploiter_scan_counts_the_high_exploit_txs(self):
         intents.TRANSPORT = Replay()
         r = self.scan(EXPLOITER)
@@ -608,7 +619,7 @@ class ScanEndpointTest(unittest.TestCase):
         man = json.loads(MODEL.with_suffix(".json").read_text())
         self.assertEqual(b["model"], {"version": "intents_v1", "sha256": man["pkl_sha256"]})
 
-    @unittest.skipUnless(MODEL.exists(), "frozen intents model not present (near/models/intents_v1.pkl)")
+    @unittest.skipUnless(HAS_MODEL, MODEL_SKIP)
     def test_second_scan_is_served_from_the_activity_cache(self):
         intents.TRANSPORT = Replay()
         first = self.scan(EXPLOITER).json()
@@ -618,6 +629,7 @@ class ScanEndpointTest(unittest.TestCase):
         self.assertEqual(replay.calls, [])
         self.assertEqual(r.json(), first)
 
+    @patch.object(intents, "model_info", new=lambda: {})
     def test_account_with_no_intents_txs_scans_empty(self):
         intents.TRANSPORT = Answer({"/account": EMPTY_INDEX})
         r = self.scan("someone.near")
@@ -629,7 +641,7 @@ class ScanEndpointTest(unittest.TestCase):
         alias = self.client.post("/v1/protocols/scan", json={"account_id": "someone.near"})
         self.assertEqual(alias.json(), b)
 
-    @unittest.skipUnless(MODEL.exists(), "frozen intents model not present")
+    @unittest.skipUnless(HAS_MODEL, MODEL_SKIP)
     def test_incomplete_low_is_counted_as_inconclusive_not_no_known_pattern(self):
         index = json.dumps({"account_txs": [{"transaction_hash": DANGLING}]}).encode()
         intents.TRANSPORT = Answer({"/account": index, "/transactions": DANGLING_BODY})
@@ -646,12 +658,14 @@ class ScanEndpointTest(unittest.TestCase):
                 self.assertEqual(self.scan(account_id).status_code, 422)
         self.assertEqual(self.client.post("/v1/intents/scan", json={}).status_code, 422)
 
+    @patch.object(intents, "model_info", new=lambda: {})
     def test_fastnear_down_is_502_with_reason(self):
         intents.TRANSPORT = intents.transport(CLOSED_PORT, timeout=2.0)
         r = self.scan("someone.near")
         self.assertEqual(r.status_code, 502, r.text)
         self.assertIn("FastNEAR", r.json()["detail"])
 
+    @patch.object(intents, "model_info", new=lambda: {})
     def test_fastnear_timeout_is_504_within_the_timeout(self):
         server = TrickleServer(gap=0.25)
         self.addCleanup(server.close)
@@ -662,6 +676,7 @@ class ScanEndpointTest(unittest.TestCase):
         self.assertEqual(r.status_code, 504, r.text)
         self.assertIn("FastNEAR did not answer within 1 s", r.json()["detail"])
 
+    @patch.object(intents, "model_info", new=lambda: {})
     def test_fastnear_body_of_the_wrong_shape_is_502_without_raw_data(self):
         cases = [{"/account": b'{"account_txs":"JUNKJUNK"}'},
                  {"/account": b'{"account_txs":[{"transaction_hash":"JUNKJUNK"}]}'},
@@ -678,6 +693,7 @@ class ScanEndpointTest(unittest.TestCase):
                 self.assertNotIn("JUNK", detail)
                 self.assertLessEqual(len(detail), 300)
 
+    @patch.object(intents, "model_info", new=lambda: {})
     def test_unreadable_scan_is_not_cached(self):
         intents.TRANSPORT = Answer({"/account": b"[]"})
         self.assertEqual(self.scan("someone.near").status_code, 502)

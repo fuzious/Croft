@@ -6,6 +6,7 @@ node_modules/
 target/
 dist/
 .claude/
+.impeccable/
 
 # Local datasets, model weights and caches
 data/

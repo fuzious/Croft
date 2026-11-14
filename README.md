@@ -52,28 +52,38 @@ are covered; missing or ambiguous evidence stays inconclusive.
 A protocol scan scores up to **20 Intents transactions among an account's 40 most recent**, cached five minutes.
 This is a bounded scan, not continuous monitoring or a complete account audit.
 
-## Attack families
+## Evidence at a glance
 
-The taxonomy adapts the value-flow and grouped-evaluation approach from `main` to NEAR's asynchronous execution.
-A supported pattern covers part of a family, not every attack in it.
+The **accounting check** reconciles deposit, refund and surviving credit events. Against recorded sandbox
+contract state and real case labels:
 
-| Family | Current evidence |
+| Evidence set | High accounting findings |
+|---|---:|
+| Sandbox: measured credit defects | **712 / 712** |
+| Sandbox: other unpatched executions | **0 / 2,953** |
+| Sandbox: patched verifier | **0 / 349** |
+| Known real exploits | **23 / 23** |
+| Sampled historical normals | **0 / 100,098** |
+
+**Agreement with recorded ground truth, not unseen-attack accuracy.** The 4,014 sandbox runs repeat controlled
+recipes; 1,189 lack direct state measurements. Of the historical normals, 25,336 were checked, 4,984 inconclusive
+and 69,778 unsupported. Zero findings does not mean every transaction was checked safe.
+[Validation and limits](near/intents/reports/RESULTS.md)
+
+## Coverage
+
+**11-category taxonomy; served rules cover 3:** callback accounting, access-control abuse and resource exhaustion.
+Categories describe patterns, not verified root causes.
+
+| Covered evidence | Still needs protocol-specific checks |
 |---|---|
-| Callback accounting | Deposit, refund and surviving credit events |
-| Access-control abuse | Direct private/admin calls and repeated rejected probes |
-| Token spoofing | Some direct receiver probes; asset authenticity needs a registry |
-| Resource exhaustion | Callback gas, log and return-value failures |
-| Async state race / reentrancy | Needs interleaved execution and protocol state |
-| Replay / signature abuse | Needs signature, nonce and historical key verification |
-| Oracle / price manipulation | Needs trusted prices and valuation rules |
-| Arithmetic / rounding | Needs contract arithmetic and state deltas |
-| Share / claim accounting | Needs share supply and redemption state |
-| Protocol accounting logic | Needs a protocol-specific state model |
-| Bridge validation | Needs source-chain proofs and bridge state |
+| Failed callbacks and retained credit after refund | Token authenticity; async races / reentrancy |
+| Direct private/admin calls | Signatures, replay and historical keys |
+| Callback gas and log failures | Prices, arithmetic, shares, protocol balances and bridge proofs |
 
-[Category definitions and sources](near/intents/fixtures/attack_taxonomy.json).
-Training keeps real attacks, controlled sandbox attempts and unlabelled traffic separate; held-out method/mode
-variants and whole-family tests are reported separately from mainnet measurements.
+**Wallet drainers are not covered.** [Full taxonomy](near/intents/fixtures/attack_taxonomy.json).
+The anomaly model added no campaign detections. The new research candidate was **rejected** because of false
+alarms; the served `intents_v1` model and rules remain unchanged.
 
 ## Try it
 
@@ -82,25 +92,17 @@ variants and whole-family tests are reported separately from mainnet measurement
 uv run uvicorn near.service.app:app --port 8000
 # Open http://localhost:8000/demo/
 
-# Deterministic evidence replay; no network or keys
+# Recorded evidence; no network or keys
 uv run python -m near.demo.replay
 ```
 
 | Demo input | What to show |
 |---|---|
-| October exploit preset | High-severity callback, log and credit evidence |
-| Normal deposit preset | No known attack pattern, with coverage shown |
-| Known missed token-spoof preset | A real detection limitation, clearly labelled |
-| `intents.near` or October exploiter scan | Recent transactions; open any row for the full analysis |
-
-## Evidence, not a guarantee
-
-![Retrospective Intents campaign detections.](docs/assets/results.svg)
-
-**23/23** October exploit transactions flagged high; one known technique repeated by one actor.
-**0/7,400** clean normal test transactions flagged high (95% upper bound: 0.052%). Rules were developed after
-seeing the campaigns. The anomaly model added no campaign detections and produced **84/7,400 medium alerts**.
-[Detailed evaluation](near/intents/reports/RESULTS.md)
+| October exploit | High-severity callback, log and retained-credit evidence |
+| Normal deposit | No known pattern, with coverage shown |
+| April callback attempt | Out-of-gas callback evidence; medium severity |
+| Not flagged: rejected overdraw probe | A failed probe with no detected attack pattern |
+| `intents.near` or exploiter account | Recent transactions; open a row to inspect evidence |
 
 ## Optional integrations
 

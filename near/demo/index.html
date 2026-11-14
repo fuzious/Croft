@@ -14,13 +14,13 @@
 :root{
   color-scheme:dark;
   --fs-xs:12px;--fs-mono:13px;--fs-sm:14px;--fs-md:16px;--fs-lg:20px;
-  --bg:#07090A;--surface:#0D1011;--field:#090B0C;--raised:#141819;
-  --line:rgba(255,255,255,.08);--field-line:rgba(255,255,255,.18);
+  --bg:#0A0C0D;--surface:#101314;--field:#0A0C0D;--raised:#161A1B;
+  --line:rgba(255,255,255,.075);--field-line:rgba(255,255,255,.18);
   --text:#ECEFEE;--text-2:#8C9693;--icon:#B8C2BF;
   --accent:#00EC97;--on-accent:#04140D;--focus:#00EC97;
   --allow:#17C964;--warn:#F5A524;--block:#F31260;
   --allow-bg:rgba(23,201,100,.12);--warn-bg:rgba(245,165,36,.12);--block-bg:rgba(243,18,96,.14);
-  --track:rgba(255,255,255,.08);--shadow:0 1px 0 rgba(255,255,255,.04) inset,0 20px 40px -24px rgba(0,0,0,.6);
+  --track:rgba(255,255,255,.08);--shadow:none;
   --sans:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme:light){:root{
@@ -31,11 +31,11 @@
   --accent:#00D688;
   --allow:#0E7A3C;--warn:#8A5A00;--block:#C20E4D;
   --allow-bg:rgba(14,122,60,.10);--warn-bg:rgba(138,90,0,.10);--block-bg:rgba(194,14,77,.10);
-  --track:rgba(8,24,18,.08);--shadow:0 1px 2px rgba(8,24,18,.04),0 12px 32px -20px rgba(8,24,18,.18);
+  --track:rgba(8,24,18,.08);--shadow:0 1px 2px rgba(8,24,18,.04);
 }}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html{scroll-behavior:smooth;scroll-padding-top:16px}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
 body{margin:0;background:var(--bg);color:var(--text);font:var(--fs-sm)/1.6 var(--sans);-webkit-font-smoothing:antialiased}
 h1,h2,h3{text-wrap:balance;margin:0;font-weight:600}
 p{text-wrap:pretty;margin:0}
@@ -48,14 +48,16 @@ main{max-width:1280px;margin:auto;padding:0 24px 40px}
 .muted{color:var(--text-2)}
 .small{font-size:var(--fs-xs)}
 
-.top{border-bottom:1px solid var(--line);margin-bottom:24px}
-.top-in{max-width:1280px;margin:auto;padding:16px 24px}
-.top-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 24px}
-.brand{display:flex;align-items:center;gap:10px;min-width:0}
-.brand svg{width:28px;height:28px;flex:none}
+.top{position:sticky;top:0;z-index:20;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 85%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.top-in{max-width:1280px;margin:auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;font-weight:600;font-size:var(--fs-sm);letter-spacing:-.01em;white-space:nowrap;text-decoration:none}
+.brand svg{width:24px;height:24px;flex:none}
+.intro{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px 32px;padding:32px 0 24px}
 h1{font-size:var(--fs-lg);line-height:1.3;letter-spacing:-.015em}
-.lede{color:var(--text-2);margin-top:6px}
-.chips{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--text-2)}
+.lede{color:var(--text-2);margin-top:4px;max-width:680px}
+.coverage{display:inline-flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--text-2);white-space:nowrap}
+.coverage b{font-weight:500;color:var(--text)}
+.chips{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--text-2)}
 .chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);white-space:nowrap}
 .chip .num{font-size:var(--fs-xs);color:var(--text)}
 .chip .dot{width:7px;height:7px;border-radius:50%;background:var(--text-2)}
@@ -63,17 +65,19 @@ h1{font-size:var(--fs-lg);line-height:1.3;letter-spacing:-.015em}
 .chip.down .dot{background:var(--warn)}
 .chip a{text-decoration:none;color:var(--text)}
 
-.grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:20px;align-items:start;margin-bottom:20px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:28px;min-width:0}
-.card-head{margin-bottom:20px}
-h2{font-size:var(--fs-lg);line-height:1.3;letter-spacing:-.015em}
+/* Primary check on the left grows with its result; scan and track record stack beside it. */
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px;align-items:start;margin-bottom:20px}
+.side{display:grid;gap:20px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:20px 24px 24px;min-width:0}
+.card-head{margin:-20px -24px 20px;padding:16px 24px;border-bottom:1px solid var(--line)}
+h2{font-size:var(--fs-md);line-height:1.4;letter-spacing:-.01em}
 h3{font-size:var(--fs-sm);line-height:1.4}
 .sub{color:var(--text-2);margin-top:2px}
 
 .row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
 label{display:flex;flex-direction:column;gap:6px;font-size:var(--fs-xs);font-weight:500;color:var(--text-2);flex:1;min-width:150px}
 input,select,textarea{width:100%;min-width:0;background:var(--field);border:1px solid var(--field-line);border-radius:6px;padding:0 12px;color:var(--text);font-size:var(--fs-sm);transition:border-color .15s}
-input,select{height:44px}
+input,select{height:40px}
 .mono-input{font:var(--fs-mono) var(--mono)}
 input::placeholder{color:var(--text-2);opacity:.8}
 input:hover,select:hover,textarea:hover{border-color:var(--text-2)}
@@ -82,10 +86,10 @@ input[aria-invalid="true"]{border-color:var(--warn)}
 textarea{min-height:260px;padding:12px;font:var(--fs-mono)/1.6 var(--mono);resize:vertical;white-space:pre;overflow-x:auto}
 .field-err{font-size:var(--fs-xs);color:var(--warn);margin-top:8px}
 .field-err:empty{display:none}
-.history-option{display:flex;flex-direction:row;align-items:center;gap:8px;min-height:36px;min-width:0;margin-top:8px;cursor:pointer}
+.history-option{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:36px;min-width:0;margin-top:8px;cursor:pointer}
 .history-option input{width:16px;height:16px;flex:none;margin:0;accent-color:var(--accent)}
 
-.btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 20px;border:1px solid transparent;border-radius:8px;background:var(--accent);color:var(--on-accent);font-size:var(--fs-sm);font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;transition:filter .15s,background-color .15s,border-color .15s}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 18px;border:1px solid transparent;border-radius:8px;background:var(--accent);color:var(--on-accent);font-size:var(--fs-sm);font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;transition:filter .15s,background-color .15s,border-color .15s}
 .btn:hover{filter:brightness(1.08);opacity:1}
 .btn:disabled{opacity:.5;cursor:progress}
 .presets{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
@@ -130,7 +134,7 @@ textarea{min-height:260px;padding:12px;font:var(--fs-mono)/1.6 var(--mono);resiz
 .rule-title{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
 .rule-title code{font-size:var(--fs-xs);color:var(--text-2)}
 .sev{display:inline-flex;align-items:center;justify-content:center;height:22px;padding:0 8px;border-radius:999px;font-size:var(--fs-xs);font-weight:600;border:1px solid var(--line);width:max-content}
-.sev.high{color:var(--text);border-color:var(--field-line)}
+.sev.high{color:var(--block);background:var(--block-bg);border-color:transparent}
 .sev.medium{color:var(--warn);background:var(--warn-bg);border-color:transparent}
 .sev.low{color:var(--text-2)}
 .section-label{margin-top:20px;color:var(--text)}
@@ -188,16 +192,25 @@ details>summary:hover{color:var(--text)}
 .record td small{display:block;font-size:var(--fs-xs);color:var(--text-2)}
 .record tr.fa td{color:var(--text-2)}
 .record td.n:before{content:attr(data-k);display:none;font:var(--fs-xs)/1.6 var(--sans);color:var(--text-2)}
+.side .record thead{display:none}
+.side .record tr{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;border-top:1px solid var(--line);padding:12px 0}
+.side .record tr:first-child{border-top:0;padding-top:0}
+.side .record td{border-top:0;padding:0}
+.side .record td:first-child{grid-column:1/-1;margin-bottom:8px}
+.side .record td.n{text-align:left;padding-left:0}
+.side .record td.n:before{display:block}
 .caveat{margin-top:12px;font-size:var(--fs-xs);color:var(--text-2)}
 .caveat strong{color:var(--text);font-weight:500}
 
 pre{background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0 0;overflow:auto;font-size:var(--fs-xs);line-height:1.7;white-space:pre-wrap}
-.code-card>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;list-style:none;width:auto;color:var(--text);min-height:44px}
+.code-card{padding:0}
+.code-card>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;list-style:none;width:auto;color:var(--text);min-height:44px;padding:16px 24px}
+.code-card[open]>summary{border-bottom:1px solid var(--line)}
 .code-card>summary::-webkit-details-marker{display:none}
 .code-card>summary:after{content:"+";font:400 var(--fs-lg)/1 var(--mono);color:var(--text-2)}
 .code-card[open]>summary:after{content:"\2212"}
 .code-card>summary .sub{display:block;margin-top:6px}
-.code-body{padding-top:20px}
+.code-body{padding:20px 24px 24px}
 .code-grid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:28px}
 .code-grid label{margin-bottom:12px}
 .stat{padding:12px 0;border-top:1px solid var(--line);font-size:var(--fs-xs);color:var(--text-2)}
@@ -214,17 +227,23 @@ pre{background:var(--raised);border:1px solid var(--line);border-radius:12px;pad
 .foot{display:flex;justify-content:space-between;gap:24px;margin-top:20px;padding-top:24px;border-top:1px solid var(--line);font-size:var(--fs-xs);color:var(--text-2)}
 .foot p{max-width:760px}
 
-@media (max-width:1024px){
-  .grid,.code-grid{grid-template-columns:minmax(0,1fr)}
+@media (max-width:1100px){
+  .workspace,.code-grid{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:600px){
   main{padding:0 16px 28px}
-  .top-in{padding:14px 16px}
-  .top{margin-bottom:16px}
+  .top-in{padding:0 16px;gap:8px}
+  .brand span{overflow:hidden;text-overflow:ellipsis}
+  .chips>:not(#netChip){display:none}
+  .intro{padding:20px 0 16px}
   input,select,.mono-input{font-size:var(--fs-md)}
   textarea{font-size:var(--fs-sm)}
-  .card{padding:20px 16px}
-  .grid{gap:16px;margin-bottom:16px}
+  .card{padding:16px 16px 20px}
+  .card-head{margin:-16px -16px 16px;padding:14px 16px}
+  .code-card{padding:0}
+  .code-card>summary{padding:14px 16px}
+  .code-body{padding:16px}
+  .workspace,.side{gap:16px;margin-bottom:16px}
   .row label{flex:1 1 100%}
   .row .btn{flex:1 1 100%}
   .verdict{padding:14px 12px;gap:12px}
@@ -253,15 +272,17 @@ pre{background:var(--raised);border:1px solid var(--line);border-radius:12px;pad
 <body>
 <header class="top">
   <div class="top-in">
-    <div class="top-row">
-      <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M16 6.5 8.5 9.5v6c0 4.6 3.1 8 7.5 9.5 4.4-1.5 7.5-4.9 7.5-9.5v-6L16 6.5Z" fill="none" stroke="var(--on-accent)" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="15.5" r="2.6" fill="var(--on-accent)"/></svg><h1>NEAR protocol security agent</h1></div>
+      <a class="brand" href="#" aria-label="NEAR protocol security agent, back to top"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M16 6.5 8.5 9.5v6c0 4.6 3.1 8 7.5 9.5 4.4-1.5 7.5-4.9 7.5-9.5v-6L16 6.5Z" fill="none" stroke="var(--on-accent)" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="15.5" r="2.6" fill="var(--on-accent)"/></svg><span>NEAR protocol security agent</span></a>
       <div class="chips"><span class="chip" id="netChip"><span class="dot" aria-hidden="true"></span><span id="net">Connecting…</span></span><span class="chip" id="modelChip" hidden>Model <span class="num" id="model"></span></span><span class="chip"><a href="/docs">API docs</a></span></div>
-    </div>
-    <p class="lede">Paste a NEAR transaction to inspect its receipt graph for known attack patterns. Calibrated coverage: NEAR Intents. Other protocols are marked unsupported.</p>
   </div>
 </header>
 <main>
-  <div class="grid">
+  <section class="intro" aria-labelledby="page-title">
+    <div><h1 id="page-title">Inspect NEAR transactions for known attack patterns</h1>
+      <p class="lede">Paste a transaction to inspect its receipt graph, token accounting and earlier related activity. Other protocols are marked unsupported.</p></div>
+    <p class="coverage">Calibrated coverage <b>NEAR Intents</b></p>
+  </section>
+  <div class="workspace">
     <section class="card" id="check" aria-labelledby="check-title">
       <div class="card-head"><h2 id="check-title">Check a transaction</h2><p class="sub">Inspect receipt rules, observed token accounting and earlier related activity.</p></div>
       <form id="scoreForm" novalidate><div class="row">
@@ -272,6 +293,7 @@ pre{background:var(--raised);border:1px solid var(--line);border-radius:12px;pad
       <div class="out" id="scoreOut" aria-live="polite"><div class="empty">Pick an example or paste a hash to see the assessment, evidence coverage and rules that fired.</div></div>
     </section>
 
+    <aside class="side">
     <section class="card" id="scan" aria-labelledby="scan-title">
       <div class="card-head"><h2 id="scan-title">Scan a protocol or account</h2><p class="sub">Checks up to 20 NEAR Intents transactions among the account's 40 most recent. This is a bounded activity scan, not a protocol audit.</p></div>
       <form id="scanForm" novalidate><div class="row">
@@ -281,22 +303,46 @@ pre{background:var(--raised);border:1px solid var(--line);border-radius:12px;pad
       <div class="presets" id="scanPresets" aria-label="Example accounts"><span>Try</span></div>
       <div class="out" id="scanOut" aria-live="polite"><div class="empty">Scan for observed attack patterns in recent Intents activity. Missing receipts and gaps in protocol coverage remain explicit. Select a row to inspect it.</div></div>
     </section>
-  </div>
 
-  <section class="card" id="record" aria-labelledby="record-title" style="margin-bottom:20px">
-    <div class="card-head"><h2 id="record-title">Track record</h2><p class="sub">Recorded mainnet attacks on NEAR Intents, scored by the frozen detector.</p></div>
+  <section class="card" id="record" aria-labelledby="record-title">
+    <div class="card-head"><h2 id="record-title">Accounting validation</h2><p class="sub">Agreement with recorded contract state and case labels. Not unseen-attack accuracy.</p></div>
+    <table class="record" aria-label="Accounting validation across five datasets">
+      <thead><tr><th scope="col">Dataset</th><th scope="col" class="n">High findings</th><th scope="col" class="n">Accounting checked</th></tr></thead>
+      <tbody>
+        <tr><td>Sandbox: measured credit defects</td><td class="n" data-k="High findings">712 / 712</td><td class="n" data-k="Accounting checked">712 / 712</td></tr>
+        <tr><td>Sandbox: other unpatched runs</td><td class="n" data-k="High findings">0 / 2,953</td><td class="n" data-k="Accounting checked">1,849 / 2,953</td></tr>
+        <tr><td>Sandbox: patched verifier</td><td class="n" data-k="High findings">0 / 349</td><td class="n" data-k="Accounting checked">109 / 349</td></tr>
+        <tr><td>Recorded October exploits<small>One attacker, one repeated technique</small></td><td class="n" data-k="High findings">23 / 23</td><td class="n" data-k="Accounting checked">23 / 23</td></tr>
+        <tr><td>Historical sampled normals</td><td class="n" data-k="High findings">0 / 100,098</td><td class="n" data-k="Accounting checked">25,336 / 100,098</td></tr>
+      </tbody>
+    </table>
+    <p class="caveat">Across 4,014 sandbox runs: 712 / 712 measured defects flagged; 0 / 3,302 other runs flagged. Of those other runs, 1,189 lack direct state measurements. Normals include 4,984 inconclusive and 69,778 unsupported flows. <strong>No finding does not mean safe.</strong></p>
+    <details style="margin-top:16px"><summary>Campaign results &amp; limits</summary>
+      <p class="caption">Frozen intents_v1 + rules. Each campaign uses the same thresholds as the normal-alert row.</p>
     <table class="record">
       <thead><tr><th scope="col">Attack</th><th scope="col" class="n">High-severity pattern</th><th scope="col" class="n">Suspicious or higher</th></tr></thead>
       <tbody>
         <tr><td>Sep 29 – Oct 1 2026 exploit, about $3.8M<small>Deposit callback overflows its log; credit kept while the token refunds</small></td><td class="n" data-k="High-severity pattern">23 / 23</td><td class="n" data-k="Suspicious or higher">23 / 23</td></tr>
-        <tr><td>Apr 2026 out-of-gas attempts<small>Callback runs out of gas inside a deposit</small></td><td class="n" data-k="High-severity pattern">0 / 55</td><td class="n" data-k="Suspicious or higher">53 / 55</td></tr>
+        <tr><td>Apr 2026 out-of-gas attempts<small>41 of 53 flags only mean “deposit used Notify”; they do not identify out-of-gas behavior</small></td><td class="n" data-k="High-severity pattern">0 / 55</td><td class="n" data-k="Suspicious or higher">53 / 55</td></tr>
         <tr><td>May 2026 admin fuzzing<small>Private or admin methods called by an outsider</small></td><td class="n" data-k="High-severity pattern">0 / 177</td><td class="n" data-k="Suspicious or higher">110 / 177</td></tr>
-        <tr><td>May 2026 token spoofing<small>Fake-token deposits; mostly missed because they look like normal failed intents</small></td><td class="n" data-k="High-severity pattern">0 / 182</td><td class="n" data-k="Suspicious or higher">18 / 182</td></tr>
+        <tr><td>May 2026 “token spoofing” campaign<small>Campaign label; these rules do not verify token authenticity</small></td><td class="n" data-k="High-severity pattern">0 / 182</td><td class="n" data-k="Suspicious or higher">18 / 182</td></tr>
         <tr class="fa"><td>False alarms on 7,400 unseen normal transactions<small>80 of the 84 came from one hour when Intents was paused; all 84 came from the anomaly model, none from the rules</small></td><td class="n" data-k="High-severity pattern">0 / 7,400</td><td class="n" data-k="Suspicious or higher">84 / 7,400</td></tr>
       </tbody>
     </table>
-    <p class="caveat"><strong>Retrospective: rules were written after these attacks.</strong> The 23 exploit transactions are one attacker repeating one technique. These are case studies, not an estimate of how many new attacks it would catch.</p>
+      <p class="caveat"><strong>Retrospective: rules were written after these attacks.</strong> These are case studies, not an estimate of new-attack accuracy.</p>
+      <h3 class="section-label">What the receipt rules see</h3>
+      <table class="record" aria-label="Frozen receipt-rule coverage by mechanism">
+        <thead><tr><th scope="col">Mechanism</th><th scope="col" class="n">Flagged</th><th scope="col" class="n">Normal alerts</th></tr></thead>
+        <tbody>
+          <tr><td>Receipt-visible signals<small>Includes generic Notify usage, not just exploit-specific signals</small></td><td class="n" data-k="Flagged medium+">204 / 204</td><td class="n" data-k="Normal alerts medium+">0 / 7,400</td></tr>
+          <tr><td>Signed-intent and other campaign calls<small>194 signed-intent probes + 39 other calls</small></td><td class="n" data-k="Flagged medium+">0 / 233</td><td class="n" data-k="Normal alerts medium+">0 / 7,400</td></tr>
+        </tbody>
+      </table>
+      <p class="caveat">Rules alone shown here; the anomaly model adds the 84 normal alerts above. The v2 sandbox is a variant holdout of four scripted recipes: 6 measured exploits across all splits, not independent attack techniques. The research model was rejected; serving stays on intents_v1.</p>
+    </details>
   </section>
+    </aside>
+  </div>
 
   <details class="card code-card" id="code-inspection"><summary><span><h2 style="display:inline">Contract code check (supporting signal)</h2><span class="sub">Scores Rust contract source for known bug patterns. Most real bugs are missed.</span></span></summary>
     <div class="code-body"><div class="code-grid"><div>
@@ -307,7 +353,7 @@ pre{background:var(--raised);border:1px solid var(--line);border-radius:12px;pad
     </div><aside aria-label="Code model evaluation"><div id="stats"></div><p class="caption">Sealed test of v1. The optional v2 was not measurably better on test_v1c, which is not sealed. See near/model/reports/RESULTS.md.</p></aside></div></div>
   </details>
 
-  <footer class="foot"><p>Prototype, not an audit. It flags transactions that match known attack patterns after they land; it does not prevent attacks. The detector was trained, calibrated and tested on NEAR Intents traffic. Other protocols are unsupported; incomplete graphs can hide evidence. No known pattern does not mean safe.</p><a href="/docs">API reference</a></footer>
+  <footer class="foot"><p>Prototype, not an audit. Checks transactions after they land. An 11-category taxonomy describes attack types; served rules cover 3: callback accounting, access control and resource exhaustion. Token authenticity and wallet drainers are not covered. Calibrated only on NEAR Intents; other protocols are unsupported. Incomplete graphs can hide evidence. No known pattern does not mean safe.</p><a href="/docs">API reference</a></footer>
 </main>
 <script type="module">
 const $ = id => document.getElementById(id);
@@ -318,16 +364,16 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 // Real mainnet transactions from the labelled set (near/data/intents); labels as scored by the frozen model.
 const TX_PRESETS = [
   {label: "Oct 2026 exploit", hash: "3k91uDpUiezxUe7hBgAR7kc3TBkToMZKGAiv6GqbtKiC"},
-  {label: "Apr 2026 out-of-gas attempt", hash: "2b4V5vJJmVA7mLXtQR99SA24ssbStTTBW7WcxW6k3qru"},
+  {label: "Apr 2026 out-of-gas attempt", hash: "Ete7rqrC1EFpj2ZFK4BY2vqDHtTUXmiHqfwsg1mR3k5i"},
   {label: "May 2026 admin fuzzing", hash: "BchE3fwPtgfURL4aFQpDEczFuceM8MR5qaVtBX5Krudx"},
   {label: "Normal deposit", hash: "8tTzvGLMV7x1swmF2A5m3zDugCimdwmDrTXDTvKsJvj"},
-  // An attack the detector misses: shown on purpose.
-  {label: "Missed: token spoof", hash: "F5cgTm3kN8XBseeqWhScwure4ARBXUPqVV5JgU9mPvze"},
+  // A rejected probe with no high/medium rule evidence: shown on purpose.
+  {label: "Not flagged: rejected overdraw probe", hash: "F5cgTm3kN8XBseeqWhScwure4ARBXUPqVV5JgU9mPvze"},
 ];
-// Labelled attacks the detector misses; the page says so instead of letting the low label speak alone.
+// Explain a campaign-labelled probe without implying that its exploit succeeded.
 const KNOWN_MISSES = {
-  F5cgTm3kN8XBseeqWhScwure4ARBXUPqVV5JgU9mPvze: "<strong>Known miss:</strong> this is a May 2026 token-spoof attack attempt. "
-    + "Only 18 of 182 in that campaign were caught; most look like normal failed intents.",
+  F5cgTm3kN8XBseeqWhScwure4ARBXUPqVV5JgU9mPvze: "<strong>Not flagged:</strong> this overdraw probe was rejected with “insufficient balance or overflow”. "
+    + "It belongs to the campaign labelled token spoofing; this receipt does not establish token spoofing or a successful exploit. The detector does not check token authenticity.",
 };
 const SCAN_PRESETS = [
   {label: "intents.near (live)", id: "intents.near"},

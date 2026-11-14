@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from near.intents import history
 from near.service import app, intents
-from near.service.test_intents import EXPLOIT, NORMAL, MODEL, Replay, recorded_tx
+from near.service.test_intents import EXPLOIT, NORMAL, HAS_MODEL, MODEL_SKIP, Replay, recorded_tx
 
 
 def baseline(label="low"):
@@ -168,7 +168,7 @@ class EvidenceIntegrationTest(unittest.TestCase):
         self.assertTrue(body["history"]["coverage"]["requested"])
         self.assertEqual(len(transport.calls), 2)
 
-    @unittest.skipUnless(MODEL.exists(), "frozen Intents model is not present")
+    @unittest.skipUnless(HAS_MODEL, MODEL_SKIP)
     def test_recorded_scan_adds_history_without_extra_network_requests(self):
         from near.service.test_intents import EXPLOITER
         intents.clear_cache()

@@ -1,0 +1,185 @@
+{
+  "kind": "accounting_ground_truth_agreement",
+  "completed_at": "2026-11-14T18:34:15.406506+00:00",
+  "no_training": true,
+  "source_sha256": {
+    "near/intents/validate_accounting.py": "5b6d33668059e01b04d61b61e8dc38d1975d700a24513f2c054e4548bdaaf229",
+    "near/intents/accounting.py": "6fb77c771bb49a9ff66a5202cdfec04922a956b363e6173252af8096cdd94373",
+    "near/intents/features.py": "3f8110f88717a8557f8cba6183cf2535b236bf5a2ec06776ee0ea90cd233115d"
+  },
+  "inputs": [
+    {
+      "path": "near/data/intents/synthetic/attacks.jsonl.gz",
+      "sha256": "8e68d34f7fd74ece43e9e22d1770522347788b42c18845156be29f02d62cbe9e",
+      "rows_scored": 2400,
+      "groups": {
+        "sandbox_state_positive": 706,
+        "sandbox_other_unpatched": 1694
+      },
+      "verifier_versions": {
+        "v0.4.2": 2400
+      },
+      "sandbox_run_ids": {
+        "not_recorded": 2400
+      }
+    },
+    {
+      "path": "near/data/intents/synthetic/benign.jsonl.gz",
+      "sha256": "8074ecdcda4f6734813904b809dc1cfbbcaa10c7b14ae525359dac6b7fd5e79a",
+      "rows_scored": 992,
+      "groups": {
+        "sandbox_other_unpatched": 992
+      },
+      "verifier_versions": {
+        "v0.4.2": 992
+      },
+      "sandbox_run_ids": {
+        "not_recorded": 992
+      }
+    },
+    {
+      "path": "near/data/intents/synthetic/fixed_v0.4.3-backport.jsonl.gz",
+      "sha256": "deb76b020b95eb40b8d17321d50a7095133941b54615e836be58f3455d866adb",
+      "rows_scored": 349,
+      "groups": {
+        "sandbox_patched": 349
+      },
+      "verifier_versions": {
+        "v0.4.3-backport": 349
+      },
+      "sandbox_run_ids": {
+        "not_recorded": 349
+      }
+    },
+    {
+      "path": "near/data/intents/v2_synthetic/train.jsonl.gz",
+      "sha256": "55cce7f224ff74d2689c294530af1f6e2e97e0ee94e5582d52c9205598964f5a",
+      "rows_scored": 91,
+      "groups": {
+        "sandbox_other_unpatched": 88,
+        "sandbox_state_positive": 3
+      },
+      "verifier_versions": {
+        "v0.4.2": 91
+      },
+      "sandbox_run_ids": {
+        "families-v2-base-20261114": 85,
+        "families-v2-supplement-20261114": 6
+      }
+    },
+    {
+      "path": "near/data/intents/v2_synthetic/validation.jsonl.gz",
+      "sha256": "17d7fea1808035d145f6eaa55aadc27adb3374bafa32e55843d60be0ac422f14",
+      "rows_scored": 91,
+      "groups": {
+        "sandbox_other_unpatched": 90,
+        "sandbox_state_positive": 1
+      },
+      "verifier_versions": {
+        "v0.4.2": 91
+      },
+      "sandbox_run_ids": {
+        "families-v2-base-20261114": 85,
+        "families-v2-supplement-20261114": 6
+      }
+    },
+    {
+      "path": "near/data/intents/v2_synthetic/test.jsonl.gz",
+      "sha256": "b6c73187d96c3aeb07d1653b9156419b3b1e9ae5174d6be7b5dc15bf4633b223",
+      "rows_scored": 91,
+      "groups": {
+        "sandbox_other_unpatched": 89,
+        "sandbox_state_positive": 2
+      },
+      "verifier_versions": {
+        "v0.4.2": 91
+      },
+      "sandbox_run_ids": {
+        "families-v2-base-20261114": 85,
+        "families-v2-supplement-20261114": 6
+      }
+    },
+    {
+      "path": "near/data/intents/labelled.jsonl.gz",
+      "sha256": "f6557a7580dd7693be272d2c8e3c685da0fb7a512a8548729fba8995c7174d16",
+      "rows_scored": 23,
+      "groups": {
+        "real_exploits": 23
+      },
+      "verifier_versions": {},
+      "sandbox_run_ids": {}
+    },
+    {
+      "path": "near/data/intents/normals.jsonl.gz",
+      "sha256": "7a7ecb374fb03fffa1bbf5f71a26fa611336d938899e59e149178cc286b33aea",
+      "rows_scored": 100098,
+      "groups": {
+        "historical_normals": 100098
+      },
+      "verifier_versions": {},
+      "sandbox_run_ids": {}
+    }
+  ],
+  "groups": {
+    "sandbox_state_positive": {
+      "n": 712,
+      "high_findings": 712,
+      "checked": 712,
+      "inconclusive": 0,
+      "unsupported": 0,
+      "state_positive": 712
+    },
+    "sandbox_other_unpatched": {
+      "n": 2953,
+      "high_findings": 0,
+      "checked": 1849,
+      "inconclusive": 479,
+      "unsupported": 625,
+      "state_zero": 1887,
+      "state_not_measured": 1066
+    },
+    "sandbox_patched": {
+      "n": 349,
+      "high_findings": 0,
+      "checked": 109,
+      "inconclusive": 159,
+      "unsupported": 81,
+      "state_not_measured": 123,
+      "state_zero": 226
+    },
+    "real_exploits": {
+      "n": 23,
+      "high_findings": 23,
+      "checked": 23,
+      "inconclusive": 0,
+      "unsupported": 0
+    },
+    "historical_normals": {
+      "n": 100098,
+      "high_findings": 0,
+      "checked": 25336,
+      "inconclusive": 4984,
+      "unsupported": 69778
+    }
+  },
+  "sandbox": {
+    "n": 4014,
+    "state_measurements": {
+      "positive": 712,
+      "zero": 2113,
+      "not_measured": 1189
+    },
+    "measured_state_disagreements": [],
+    "other_high_findings": 0
+  },
+  "unique_transactions_scored": 104135,
+  "duplicate_transactions": 0,
+  "interpretation": "Agreement with recorded ground truth and case labels, not unseen-attack accuracy.",
+  "limits": [
+    "Only rows with a recorded ghost_credit value have a direct measured balance-state label.",
+    "Other sandbox executions include unmeasured benign flows and unsuccessful probes; they are not all independently proved state-negative.",
+    "Real exploit labels come from the existing retrospective campaign; real normals are the existing sampled dataset, not independently measured opening/closing balances.",
+    "Repeated scenarios share implementation and verifier builds, including patched runs; transactions are not independent attack techniques.",
+    "The no-high-finding totals include unsupported or inconclusive accounting; absence of a finding never establishes safety or protocol solvency."
+  ]
+}
