@@ -1,8 +1,9 @@
-# Croft · NEAR
+# Croft: Security Oracle · NEAR guide
 
-Investigate completed NEAR Intents transactions and review receipt, accounting and bounded history evidence.
-Findings do not prove safety, stop transactions or automatically block an account. Wallet drainers are outside coverage.
-[Transaction evidence](intents/reports/RESULTS.md) · [Source-model evidence](model/reports/RESULTS.md)
+Investigate completed NEAR Intents transactions and review receipt, accounting and bounded history evidence,
+and check a receiver before paying it (`/v1/check`: allow, warn or block).
+Transaction findings do not prove safety and never block an account on their own. Wallet drainers are outside coverage.
+[Presentation video](https://youtu.be/_q4_Ea43KwE) · [Transaction evidence](intents/reports/RESULTS.md) · [Source-model evidence](model/reports/RESULTS.md)
 
 ## Run
 
@@ -14,14 +15,14 @@ uv sync --locked
 uv run uvicorn near.service.app:app --port 8000
 ```
 
-Open <http://localhost:8000/demo/>, <http://localhost:8000/human/> or the [API schemas](http://localhost:8000/docs).
+Set `CROFT_API` to the address uvicorn prints, then open `$CROFT_API/demo/`, `$CROFT_API/human/` or `$CROFT_API/docs` (API schemas).
 The transaction demo needs no wallet, keys or Git LFS; live reads use FastNEAR mainnet.
 Keep it local: the review dashboard has no authentication, and public deployment needs quotas and report authentication.
 
 ```bash
-curl -s localhost:8000/v1/transactions/score -H 'content-type: application/json' \
+curl -s "$CROFT_API"/v1/transactions/score -H 'content-type: application/json' \
   -d '{"tx_hash":"3k91uDpUiezxUe7hBgAR7kc3TBkToMZKGAiv6GqbtKiC"}'
-curl -s localhost:8000/v1/protocols/scan -H 'content-type: application/json' \
+curl -s "$CROFT_API"/v1/protocols/scan -H 'content-type: application/json' \
   -d '{"account_id":"intents.near"}'
 uv run python -m near.demo.replay
 ```
@@ -83,7 +84,7 @@ Keep the admin token and signing seed on the backend; use a separate key per net
 4. Read `router.get_preapproval_nonce({"agent_id":"agent.human.testnet"})` and use that value below, not always `"0"`.
 
 ```bash
-curl --fail-with-body localhost:8000/v1/preapprovals \
+curl --fail-with-body "$CROFT_API"/v1/preapprovals \
   -H "Authorization: Bearer $ORACLE_ADMIN_TOKEN" -H 'Content-Type: application/json' \
   -d '{"consumer_id":"router.testnet","agent_id":"agent.human.testnet", "receiver_id":"shop.testnet",
        "amount":"1000000000000000000000000","nonce":"0","ttl_seconds":300}'
