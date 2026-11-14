@@ -1,0 +1,16 @@
+[workspace]
+resolver = "3"
+members = ["security_oracle", "guarded_router", "sandbox_tests"]
+# `cargo test` at this root runs the sandbox tests; contracts only build for wasm (cargo near build)
+default-members = ["sandbox_tests"]
+
+[workspace.dependencies]
+near-sdk = "5.30"
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true

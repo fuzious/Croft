@@ -1,0 +1,14 @@
+[package]
+name = "security_oracle"
+description = "NEAR Security Oracle: security_oracle contract"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.95"
+repository = "https://github.com/fuzious/security_oracle"
+license = "BUSL-1.1"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = { workspace = true }

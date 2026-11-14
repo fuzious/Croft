@@ -11,3 +11,10 @@ data/
 models/
 *.zip
 !archives/*.zip
+node_modules/
+target/
+.claude/
+
+# NEAR: out-of-fold / test score arrays ship in archives/near_models.zip
+near/model/reports/*.npy
+near/model/reports/*.npz

@@ -1,0 +1,69 @@
+66529 rows (396 dropped by split audit), 8729 label-1, 2181 groups; featurized in 29s (context: {'repo': 667, 'code': 85, 'row': 65777})
+== hgb
+    hgb: selected {'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.3} in 333s; grid [({'lr': 0.1, 'leaves': 31, 'svd': 0, 'top_tokens': 1000, 'info': 0.3}, 0.3201), ({'lr': 0.1, 'leaves': 31, 'svd': 0, 'top_tokens': 1000, 'info': 0.0}, 0.3238), ({'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.3}, 0.3361), ({'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.0}, 0.3216), ({'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.3}, 0.3277), ({'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.0}, 0.3328)]
+  outer fold 0: train 53223 test 13306 thresholds block=0.5998 warn=0.2455 params {'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.3}
+    hgb: selected {'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.0} in 338s; grid [({'lr': 0.1, 'leaves': 31, 'svd': 0, 'top_tokens': 1000, 'info': 0.3}, 0.3459), ({'lr': 0.1, 'leaves': 31, 'svd': 0, 'top_tokens': 1000, 'info': 0.0}, 0.3464), ({'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.3}, 0.3481), ({'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.0}, 0.329), ({'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.3}, 0.3515), ({'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.0}, 0.3694)]
+  outer fold 1: train 53223 test 13306 thresholds block=0.6834 warn=0.2923 params {'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.0}
+    hgb: selected {'lr': 0.1, 'leaves': 31, 'svd': 0, 'top_tokens': 1000, 'info': 0.3} in 312s; grid [({'lr': 0.1, 'leaves': 31, 'svd': 0, 'top_tokens': 1000, 'info': 0.3}, 0.3878), ({'lr': 0.1, 'leaves': 31, 'svd': 0, 'top_tokens': 1000, 'info': 0.0}, 0.3816), ({'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.3}, 0.3481), ({'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.0}, 0.3472), ({'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.3}, 0.3712), ({'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.0}, 0.3586)]
+  outer fold 2: train 53223 test 13306 thresholds block=0.6525 warn=0.3136 params {'lr': 0.1, 'leaves': 31, 'svd': 0, 'top_tokens': 1000, 'info': 0.3}
+    hgb: selected {'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.3} in 343s; grid [({'lr': 0.1, 'leaves': 31, 'svd': 0, 'top_tokens': 1000, 'info': 0.3}, 0.3418), ({'lr': 0.1, 'leaves': 31, 'svd': 0, 'top_tokens': 1000, 'info': 0.0}, 0.3315), ({'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.3}, 0.3486), ({'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.0}, 0.3097), ({'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.3}, 0.3333), ({'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.0}, 0.3324)]
+  outer fold 3: train 53223 test 13306 thresholds block=0.6196 warn=0.2479 params {'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.3}
+    hgb: selected {'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.3} in 368s; grid [({'lr': 0.1, 'leaves': 31, 'svd': 0, 'top_tokens': 1000, 'info': 0.3}, 0.3268), ({'lr': 0.1, 'leaves': 31, 'svd': 0, 'top_tokens': 1000, 'info': 0.0}, 0.3374), ({'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.3}, 0.3107), ({'lr': 0.1, 'leaves': 31, 'svd': 128, 'info': 0.0}, 0.292), ({'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.3}, 0.3487), ({'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.0}, 0.3365)]
+  outer fold 4: train 53224 test 13305 thresholds block=0.6617 warn=0.2711 params {'lr': 0.05, 'leaves': 63, 'iters': 600, 'svd': 0, 'top_tokens': 1000, 'info': 0.3}
+hgb: PR-AUC 0.680 ROC-AUC 0.897
+  block: real 58/376 = 15.4% [12.1%, 19.4%] mut 3309/8277 = 40.0% [38.9%, 41.0%] FPR-contract 461/46714 = 1.0% [0.9%, 1.1%] files 285/6500 = 4.4% [3.9%, 4.9%]
+  warn: real 113/376 = 30.1% [25.6%, 34.9%] mut 5266/8277 = 63.6% [62.6%, 64.7%] FPR-contract 2590/46714 = 5.5% [5.3%, 5.8%] files 1348/6500 = 20.7% [19.8%, 21.7%]
+== sgd
+    sgd: selected {'alpha': 3e-05, 'char': 1.0, 'info': 0.3} in 24s; grid [({'alpha': 3e-06, 'char': 0.0, 'info': 0.3}, 0.2223), ({'alpha': 3e-06, 'char': 1.0, 'info': 0.3}, 0.2605), ({'alpha': 1e-05, 'char': 0.0, 'info': 0.3}, 0.2575), ({'alpha': 1e-05, 'char': 1.0, 'info': 0.3}, 0.278), ({'alpha': 3e-05, 'char': 0.0, 'info': 0.3}, 0.2711), ({'alpha': 3e-05, 'char': 1.0, 'info': 0.3}, 0.3086)]
+  outer fold 0: train 53223 test 13306 thresholds block=0.7002 warn=0.3196 params {'alpha': 3e-05, 'char': 1.0, 'info': 0.3}
+    sgd: selected {'alpha': 3e-06, 'char': 1.0, 'info': 0.3} in 29s; grid [({'alpha': 3e-06, 'char': 0.0, 'info': 0.3}, 0.2625), ({'alpha': 3e-06, 'char': 1.0, 'info': 0.3}, 0.2845), ({'alpha': 1e-05, 'char': 0.0, 'info': 0.3}, 0.2371), ({'alpha': 1e-05, 'char': 1.0, 'info': 0.3}, 0.2779), ({'alpha': 3e-05, 'char': 0.0, 'info': 0.3}, 0.2426), ({'alpha': 3e-05, 'char': 1.0, 'info': 0.3}, 0.2718)]
+  outer fold 1: train 53223 test 13306 thresholds block=0.9984 warn=0.516 params {'alpha': 3e-06, 'char': 1.0, 'info': 0.3}
+    sgd: selected {'alpha': 3e-05, 'char': 1.0, 'info': 0.3} in 23s; grid [({'alpha': 3e-06, 'char': 0.0, 'info': 0.3}, 0.2659), ({'alpha': 3e-06, 'char': 1.0, 'info': 0.3}, 0.2461), ({'alpha': 1e-05, 'char': 0.0, 'info': 0.3}, 0.2682), ({'alpha': 1e-05, 'char': 1.0, 'info': 0.3}, 0.2721), ({'alpha': 3e-05, 'char': 0.0, 'info': 0.3}, 0.2746), ({'alpha': 3e-05, 'char': 1.0, 'info': 0.3}, 0.2921)]
+  outer fold 2: train 53223 test 13306 thresholds block=0.7879 warn=0.462 params {'alpha': 3e-05, 'char': 1.0, 'info': 0.3}
+    sgd: selected {'alpha': 3e-05, 'char': 0.0, 'info': 0.3} in 20s; grid [({'alpha': 3e-06, 'char': 0.0, 'info': 0.3}, 0.2328), ({'alpha': 3e-06, 'char': 1.0, 'info': 0.3}, 0.246), ({'alpha': 1e-05, 'char': 0.0, 'info': 0.3}, 0.2571), ({'alpha': 1e-05, 'char': 1.0, 'info': 0.3}, 0.2453), ({'alpha': 3e-05, 'char': 0.0, 'info': 0.3}, 0.2808), ({'alpha': 3e-05, 'char': 1.0, 'info': 0.3}, 0.2447)]
+  outer fold 3: train 53223 test 13306 thresholds block=0.7462 warn=0.4421 params {'alpha': 3e-05, 'char': 0.0, 'info': 0.3}
+    sgd: selected {'alpha': 1e-05, 'char': 1.0, 'info': 0.3} in 21s; grid [({'alpha': 3e-06, 'char': 0.0, 'info': 0.3}, 0.2539), ({'alpha': 3e-06, 'char': 1.0, 'info': 0.3}, 0.2856), ({'alpha': 1e-05, 'char': 0.0, 'info': 0.3}, 0.2705), ({'alpha': 1e-05, 'char': 1.0, 'info': 0.3}, 0.3125), ({'alpha': 3e-05, 'char': 0.0, 'info': 0.3}, 0.2822), ({'alpha': 3e-05, 'char': 1.0, 'info': 0.3}, 0.2816)]
+  outer fold 4: train 53224 test 13305 thresholds block=0.7138 warn=0.2499 params {'alpha': 1e-05, 'char': 1.0, 'info': 0.3}
+sgd: PR-AUC 0.554 ROC-AUC 0.837
+  block: real 18/376 = 4.8% [3.0%, 7.4%] mut 1618/8277 = 19.5% [18.7%, 20.4%] FPR-contract 293/46714 = 0.6% [0.6%, 0.7%] files 199/6500 = 3.1% [2.7%, 3.5%]
+  warn: real 66/376 = 17.6% [14.0%, 21.7%] mut 4036/8277 = 48.8% [47.7%, 49.8%] FPR-contract 1753/46714 = 3.8% [3.6%, 3.9%] files 963/6500 = 14.8% [14.0%, 15.7%]
+== logreg
+    logreg: selected {'C': 1.0, 'char': 1.0, 'info': 0.3} in 94s; grid [({'C': 0.3, 'char': 0.0, 'info': 0.3}, 0.268), ({'C': 0.3, 'char': 1.0, 'info': 0.3}, 0.3088), ({'C': 1.0, 'char': 0.0, 'info': 0.3}, 0.2732), ({'C': 1.0, 'char': 1.0, 'info': 0.3}, 0.3174)]
+  outer fold 0: train 53223 test 13306 thresholds block=0.6434 warn=0.2926 params {'C': 1.0, 'char': 1.0, 'info': 0.3}
+    logreg: selected {'C': 0.3, 'char': 1.0, 'info': 0.3} in 96s; grid [({'C': 0.3, 'char': 0.0, 'info': 0.3}, 0.2997), ({'C': 0.3, 'char': 1.0, 'info': 0.3}, 0.3327), ({'C': 1.0, 'char': 0.0, 'info': 0.3}, 0.2892), ({'C': 1.0, 'char': 1.0, 'info': 0.3}, 0.3083)]
+  outer fold 1: train 53223 test 13306 thresholds block=0.6532 warn=0.3429 params {'C': 0.3, 'char': 1.0, 'info': 0.3}
+    logreg: selected {'C': 0.3, 'char': 1.0, 'info': 0.3} in 78s; grid [({'C': 0.3, 'char': 0.0, 'info': 0.3}, 0.2951), ({'C': 0.3, 'char': 1.0, 'info': 0.3}, 0.3317), ({'C': 1.0, 'char': 0.0, 'info': 0.3}, 0.2878), ({'C': 1.0, 'char': 1.0, 'info': 0.3}, 0.3127)]
+  outer fold 2: train 53223 test 13306 thresholds block=0.6485 warn=0.339 params {'C': 0.3, 'char': 1.0, 'info': 0.3}
+    logreg: selected {'C': 0.3, 'char': 1.0, 'info': 0.3} in 85s; grid [({'C': 0.3, 'char': 0.0, 'info': 0.3}, 0.2898), ({'C': 0.3, 'char': 1.0, 'info': 0.3}, 0.3028), ({'C': 1.0, 'char': 0.0, 'info': 0.3}, 0.2766), ({'C': 1.0, 'char': 1.0, 'info': 0.3}, 0.287)]
+  outer fold 3: train 53223 test 13306 thresholds block=0.6419 warn=0.3327 params {'C': 0.3, 'char': 1.0, 'info': 0.3}
+    logreg: selected {'C': 0.3, 'char': 1.0, 'info': 0.3} in 78s; grid [({'C': 0.3, 'char': 0.0, 'info': 0.3}, 0.2785), ({'C': 0.3, 'char': 1.0, 'info': 0.3}, 0.3411), ({'C': 1.0, 'char': 0.0, 'info': 0.3}, 0.2817), ({'C': 1.0, 'char': 1.0, 'info': 0.3}, 0.3329)]
+  outer fold 4: train 53224 test 13305 thresholds block=0.6403 warn=0.3238 params {'C': 0.3, 'char': 1.0, 'info': 0.3}
+logreg: PR-AUC 0.616 ROC-AUC 0.875
+  block: real 26/376 = 6.9% [4.8%, 9.9%] mut 2407/8277 = 29.1% [28.1%, 30.1%] FPR-contract 465/46714 = 1.0% [0.9%, 1.1%] files 292/6500 = 4.5% [4.0%, 5.0%]
+  warn: real 105/376 = 27.9% [23.6%, 32.7%] mut 4755/8277 = 57.4% [56.4%, 58.5%] FPR-contract 2396/46714 = 5.1% [4.9%, 5.3%] files 1208/6500 = 18.6% [17.7%, 19.5%]
+== detectors
+    detectors: selected {'info': 0.3} in 1s; grid [({'info': 0.3}, 0.1284)]
+  outer fold 0: train 53223 test 13306 thresholds block=1.393 warn=1.106 params {'info': 0.3}
+    detectors: selected {'info': 0.3} in 1s; grid [({'info': 0.3}, 0.1366)]
+  outer fold 1: train 53223 test 13306 thresholds block=1.393 warn=1.106 params {'info': 0.3}
+    detectors: selected {'info': 0.3} in 1s; grid [({'info': 0.3}, 0.1381)]
+  outer fold 2: train 53223 test 13306 thresholds block=1.393 warn=1.106 params {'info': 0.3}
+    detectors: selected {'info': 0.3} in 1s; grid [({'info': 0.3}, 0.126)]
+  outer fold 3: train 53223 test 13306 thresholds block=1.393 warn=1.106 params {'info': 0.3}
+    detectors: selected {'info': 0.3} in 1s; grid [({'info': 0.3}, 0.126)]
+  outer fold 4: train 53224 test 13305 thresholds block=1.393 warn=1.106 params {'info': 0.3}
+detectors: PR-AUC 0.293 ROC-AUC 0.652
+  block: real 7/376 = 1.9% [0.9%, 3.8%] mut 564/8277 = 6.8% [6.3%, 7.4%] FPR-contract 310/46714 = 0.7% [0.6%, 0.7%] files 189/6500 = 2.9% [2.5%, 3.3%]
+  warn: real 29/376 = 7.7% [5.4%, 10.9%] mut 2423/8277 = 29.3% [28.3%, 30.3%] FPR-contract 1327/46714 = 2.8% [2.7%, 3.0%] files 755/6500 = 11.6% [10.9%, 12.4%]
+  outer fold 0: train 53223 test 13306 thresholds block=0.573 warn=0.2573
+  outer fold 1: train 53223 test 13306 thresholds block=0.5942 warn=0.3018
+  outer fold 2: train 53223 test 13306 thresholds block=0.6083 warn=0.3135
+  outer fold 3: train 53223 test 13306 thresholds block=0.5718 warn=0.2802
+  outer fold 4: train 53224 test 13305 thresholds block=0.5924 warn=0.283
+avg(hgb,logreg): PR-AUC 0.681 ROC-AUC 0.899
+  block: real 48/376 = 12.8% [9.8%, 16.5%] mut 3221/8277 = 38.9% [37.9%, 40.0%] FPR-contract 482/46714 = 1.0% [0.9%, 1.1%] files 297/6500 = 4.6% [4.1%, 5.1%]
+  warn: real 116/376 = 30.9% [26.4%, 35.7%] mut 5287/8277 = 63.9% [62.8%, 64.9%] FPR-contract 2510/46714 = 5.4% [5.2%, 5.6%] files 1270/6500 = 19.5% [18.6%, 20.5%]
+class head macro-F1 on real rows 0.266 (detector baseline 0.181)
+== final selection on all train: hgb
+== final selection on all train: logreg
+wrote near/model/reports/classic_cv.json / .md; best by protocol: avg(hgb,logreg)

@@ -1,0 +1,155 @@
+# Sealed test v1: frozen NEAR code-risk model, scored once (2026-11-14)
+
+Model `frozen_near_v1` sha256 `c76c461874c352a5...` (hist gradient boosting (lr 0.1, 31 leaves, 300 iters, l2 1.0) on signed-log analyzer features + 1000 chi2-selected binary code-token 1-3 grams), thresholds block 0.6316 / warn 0.2908 (frozen, from train OOF). Test `near/data/test_v1.jsonl` sha256 `8168bcf51be7537a...`: 7666 rows, 1842 label-1, 27 groups. Rows by source/label: {'audit|0': 116, 'audit|1': 236, 'corpus|0': 4567, 'fix_commit|0': 50, 'fix_commit|1': 54, 'incident|0': 11, 'incident|1': 13, 'mutation_original|0': 1080, 'mutation|1': 1539}. Checks passed before scoring: hashes, feature schema, no shared id / group / norm_hash with train.
+
+PR-AUC 0.671 (weighted 0.628), ROC-AUC 0.786; ROC-AUC real label-1 vs contract-code corpus 0.626, mutations vs contract corpus 0.821, real vs paired fixed 0.475; pair rank (vulnerable > fixed) 75.5/172 = 43.9% [36.7%, 51.4%].
+
+| | block | warn |
+|---|---|---|
+| recall, real label-1 (all) | 20/303 = 6.6% [4.3%, 10.0%] | 49/303 = 16.2% [12.5%, 20.7%] |
+| recall, real label-1 severity != info | 18/215 = 8.4% [5.4%, 12.8%] | 42/215 = 19.5% [14.8%, 25.3%] |
+| recall, real label-1 severity = info | 2/88 = 2.3% [0.6%, 7.9%] | 7/88 = 8.0% [3.9%, 15.5%] |
+| time split (real label-1 dated >= 2025): recall | 10/129 = 7.8% [4.3%, 13.7%] | 22/129 = 17.1% [11.5%, 24.5%] |
+| time split: recall, severity != info | 10/103 = 9.7% [5.4%, 17.0%] | 21/103 = 20.4% [13.7%, 29.2%] |
+| recall, mutations | 473/1539 = 30.7% [28.5%, 33.1%] | 843/1539 = 54.8% [52.3%, 57.2%] |
+| false alarms, corpus negatives (all) | 33/4567 = 0.7% [0.5%, 1.0%] | 221/4567 = 4.8% [4.3%, 5.5%] |
+| false alarms, contract-code corpus negatives | 32/3699 = 0.9% [0.6%, 1.2%] | 194/3699 = 5.2% [4.6%, 6.0%] |
+| false alarms, contract-code corpus excl. label conflicts | 32/3684 = 0.9% [0.6%, 1.2%] | 194/3684 = 5.3% [4.6%, 6.0%] |
+| false alarms, paired fixed versions | 7/177 = 4.0% [1.9%, 7.9%] | 22/177 = 12.4% [8.4%, 18.1%] |
+| false alarms, paired fixed excl. label conflicts | 7/170 = 4.1% [2.0%, 8.3%] | 22/170 = 12.9% [8.7%, 18.8%] |
+| false alarms, mutation originals | 16/1080 = 1.5% [0.9%, 2.4%] | 106/1080 = 9.8% [8.2%, 11.7%] |
+| contract level deployed rule: test corpus files holding no real label-1 alarming | 15/676 = 2.2% [1.3%, 3.6%] | 81/676 = 12.0% [9.7%, 14.6%] |
+| contract level deployed rule: clean files alarming | n/a | n/a |
+| contract level deployed rule: files holding a real vulnerability alarming | 22/161 = 13.7% [9.2%, 19.8%] | 56/161 = 34.8% [27.9%, 42.4%] |
+| contract level protocol rule: clean files alarming | n/a | n/a |
+| contract level protocol rule: files holding a real vulnerability alarming | 22/161 = 13.7% [9.2%, 19.8%] | 56/161 = 34.8% [27.9%, 42.4%] |
+
+### Real label-1 recall by source
+
+| | block | warn |
+|---|---|---|
+| audit | 19/236 = 8.1% [5.2%, 12.2%] | 42/236 = 17.8% [13.4%, 23.2%] |
+| fix_commit | 1/54 = 1.9% [0.3%, 9.8%] | 4/54 = 7.4% [2.9%, 17.6%] |
+| incident | 0/13 = 0.0% [0.0%, 22.8%] | 3/13 = 23.1% [8.2%, 50.3%] |
+
+### Real label-1 (severity != info) recall by source
+
+| | block | warn |
+|---|---|---|
+| audit | 17/148 = 11.5% [7.3%, 17.6%] | 35/148 = 23.6% [17.5%, 31.1%] |
+| fix_commit | 1/54 = 1.9% [0.3%, 9.8%] | 4/54 = 7.4% [2.9%, 17.6%] |
+| incident | 0/13 = 0.0% [0.0%, 22.8%] | 3/13 = 23.1% [8.2%, 50.3%] |
+
+### Real label-1 recall by vuln_class
+
+| | block | warn |
+|---|---|---|
+| None | 0/1 = 0.0% [0.0%, 79.3%] | 1/1 = 100.0% [20.7%, 100.0%] |
+| async_reentrancy | 0/4 = 0.0% [0.0%, 49.0%] | 1/4 = 25.0% [4.6%, 69.9%] |
+| ft_receiver_trust | 2/6 = 33.3% [9.7%, 70.0%] | 2/6 = 33.3% [9.7%, 70.0%] |
+| gas_dos | 1/16 = 6.2% [1.1%, 28.3%] | 3/16 = 18.8% [6.6%, 43.0%] |
+| logic_error | 4/120 = 3.3% [1.3%, 8.3%] | 11/120 = 9.2% [5.2%, 15.7%] |
+| missing_access_control | 3/46 = 6.5% [2.2%, 17.5%] | 6/46 = 13.0% [6.1%, 25.7%] |
+| missing_one_yocto | 0/10 = 0.0% [0.0%, 27.8%] | 1/10 = 10.0% [1.8%, 40.4%] |
+| non_private_callback | 0/3 = 0.0% [0.0%, 56.2%] | 1/3 = 33.3% [6.1%, 79.2%] |
+| oracle_price | 1/16 = 6.2% [1.1%, 28.3%] | 3/16 = 18.8% [6.6%, 43.0%] |
+| precision_rounding | 0/13 = 0.0% [0.0%, 22.8%] | 1/13 = 7.7% [1.4%, 33.3%] |
+| signer_auth | 1/3 = 33.3% [6.1%, 79.2%] | 1/3 = 33.3% [6.1%, 79.2%] |
+| storage_staking | 4/21 = 19.0% [7.7%, 40.0%] | 6/21 = 28.6% [13.8%, 50.0%] |
+| unchecked_receiver | 0/2 = 0.0% [0.0%, 65.8%] | 0/2 = 0.0% [0.0%, 65.8%] |
+| unguarded_upgrade | 0/4 = 0.0% [0.0%, 49.0%] | 0/4 = 0.0% [0.0%, 49.0%] |
+| unhandled_promise_result | 4/20 = 20.0% [8.1%, 41.6%] | 12/20 = 60.0% [38.7%, 78.1%] |
+| unsafe_arithmetic | 0/18 = 0.0% [0.0%, 17.6%] | 0/18 = 0.0% [0.0%, 17.6%] |
+
+### Real label-1 recall by severity
+
+| | block | warn |
+|---|---|---|
+| None | 0/14 = 0.0% [0.0%, 21.5%] | 3/14 = 21.4% [7.6%, 47.6%] |
+| critical | 1/8 = 12.5% [2.2%, 47.1%] | 1/8 = 12.5% [2.2%, 47.1%] |
+| high | 3/54 = 5.6% [1.9%, 15.1%] | 9/54 = 16.7% [9.0%, 28.7%] |
+| info | 2/88 = 2.3% [0.6%, 7.9%] | 7/88 = 8.0% [3.9%, 15.5%] |
+| low | 2/60 = 3.3% [0.9%, 11.4%] | 8/60 = 13.3% [6.9%, 24.2%] |
+| medium | 12/79 = 15.2% [8.9%, 24.7%] | 21/79 = 26.6% [18.1%, 37.2%] |
+
+### Time split (>= 2025) recall by source
+
+| | block | warn |
+|---|---|---|
+| audit | 10/87 = 11.5% [6.4%, 19.9%] | 16/87 = 18.4% [11.6%, 27.8%] |
+| fix_commit | 0/37 = 0.0% [0.0%, 9.4%] | 3/37 = 8.1% [2.8%, 21.3%] |
+| incident | 0/5 = 0.0% [0.0%, 43.4%] | 3/5 = 60.0% [23.1%, 88.2%] |
+
+### Time split recall by vuln_class
+
+| | block | warn |
+|---|---|---|
+| None | 0/1 = 0.0% [0.0%, 79.3%] | 1/1 = 100.0% [20.7%, 100.0%] |
+| async_reentrancy | 0/3 = 0.0% [0.0%, 56.2%] | 0/3 = 0.0% [0.0%, 56.2%] |
+| ft_receiver_trust | 1/2 = 50.0% [9.5%, 90.5%] | 1/2 = 50.0% [9.5%, 90.5%] |
+| gas_dos | 0/5 = 0.0% [0.0%, 43.4%] | 1/5 = 20.0% [3.6%, 62.4%] |
+| logic_error | 1/38 = 2.6% [0.5%, 13.5%] | 3/38 = 7.9% [2.7%, 20.8%] |
+| missing_access_control | 2/38 = 5.3% [1.5%, 17.3%] | 5/38 = 13.2% [5.8%, 27.3%] |
+| missing_one_yocto | 0/6 = 0.0% [0.0%, 39.0%] | 0/6 = 0.0% [0.0%, 39.0%] |
+| non_private_callback | 0/2 = 0.0% [0.0%, 65.8%] | 1/2 = 50.0% [9.5%, 90.5%] |
+| oracle_price | 1/5 = 20.0% [3.6%, 62.4%] | 2/5 = 40.0% [11.8%, 76.9%] |
+| precision_rounding | 0/3 = 0.0% [0.0%, 56.2%] | 0/3 = 0.0% [0.0%, 56.2%] |
+| signer_auth | 1/3 = 33.3% [6.1%, 79.2%] | 1/3 = 33.3% [6.1%, 79.2%] |
+| storage_staking | 1/8 = 12.5% [2.2%, 47.1%] | 1/8 = 12.5% [2.2%, 47.1%] |
+| unguarded_upgrade | 0/1 = 0.0% [0.0%, 79.3%] | 0/1 = 0.0% [0.0%, 79.3%] |
+| unhandled_promise_result | 3/8 = 37.5% [13.7%, 69.4%] | 6/8 = 75.0% [40.9%, 92.9%] |
+| unsafe_arithmetic | 0/6 = 0.0% [0.0%, 39.0%] | 0/6 = 0.0% [0.0%, 39.0%] |
+
+### Time split recall by severity
+
+| | block | warn |
+|---|---|---|
+| None | 0/6 = 0.0% [0.0%, 39.0%] | 3/6 = 50.0% [18.8%, 81.2%] |
+| critical | 1/4 = 25.0% [4.6%, 69.9%] | 1/4 = 25.0% [4.6%, 69.9%] |
+| high | 3/38 = 7.9% [2.7%, 20.8%] | 6/38 = 15.8% [7.4%, 30.4%] |
+| info | 0/26 = 0.0% [0.0%, 12.9%] | 1/26 = 3.8% [0.7%, 18.9%] |
+| low | 1/27 = 3.7% [0.7%, 18.3%] | 2/27 = 7.4% [2.1%, 23.4%] |
+| medium | 5/28 = 17.9% [7.9%, 35.6%] | 9/28 = 32.1% [17.9%, 50.7%] |
+
+### Mutation recall by vuln_class
+
+| | block | warn |
+|---|---|---|
+| async_reentrancy | 0/10 = 0.0% [0.0%, 27.8%] | 2/10 = 20.0% [5.7%, 51.0%] |
+| ft_receiver_trust | 0/15 = 0.0% [0.0%, 20.4%] | 8/15 = 53.3% [30.1%, 75.2%] |
+| gas_dos | 4/52 = 7.7% [3.0%, 18.2%] | 16/52 = 30.8% [19.9%, 44.3%] |
+| missing_access_control | 44/347 = 12.7% [9.6%, 16.6%] | 180/347 = 51.9% [46.6%, 57.1%] |
+| missing_one_yocto | 9/215 = 4.2% [2.2%, 7.8%] | 61/215 = 28.4% [22.8%, 34.7%] |
+| non_private_callback | 132/166 = 79.5% [72.7%, 85.0%] | 148/166 = 89.2% [83.5%, 93.0%] |
+| oracle_price | 0/3 = 0.0% [0.0%, 56.2%] | 0/3 = 0.0% [0.0%, 56.2%] |
+| precision_rounding | 46/88 = 52.3% [42.0%, 62.4%] | 67/88 = 76.1% [66.3%, 83.8%] |
+| signer_auth | 210/300 = 70.0% [64.6%, 74.9%] | 262/300 = 87.3% [83.1%, 90.6%] |
+| storage_staking | 0/85 = 0.0% [0.0%, 4.3%] | 9/85 = 10.6% [5.7%, 18.9%] |
+| unchecked_receiver | 0/14 = 0.0% [0.0%, 21.5%] | 1/14 = 7.1% [1.3%, 31.5%] |
+| unguarded_upgrade | 18/47 = 38.3% [25.8%, 52.6%] | 38/47 = 80.9% [67.5%, 89.6%] |
+| unhandled_promise_result | 7/86 = 8.1% [4.0%, 15.9%] | 36/86 = 41.9% [32.0%, 52.4%] |
+| unsafe_arithmetic | 3/111 = 2.7% [0.9%, 7.6%] | 15/111 = 13.5% [8.4%, 21.1%] |
+
+### Held-out incidents (hacks)
+
+| incident | date | class | vulnerable fns | max risk | outcome | fixed version alarms at |
+|---|---|---|---|---|---|---|
+| Aurora Engine ETH total supply depletion via SELFDESTRUCT (GHSA-3p69-m8gg-fwmf) | 2022-06-22 | logic_error | 1 | 0.031 | **missed** | missed |
+| Aurora Engine deploy_upgrade callable by anyone | 2022-01-07 | unguarded_upgrade | 1 | 0.146 | **missed** | missed |
+| Aurora Engine fee stealing in NEP-141 -> ERC-20 bridging | 2022-06-10 | ft_receiver_trust | 1 | 0.158 | **missed** | missed |
+| Aurora Engine forged withdrawal receipts (Rainbow Bridge withdrawal logic error) | 2022-06-16 | logic_error | 1 | 0.008 | **missed** | missed |
+| Aurora Engine infinite spend via DELEGATECALL to exit precompiles (ExitToEthereum) | 2022-04-26 | logic_error | 1 | 0.040 | **missed** | missed |
+| Aurora Engine infinite spend via DELEGATECALL to exit precompiles (ExitToNear) | 2022-04-26 | logic_error | 1 | 0.046 | **missed** | missed |
+| Aurora Engine relayer key manager could remove the engine's full-access key | 2024-11-11 | unhandled_promise_result | 1 | 0.017 | **missed** | missed |
+| Aurora Engine silo admin methods open to anyone | 2025-08-08 | missing_access_control | 1 | 0.009 | **missed** | n/a |
+| NEAR Intents deposit notification refunds not capped (ghost balances) | 2026-10-01 | unhandled_promise_result | 1 | 0.384 | **warn** | missed |
+| NEAR Intents second deposit-notification vulnerability (bug bounty) | 2026-10-07 | None | 1 | 0.418 | **warn** | warn |
+| Ref farming fake seed id in mft_on_transfer | 2021-08-09 | ft_receiver_trust | 1 | 0.221 | **missed** | missed |
+| Rhea Finance margin trading slippage check double-counts reused swap outputs | 2026-04-16 | logic_error | 1 | 0.029 | **missed** | n/a |
+| SWEAT token ft_resolve_transfer without #[private] | 2026-04-29 | non_private_callback | 1 | 0.404 | **warn** | missed |
+
+vuln_class head on 302 real label-1 rows: accuracy 0.291, macro-F1 0.239.
+
+Label conflicts (split audit `label_conflicts_j09.json`, test label-0 rows that are near-identical to a label-1 row): 29 rows in test.
+
+Trivial functions (< 2 statements or body < 3 lines) are not scored by the deployed model and count as not alarming: {'incident|0': 1, 'audit|1': 29, 'audit|0': 3, 'fix_commit|1': 8, 'fix_commit|0': 2, 'mutation|1': 152, 'mutation_original|0': 95} test rows (source|label).

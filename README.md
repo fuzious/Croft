@@ -1,5 +1,15 @@
 # Security Oracle
 
+> [!NOTE]
+> **NEAR Hackathon, track 06 (AI Security & Defense): see [`near/README.md`](near/README.md).** It covers an
+> allow / warn / block oracle for agents that pay on NEAR:
+> - a model trained on NEAR Rust contract vulnerabilities;
+> - account signals and a shared blocklist;
+> - an agent wrapper and an on-chain guarded router;
+> - a prompt-injection attack demo.
+>
+> That README has the step-by-step run guide. The EVM oracle described below predates the hackathon.
+
 Detects DeFi exploits **before they execute**. A transaction is traced or simulated, turned into a priced summary of
 who gained and who lost (a "fact card"), and scored by a small frozen model.
 
@@ -196,6 +206,7 @@ Full results log: `runs/RESULTS.md`.
 | `models/` | Frozen models with metadata and hashes (from `archives/models.zip`) |
 | `archives/` | Zipped `data/` and `models/` (Git LFS) |
 | `runs/` | Results log `runs/RESULTS.md` (tracked); other reports and logs stay local |
+| `near/` | NEAR security oracle (hackathon track 06): analyzer, data collection, model, service, contracts, agent, demo |
 
 ## Data and models
 
@@ -208,6 +219,7 @@ overlays: they hold only files that are new or changed since the base zips, so u
 | `archives/models.zip` | `models/` (frozen classifiers, tx-hash manifests, `laya_frozen_v7` weights) |
 | `archives/datasets_v12.zip` | overlay: v12 cards, per-category holdouts, test v4, harm/drainer sets, stage-2 flags, new replays |
 | `archives/models_v12.zip` | overlay: `frozen_v12` (current classifier), `dev_v12_tx_hashes.json`, `stage2_v1.json` |
+| `archives/near_datasets.zip`, `near_models.zip`, `near_llm_v2.zip` | NEAR oracle data, frozen models, optional v2 LLM (see `near/README.md`) |
 
 ```bash
 git lfs install            # once per machine
