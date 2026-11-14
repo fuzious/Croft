@@ -2,6 +2,8 @@
 
 Transaction security research for Ethereum/EVM and NEAR.
 
+Presentation video: <https://youtu.be/_q4_Ea43KwE>
+
 | Project | Contents | Start here |
 | --- | --- | --- |
 | Ethereum / EVM | Fact cards, exploit datasets, frozen models, collection/evaluation scripts and Solidity gate | [eth/README.md](eth/README.md) |
