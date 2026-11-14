@@ -1,0 +1,102 @@
+{
+ "decision": {
+  "decision_rule": "Candidates, both fitted on train normals only: (A) iforest_global, IsolationForest (300 trees, 2048 samples, seed 0) on robust-standardized tx_features; (B) tail_per_flow, per-flow-type empirical tail model (score = sum of the 3 largest -log10 two-sided tail probabilities of the features against train normals of the same flow type). Rules' high hits are kept by construction (label = max of rules and anomaly), so the choice is made on known-normal failure modes only: on calibration normals with at least one failed receipt, the candidate whose mean anomaly percentile (against its own train scores) is lower wins. Tie (difference < 0.005): fewer failing calibration normals at medium or above with the candidate's own calibrated thresholds; still tied: tail_per_flow (interpretable). No attack transaction is used.",
+  "candidates": {
+   "iforest_global": {
+    "fit_score_s": 1.0,
+    "failing_calib_mean_pct": 0.965574550310982,
+    "nonfailing_calib_mean_pct": 0.6045795808699366,
+    "failing_calib_medium_plus": 2,
+    "n_failing_calib": 2531,
+    "calib_high": 1,
+    "calib_medium_plus": 17,
+    "thresholds": {
+     "combined": {
+      "high": 0.7353436986390677,
+      "medium": 0.6766242053793856
+     },
+     "anomaly_only": {
+      "high": 0.7147194429896544,
+      "medium": 0.6722068977020004
+     }
+    }
+   },
+   "tail_per_flow": {
+    "fit_score_s": 0.3,
+    "failing_calib_mean_pct": 0.9354748326002122,
+    "nonfailing_calib_mean_pct": 0.6037091397704463,
+    "failing_calib_medium_plus": 2,
+    "n_failing_calib": 2531,
+    "calib_high": 1,
+    "calib_medium_plus": 7,
+    "thresholds": {
+     "combined": {
+      "high": 12.665658909202909,
+      "medium": 12.1342658588857
+     },
+     "anomaly_only": {
+      "high": 12.665658909202909,
+      "medium": 11.925296219708665
+     }
+    }
+   }
+  },
+  "pick": "tail_per_flow",
+  "why": "lower mean percentile on failing calibration normals"
+ },
+ "split": {
+  "train_last": "2026-05",
+  "calib": [
+   "2026-06",
+   "2026-09"
+  ],
+  "test_first": "2026-10",
+  "n_train": 69863,
+  "n_calib": 17772,
+  "n_test": 12463,
+  "train_by_flow": {
+   "deposit": 22170,
+   "withdrawal": 348,
+   "other": 5345,
+   "execute_intents": 42000
+  },
+  "calib_by_flow": {
+   "execute_intents": 11858,
+   "deposit": 5687,
+   "other": 227
+  }
+ },
+ "rates": {
+  "high": 0.0001,
+  "medium": 0.001
+ },
+ "thresholds_anomaly_only": {
+  "high": 12.665658909202909,
+  "medium": 11.925296219708665
+ },
+ "normals_sha256": "7a7ecb374fb03fffa1bbf5f71a26fa611336d938899e59e149178cc286b33aea",
+ "calib_percentile_at_thresholds": {
+  "high": 1.0,
+  "medium": 1.0
+ },
+ "version": "intents_v1",
+ "kind": "tail_per_flow",
+ "thresholds": {
+  "high": 12.665658909202909,
+  "medium": 12.1342658588857
+ },
+ "severity_weight": {
+  "high": 1.0,
+  "medium": 1.0,
+  "low": 0.0
+ },
+ "frozen_at": "2026-11-14T11:13:27+00:00",
+ "pkl_sha256": "a8650b35e9b6f673e9502780943c883685d78110ae35ed2ae8e7bf5c7a8ce340",
+ "code_sha256": {
+  "near/intents/features.py": "3f8110f88717a8557f8cba6183cf2535b236bf5a2ec06776ee0ea90cd233115d",
+  "near/intents/model.py": "21ca773c4d3ef982a04d7b623715417ff130da63d077116baa7200a054c7b4fe"
+ },
+ "train_ids_file": "intents_v1.train_ids.json",
+ "train_ids_sha256": "d3226174ccdfdc7975728d83be820dbf6663ffe2c7da8290c704f387be7de204",
+ "n_train": 69863
+}

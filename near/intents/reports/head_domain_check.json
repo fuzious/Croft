@@ -1,0 +1,212 @@
+{
+ "protocol": "Domain check: rows are the synthetic benign sandbox txs (label 1, group = sandbox family) and real normals from the train and calibration months only (label 0, group = month), the real ones sampled per flow type to the synthetic flow mix with one common ratio (at most 3 real per synthetic, seed 0). Classifier: HistGradientBoostingClassifier (seed 0) on tx_features, out-of-fold ROC-AUC with 5-fold StratifiedGroupKFold. Pass: AUC <= 0.75. Otherwise drop, one at a time, the kept feature with the largest univariate |AUC - 0.5| on the same rows and re-run, for at most floor(0.5 * n_features) drops; if the AUC is still above 0.75 the head is not used. Head (only after a pass, on the kept features): the same classifier with balanced class weights, positives = all synthetic attack txs (exploit and attempt), negatives = synthetic benign plus real train-month normals. Head thresholds on calibration normals with md.alert_threshold, intents_v1's combined alerts using the budget first, so the combined calibration alert rate stays at most 1/10,000 (high) and 1/1,000 (medium). Combined label = max(intents_v1 label, head label). Adopt iff, on real held-out campaign txs with role exploit or attempt, medium-or-above detections rise by at least 5, AND on sealed test normals the head adds at most floor(n_test / 1,000) medium-or-above and at most floor(n_test / 10,000) high alerts. Thresholds are never tuned on the test slice or on real campaigns.",
+ "n_synthetic": 992,
+ "n_real": 1816,
+ "auc_all_features": 0.8070494573326702,
+ "steps": [
+  {
+   "drop": null,
+   "auc": 0.8070494573326702
+  },
+  {
+   "drop": "ev_nep141_ft_transfer",
+   "univariate_sep": 0.20154185022026433,
+   "auc": 0.810052557020037
+  },
+  {
+   "drop": "ev_nep245_mt_transfer",
+   "univariate_sep": 0.19873470139974414,
+   "auc": 0.7512040153829758
+  },
+  {
+   "drop": "max_log_ratio",
+   "univariate_sep": 0.15409953637913876,
+   "auc": 0.7377622299985791
+  }
+ ],
+ "dropped": [
+  "ev_nep141_ft_transfer",
+  "ev_nep245_mt_transfer",
+  "max_log_ratio"
+ ],
+ "kept": [
+  "flow_deposit",
+  "flow_execute_intents",
+  "flow_withdrawal",
+  "flow_other",
+  "n_actions",
+  "has_delegate",
+  "top_args_log_bytes",
+  "n_receipts_log",
+  "n_fc_receipts_log",
+  "n_refund_receipts_log",
+  "max_depth",
+  "n_distinct_receivers",
+  "n_distinct_methods",
+  "n_failed",
+  "frac_failed",
+  "first_receipt_failed",
+  "n_failed_intents",
+  "n_failed_callback",
+  "n_failed_resolve",
+  "fail_log_limit",
+  "fail_value_limit",
+  "fail_oog",
+  "fail_deserialize",
+  "fail_method_missing",
+  "fail_account_missing",
+  "fail_code_missing",
+  "fail_panic",
+  "fail_other",
+  "n_logs_log",
+  "total_log_kb_log",
+  "n_events_log",
+  "n_events_failed_log",
+  "ev_nep245_mt_mint",
+  "ev_nep245_mt_burn",
+  "ev_nep141_ft_mint",
+  "ev_nep141_ft_burn",
+  "ev_nep171_nft_transfer",
+  "ev_dip4_transfer",
+  "ev_dip4_token_diff",
+  "ev_dip4_intents_executed",
+  "ev_dip4_withdraw",
+  "ev_dip4_other",
+  "ev_other_standard",
+  "ev_unparsed",
+  "max_token_ids_per_event_log",
+  "max_dup_token_ids_log",
+  "n_distinct_tokens_log",
+  "dust_fraction",
+  "amount_spread_log10",
+  "n_self_callbacks",
+  "n_resolve_calls",
+  "n_on_transfer_calls",
+  "n_notify_receivers",
+  "n_direct_private_calls",
+  "n_admin_calls",
+  "n_admin_failed",
+  "refund_over_deposit_log10",
+  "credit_excess_log2",
+  "refund_to_sender_frac",
+  "max_gas_use_ratio"
+ ],
+ "passed": true,
+ "drop_budget": 31,
+ "top_univariate_separation": [
+  {
+   "feature": "ev_nep141_ft_transfer",
+   "abs_auc_minus_half": 0.20154185022026433,
+   "syn_mean": 0.0,
+   "real_mean": 0.2816290855407715
+  },
+  {
+   "feature": "ev_nep245_mt_transfer",
+   "abs_auc_minus_half": 0.19873470139974414,
+   "syn_mean": 0.4987427890300751,
+   "real_mean": 0.20847636461257935
+  },
+  {
+   "feature": "max_log_ratio",
+   "abs_auc_minus_half": 0.15409953637913876,
+   "syn_mean": 0.02082916907966137,
+   "real_mean": 0.022248994559049606
+  },
+  {
+   "feature": "n_logs_log",
+   "abs_auc_minus_half": 0.15302763517834306,
+   "syn_mean": 1.1949025392532349,
+   "real_mean": 1.3733707666397095
+  },
+  {
+   "feature": "n_events_log",
+   "abs_auc_minus_half": 0.13591385267159306,
+   "syn_mean": 1.0463669300079346,
+   "real_mean": 1.2315154075622559
+  },
+  {
+   "feature": "max_token_ids_per_event_log",
+   "abs_auc_minus_half": 0.13371648296504202,
+   "syn_mean": 0.9027884006500244,
+   "real_mean": 0.6636223196983337
+  },
+  {
+   "feature": "max_gas_use_ratio",
+   "abs_auc_minus_half": 0.12601916654824508,
+   "syn_mean": 0.2780988812446594,
+   "real_mean": 0.18794754147529602
+  },
+  {
+   "feature": "ev_nep141_ft_mint",
+   "abs_auc_minus_half": 0.12169603524229078,
+   "syn_mean": 0.0,
+   "real_mean": 0.1687065213918686
+  },
+  {
+   "feature": "n_receipts_log",
+   "abs_auc_minus_half": 0.11414720850504473,
+   "syn_mean": 1.784716010093689,
+   "real_mean": 1.9744688272476196
+  },
+  {
+   "feature": "max_depth",
+   "abs_auc_minus_half": 0.11096703140542846,
+   "syn_mean": 2.961693525314331,
+   "real_mean": 3.2802863121032715
+  },
+  {
+   "feature": "amount_spread_log10",
+   "abs_auc_minus_half": 0.10816848665979828,
+   "syn_mean": 2.1480648517608643,
+   "real_mean": 0.30859866738319397
+  },
+  {
+   "feature": "n_distinct_receivers",
+   "abs_auc_minus_half": 0.10409209801762115,
+   "syn_mean": 1.9808467626571655,
+   "real_mean": 2.3023128509521484
+  },
+  {
+   "feature": "n_notify_receivers",
+   "abs_auc_minus_half": 0.09603257780304109,
+   "syn_mean": 0.2036290317773819,
+   "real_mean": 0.011563876643776894
+  },
+  {
+   "feature": "n_distinct_tokens_log",
+   "abs_auc_minus_half": 0.09451187695395769,
+   "syn_mean": 0.9027884006500244,
+   "real_mean": 0.7178612351417542
+  },
+  {
+   "feature": "n_fc_receipts_log",
+   "abs_auc_minus_half": 0.07345215468239308,
+   "syn_mean": 1.3011620044708252,
+   "real_mean": 1.4188716411590576
+  }
+ ],
+ "synthetic_flows": {
+  "deposit": 550,
+  "execute_intents": 178,
+  "other": 74,
+  "withdrawal": 190
+ },
+ "real_flows": {
+  "deposit": 1007,
+  "other": 135,
+  "execute_intents": 326,
+  "withdrawal": 348
+ },
+ "synthetic_groups": {
+  "sandbox:mt_deposit": 181,
+  "sandbox:execute_intents": 178,
+  "sandbox:mt_deposit_notify": 171,
+  "sandbox:ft_deposit": 147,
+  "sandbox:intents_mt_transfer": 74,
+  "sandbox:wnear_deposit": 51,
+  "sandbox:mt_withdraw": 82,
+  "sandbox:ft_withdraw": 108
+ },
+ "features_sha256": "3f8110f88717a8557f8cba6183cf2535b236bf5a2ec06776ee0ea90cd233115d",
+ "at": "2026-11-14T11:22:33+00:00"
+}

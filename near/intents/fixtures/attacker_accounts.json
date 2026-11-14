@@ -1,0 +1,16 @@
+{
+ "oct2026_notify_ghost_exploit": {
+  "signer_depositor": "20e6bfe4685d99004fc2095d3a0fc6158cd810ce8f801196141e183ed6e19d65",
+  "notify_receiver_contracts_intents_accounts": ["dd1fe58ec316ada5b673b88c14fe2fa2b7ede82080440901dfbd64b994241757", "873518f0f5cf120d7a8e2a416337bba16d7ae622e91f7da3862f07e89dc2ba9e"],
+  "funder": "da5aecd1f2aae8bf627ac2b470a0e781f7fdb8767edbe7b08f4f2819c61bda5e",
+  "funder_of_funder": "poornode5201.near (created 2026-09-28 20:54 by meteor-relayer, funded by e589457354361489a89039b8be6737cbc2db4d13919b6ccf23889a60f3b0d8f3)",
+  "bsc_cashout_address": "0x09fd1f5d9f185067a92493e43aa259ea4ab3ad37 (decoded from HOT withdrawal memo 958q145aj6MHGDgMHESSt9RWQ8W; tagged 'NEAR Intents Exploiter 1' per X post 2106000451585835448)",
+  "real_token": "v2_1.omni.hot.tg token 56_2CMMyVTGZkeyNZTSvS5sarzfir6g = BSC USDT 0x55d398326f99059ff775485246999027b3197955",
+  "filler_token": "v2_1.omni.hot.tg token 4444119_EnfNtEaQ... (base58 of 'ibc/C679139C206D0E7379C1526A19B91DD18A9B3C1A28E76C099962629894E4D193'), 97e36 units minted via HOT deposit FmwaoRNDU6BubkHZFy3ucSPpXVUrGUWkRVQwJAiJZZi3"
+ },
+ "apr2026_oog_attempt": ["75223451ec3b5bf3ab48a83691729377e4bd16721422f2e8c78b192cf850e343", "e851fba832e6efaa54e98c2dcf934ed1db567de470d32ce95a842395d4afb6d7", "consolidation: b9ad4da1d9d822ef573adbc8c554de21f1dcaea3988cada6537758a33f9cfb39"],
+ "may2026_fake_token_fuzzer": ["f54d146a847e26bb6fcde0a4c99ad820fb446b1e048dd4f3094c699e841972a5"],
+ "may2026_admin_method_fuzzer": ["test1779579480756.near"],
+ "oct2026_team_regression_test_not_attacker": ["e81ff331aeab3cb54f3e64e4b770a0541df6a0fe63c43c27e81be911b506459b", "2d1252c66875f20a6904ecca70b742e0d57ac5ace4fa3fdd2b3becfb5513e6c2", "funded by defuse-ops.near; also tested on staging-intents.near"],
+ "apr2026_rhea_attacker_funded_via_intents": ["31ac7a2705a0686ff427b1a52d3ffd1fcfaa4b1f3cb3e83a0f767494e724a540", "intents-side account 2db3d694de23fe72b7ec98441a42ce101e3a872066f19c06cbd4818ca0bfd1f4", "72633832db9d039b97906320169a8411bc2fa0f78303a4ecb1d35de71af621c5", "5a7695e3626aeae7c0d340b6e58f813c71455d1be490eeb44e90bd9682343040 (deleted)"]
+}

@@ -36,6 +36,18 @@ TOP_FN = {"fn": "ft_on_transfer", "vuln_class_guess": "ft_receiver_trust", "labe
 HIGH_AGREED = {"risk": 0.91, "label": "high", "version": "m1",
                "top": [TOP_FN | {"detector_hits": [{"severity": "high", "detector": "ft_on_transfer_no_token_check"}]}]}
 
+def ia(*txs):
+    """intents_activity signal value with the given scored txs: (tx_hash, label, rules)."""
+    return S({"n_scored": len(txs), "requests": 2,
+              "txs": [{"tx_hash": h, "label": lab, "risk": 0.9, "flow": "deposit", "rules": rules}
+                      for h, lab, rules in txs]})
+
+
+IA_LOW = ("LowTx1", "low", [])
+IA_MED = ("MedTx1", "medium", ["notify_receiver_in_deposit"])
+IA_HIGH = ("HighTx1", "high", ["failed_resolve_callback", "credit_kept"])
+IA_HIGH_ANOMALY = ("HighTx2", "high", [])
+
 CASES = [
     # (name, signals, kwargs, verdict, reason substring or None)
     ("verified low-risk contract", base(), {}, "allow", None),
@@ -93,6 +105,22 @@ CASES = [
                                          prior_interactions=S(None, available=False)),
      {"network": "sandbox", "deposit_yocto": str(250 * NEAR)}, "allow", "sandbox"),
     ("block beats warn", base(code_risk=S(HIGH_AGREED), age_days=S(1.0)), {}, "block", "1 days old"),
+    # NEAR Intents activity of the receiver
+    ("intents: recent txs all low", eoa(intents_activity=ia(IA_LOW, IA_LOW)), {}, "allow", None),
+    ("intents: no intents txs", eoa(intents_activity=ia()), {}, "allow", None),
+    ("intents: a high tx warns, naming the rule", eoa(intents_activity=ia(IA_LOW, IA_HIGH)), {}, "warn",
+     "failed_resolve_callback"),
+    ("intents: a high tx warns, naming the tx", eoa(intents_activity=ia(IA_HIGH)), {}, "warn", "HighTx1"),
+    ("intents: high from the anomaly model alone", eoa(intents_activity=ia(IA_HIGH_ANOMALY)), {}, "warn",
+     "anomaly score"),
+    ("intents: high alone never blocks", base(intents_activity=ia(IA_HIGH, IA_HIGH)), {}, "warn", "HighTx1"),
+    ("intents: medium is info only", eoa(intents_activity=ia(IA_LOW, IA_MED)), {}, "allow", "MedTx1"),
+    ("intents: unreadable warns for an EOA",
+     eoa(intents_activity=S(None, available=False, error="FastNEAR request failed: 429")), {}, "warn", "429"),
+    ("intents: unreadable warns for a verified low-risk contract",
+     base(intents_activity=S(None, available=False, error="FastNEAR timed out after 15 s")), {}, "warn",
+     "FastNEAR timed out"),
+    ("intents: not applicable off mainnet", eoa(intents_activity=S(None, source="n/a")), {}, "allow", None),
 ]
 
 

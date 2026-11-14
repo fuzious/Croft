@@ -1,0 +1,330 @@
+{
+ "protocol": "Domain check: rows are the synthetic benign sandbox txs (label 1, group = sandbox family) and real normals from the train and calibration months only (label 0, group = month), the real ones sampled per flow type to the synthetic flow mix with one common ratio (at most 3 real per synthetic, seed 0). Classifier: HistGradientBoostingClassifier (seed 0) on tx_features, out-of-fold ROC-AUC with 5-fold StratifiedGroupKFold. Pass: AUC <= 0.75. Otherwise drop, one at a time, the kept feature with the largest univariate |AUC - 0.5| on the same rows and re-run, for at most floor(0.5 * n_features) drops; if the AUC is still above 0.75 the head is not used. Head (only after a pass, on the kept features): the same classifier with balanced class weights, positives = all synthetic attack txs (exploit and attempt), negatives = synthetic benign plus real train-month normals. Head thresholds on calibration normals with md.alert_threshold, intents_v1's combined alerts using the budget first, so the combined calibration alert rate stays at most 1/10,000 (high) and 1/1,000 (medium). Combined label = max(intents_v1 label, head label). Adopt iff, on real held-out campaign txs with role exploit or attempt, medium-or-above detections rise by at least 5, AND on sealed test normals the head adds at most floor(n_test / 1,000) medium-or-above and at most floor(n_test / 10,000) high alerts. Thresholds are never tuned on the test slice or on real campaigns.",
+ "kept_features": [
+  "flow_deposit",
+  "flow_execute_intents",
+  "flow_withdrawal",
+  "flow_other",
+  "n_actions",
+  "has_delegate",
+  "top_args_log_bytes",
+  "n_receipts_log",
+  "n_fc_receipts_log",
+  "n_refund_receipts_log",
+  "max_depth",
+  "n_distinct_receivers",
+  "n_distinct_methods",
+  "n_failed",
+  "frac_failed",
+  "first_receipt_failed",
+  "n_failed_intents",
+  "n_failed_callback",
+  "n_failed_resolve",
+  "fail_log_limit",
+  "fail_value_limit",
+  "fail_oog",
+  "fail_deserialize",
+  "fail_method_missing",
+  "fail_account_missing",
+  "fail_code_missing",
+  "fail_panic",
+  "fail_other",
+  "n_logs_log",
+  "total_log_kb_log",
+  "n_events_log",
+  "n_events_failed_log",
+  "ev_nep245_mt_mint",
+  "ev_nep245_mt_burn",
+  "ev_nep141_ft_mint",
+  "ev_nep141_ft_burn",
+  "ev_nep171_nft_transfer",
+  "ev_dip4_transfer",
+  "ev_dip4_token_diff",
+  "ev_dip4_intents_executed",
+  "ev_dip4_withdraw",
+  "ev_dip4_other",
+  "ev_other_standard",
+  "ev_unparsed",
+  "max_token_ids_per_event_log",
+  "max_dup_token_ids_log",
+  "n_distinct_tokens_log",
+  "dust_fraction",
+  "amount_spread_log10",
+  "n_self_callbacks",
+  "n_resolve_calls",
+  "n_on_transfer_calls",
+  "n_notify_receivers",
+  "n_direct_private_calls",
+  "n_admin_calls",
+  "n_admin_failed",
+  "refund_over_deposit_log10",
+  "credit_excess_log2",
+  "refund_to_sender_frac",
+  "max_gas_use_ratio"
+ ],
+ "dropped_features": [
+  "ev_nep141_ft_transfer",
+  "ev_nep245_mt_transfer",
+  "max_log_ratio"
+ ],
+ "domain_auc": 0.7377622299985791,
+ "head_thresholds": {
+  "high": 0.10718661949614267,
+  "medium": 0.10718661949614267
+ },
+ "n_train": {
+  "synthetic_attacks": 2400,
+  "synthetic_benign": 992,
+  "real_train_normals": 69863
+ },
+ "calib": {
+  "n": 17772,
+  "base": {
+   "n": 17772,
+   "high": 1,
+   "medium": 16,
+   "missed": 17755
+  },
+  "combined": {
+   "n": 17772,
+   "high": 1,
+   "medium": 16,
+   "missed": 17755
+  },
+  "head_p_quantiles": {
+   "0.5": 0.00032537296426470393,
+   "0.99": 0.000528248893265492,
+   "0.999": 0.0018674084668997644,
+   "1.0": 0.10718661949614265
+  }
+ },
+ "test": {
+  "n": 12463,
+  "base": {
+   "n": 12463,
+   "high": 0,
+   "medium": 85,
+   "missed": 12378
+  },
+  "combined": {
+   "n": 12463,
+   "high": 80,
+   "medium": 5,
+   "missed": 12378
+  },
+  "base_medium_plus": {
+   "k": 85,
+   "n": 12463,
+   "rate": 0.006820187755757041,
+   "ci95": [
+    0.005519447115436328,
+    0.00842487058568855
+   ]
+  },
+  "combined_medium_plus": {
+   "k": 85,
+   "n": 12463,
+   "rate": 0.006820187755757041,
+   "ci95": [
+    0.005519447115436328,
+    0.00842487058568855
+   ]
+  },
+  "added_medium_plus": 0,
+  "added_high": 80,
+  "added_by_flow": {}
+ },
+ "cases": {
+  "apr_oog_attempts / attempt": {
+   "base": {
+    "n": 55,
+    "high": 0,
+    "medium": 53,
+    "missed": 2
+   },
+   "combined": {
+    "n": 55,
+    "high": 53,
+    "medium": 0,
+    "missed": 2
+   },
+   "head_p_median": 0.995534310462041
+  },
+  "apr_oog_attempts / setup": {
+   "base": {
+    "n": 24,
+    "high": 0,
+    "medium": 0,
+    "missed": 24
+   },
+   "combined": {
+    "n": 24,
+    "high": 0,
+    "medium": 0,
+    "missed": 24
+   },
+   "head_p_median": 0.0003253447186303706
+  },
+  "may_admin_fuzzing / attempt": {
+   "base": {
+    "n": 177,
+    "high": 0,
+    "medium": 110,
+    "missed": 67
+   },
+   "combined": {
+    "n": 177,
+    "high": 107,
+    "medium": 3,
+    "missed": 67
+   },
+   "head_p_median": 0.23028465718425092
+  },
+  "may_admin_fuzzing / setup": {
+   "base": {
+    "n": 33,
+    "high": 0,
+    "medium": 6,
+    "missed": 27
+   },
+   "combined": {
+    "n": 33,
+    "high": 4,
+    "medium": 2,
+    "missed": 27
+   },
+   "head_p_median": 0.00024297794056496593
+  },
+  "may_token_spoof / attempt": {
+   "base": {
+    "n": 182,
+    "high": 0,
+    "medium": 18,
+    "missed": 164
+   },
+   "combined": {
+    "n": 182,
+    "high": 18,
+    "medium": 0,
+    "missed": 164
+   },
+   "head_p_median": 0.00032569584992945324
+  },
+  "may_token_spoof / setup": {
+   "base": {
+    "n": 6,
+    "high": 0,
+    "medium": 0,
+    "missed": 6
+   },
+   "combined": {
+    "n": 6,
+    "high": 0,
+    "medium": 0,
+    "missed": 6
+   },
+   "head_p_median": 6.499575715681101e-05
+  },
+  "oct_exploit / cashout": {
+   "base": {
+    "n": 38,
+    "high": 0,
+    "medium": 0,
+    "missed": 38
+   },
+   "combined": {
+    "n": 38,
+    "high": 0,
+    "medium": 0,
+    "missed": 38
+   },
+   "head_p_median": 0.00032537296426470393
+  },
+  "oct_exploit / exploit": {
+   "base": {
+    "n": 23,
+    "high": 23,
+    "medium": 0,
+    "missed": 0
+   },
+   "combined": {
+    "n": 23,
+    "high": 23,
+    "medium": 0,
+    "missed": 0
+   },
+   "head_p_median": 0.9996401303859368
+  },
+  "oct_exploit / setup": {
+   "base": {
+    "n": 14,
+    "high": 0,
+    "medium": 0,
+    "missed": 14
+   },
+   "combined": {
+    "n": 14,
+    "high": 0,
+    "medium": 0,
+    "missed": 14
+   },
+   "head_p_median": 0.00032540571168711264
+  },
+  "rhea_funding / setup_funding_via_intents": {
+   "base": {
+    "n": 1,
+    "high": 0,
+    "medium": 0,
+    "missed": 1
+   },
+   "combined": {
+    "n": 1,
+    "high": 0,
+    "medium": 0,
+    "missed": 1
+   },
+   "head_p_median": 0.00032537296426470393
+  },
+  "team_regression / team_regression_test": {
+   "base": {
+    "n": 17,
+    "high": 0,
+    "medium": 12,
+    "missed": 5
+   },
+   "combined": {
+    "n": 17,
+    "high": 12,
+    "medium": 0,
+    "missed": 5
+   },
+   "head_p_median": 0.9981398639783874
+  }
+ },
+ "real_positives": {
+  "n": 437,
+  "base_medium_plus": 204,
+  "combined_medium_plus": 204,
+  "base_high": 23,
+  "combined_high": 201
+ },
+ "fixed_verifier_synthetic": {
+  "attempt": {
+   "n": 200,
+   "head_medium_plus": 199
+  },
+  "benign": {
+   "n": 149,
+   "head_medium_plus": 1
+  }
+ },
+ "decision": {
+  "adopt": false,
+  "checks": {
+   "gain 0 >= 5": false,
+   "added test medium+ 0 <= 12": true,
+   "added test high 80 <= 1": false
+  }
+ },
+ "at": "2026-11-14T11:23:47+00:00"
+}

@@ -1,0 +1,22 @@
+[package]
+name = "synthetic-mt-token"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Standalone: not part of any workspace.
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+near-sdk = "=5.24.0"
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true

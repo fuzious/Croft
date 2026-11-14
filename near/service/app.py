@@ -3,6 +3,7 @@
 POST /v1/check    {receiver_id, agent_id?, method?, deposit_yocto?, source_files?} -> verdict allow|warn|block
 POST /v1/analyze  {source_files} -> contract risk and per-function risk
 POST /v1/report   {account_id, evidence_url, evidence_sha256?, reporter?, note?, confirm?} -> local blocklist
+POST /v1/intents/score {tx_hash, sender_id?} -> NEAR Intents transaction risk, label and rule hits (FastNEAR, mainnet)
 GET  /v1/health
 GET  /demo/      browser demo (near/demo/index.html)
 
@@ -15,6 +16,7 @@ import hmac
 import json
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlsplit
@@ -22,12 +24,12 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from near.analyzer import detect, extract_functions
 from near.analyzer.detectors import SEVERITY
 
-from . import blocklist, policy, signals, source
+from . import blocklist, intents, policy, signals, source
 from .policy import THRESHOLDS
 from .signals import sig
 
@@ -36,6 +38,7 @@ MAX_SOURCE_FILES = 2000
 MAX_SOURCE_BYTES = 5 * 1024 * 1024
 MAX_FILE_BYTES = source.MAX_FILE_BYTES
 MAX_BODY_BYTES = 6 * 1024 * 1024
+INTENTS_DEADLINE_S = 15.0   # /v1/check waits at most this long, from its start, for the intents_activity signal
 DETECTORS_SHA256 = hashlib.sha256(
     (Path(__file__).resolve().parents[1] / "analyzer" / "detectors.py").read_bytes()).hexdigest()
 CFG = signals.load_config()
@@ -64,6 +67,18 @@ class CheckRequest(BaseModel):
     method: Optional[str] = Field(None, max_length=256)
     deposit_yocto: Optional[str] = Field(None, pattern=r"^\d{1,40}$")
     source_files: Optional[dict[str, str]] = None
+
+
+class IntentsScoreRequest(BaseModel):
+    tx_hash: str = Field(min_length=32, max_length=44)
+    sender_id: Optional[str] = Field(None, min_length=2, max_length=64, pattern=ACCOUNT_ID)
+
+    @field_validator("tx_hash")
+    @classmethod
+    def _base58_32_bytes(cls, v: str) -> str:
+        if not intents.valid_tx_hash(v):
+            raise ValueError("tx_hash must be a base58-encoded 32-byte NEAR transaction hash")
+        return v
 
 
 class AnalyzeRequest(BaseModel):
@@ -185,10 +200,29 @@ def analyze(req: AnalyzeRequest):
             "functions": cr["functions"], "model": {"version": cr["version"], "sha256": cr["sha256"]}}
 
 
+def _intents_activity(receiver_id: str) -> dict:
+    if CFG["network"] != "mainnet":
+        return sig(None, f"n/a: FastNEAR indexes mainnet only (network {CFG['network']})")
+    return intents.activity_signal(receiver_id)
+
+
 @app.post("/v1/check")
 def check(req: CheckRequest):
     now = time.time_ns()
-    s = signals.account_signals(CFG, req.receiver_id, req.agent_id, now)
+    deadline = time.monotonic() + INTENTS_DEADLINE_S
+    pool = ThreadPoolExecutor(1)   # FastNEAR in parallel with RPC and NearBlocks
+    try:
+        ia = pool.submit(_intents_activity, req.receiver_id)
+        s = signals.account_signals(CFG, req.receiver_id, req.agent_id, now)
+        try:
+            s["intents_activity"] = ia.result(timeout=max(0.0, deadline - time.monotonic()))
+        except TimeoutError:
+            s["intents_activity"] = sig(None, intents.SOURCE, False,
+                                        f"FastNEAR timed out after {INTENTS_DEADLINE_S:g} s")
+    finally:
+        # A timed-out read goes on in the background until it ends: at most intents_max_requests FastNEAR
+        # requests of at most intents.TIMEOUT_S each (18 s from the check's start with the defaults).
+        pool.shutdown(wait=False)
     try:
         s["local_blocklist"] = sig(blocklist.lookup(req.receiver_id), "local blocklist")
     except (OSError, ValueError) as e:
@@ -218,6 +252,23 @@ def check(req: CheckRequest):
     return {"verdict": d["verdict"], "score": d["score"], "reasons": d["reasons"], "receiver_id": req.receiver_id,
             "network": CFG["network"], "signals": s,
             "model": {"version": cr["version"], "sha256": cr["sha256"]}}
+
+
+@app.post("/v1/intents/score")
+def intents_score(req: IntentsScoreRequest):
+    """One FastNEAR request, so the endpoint answers within intents.TIMEOUT_S; a FastNEAR timeout is a 504."""
+    try:
+        info = intents.model_info()
+        out = intents.score_hash(req.tx_hash, req.sender_id)
+    except intents.FastNearTimeout as e:
+        raise HTTPException(504, str(e)) from None
+    except (intents.FastNearError, intents.TxUnscorable) as e:
+        raise HTTPException(502, str(e)) from None
+    except intents.TxNotFound as e:
+        raise HTTPException(404, str(e)) from None
+    except intents.ModelUnavailable as e:   # frozen model missing or refused by its hash checks
+        raise HTTPException(503, str(e)) from None
+    return out | {"model": info}
 
 
 @app.post("/v1/report")

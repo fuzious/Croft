@@ -73,7 +73,21 @@ details summary{cursor:pointer;color:var(--mute);font-size:13px}
   </section>
 
   <section class="card">
-    <h2>3. Prompt-injection attack, stopped three times</h2>
+    <h2>3. Score a NEAR Intents transaction</h2>
+    <p class="mute" style="margin:0 0 10px">Fetches a mainnet transaction from FastNEAR and scores its receipt graph
+      with 12 invariant rules plus an anomaly model trained only on normal <code>intents.near</code> traffic.
+      <code>high</code> warns in <code>/v1/check</code>; <code>medium</code> is listed as info. If FastNEAR cannot be
+      read, <code>/v1/check</code> warns. In practice <code>high</code> comes from the high-severity rules.</p>
+    <div class="row">
+      <label>Transaction hash<input id="txHash" autocomplete="off" spellcheck="false"></label>
+      <button id="scoreBtn">Score</button>
+    </div>
+    <div class="presets" id="txPresets"></div>
+    <div class="out" id="scoreOut"></div>
+  </section>
+
+  <section class="card">
+    <h2>4. Prompt-injection attack, stopped three times</h2>
     <p class="mute" style="margin:0 0 6px">A scripted agent reads an invoice with a hidden instruction to pay a reported
       drainer. The agent holds only a function-call key for <code>guarded_router.pay</code>. Run it locally:
       <code>cd near/agent &amp;&amp; npm install &amp;&amp; npm run demo</code> (full log: <code>near/agent/attack_demo.log</code>).</p>
@@ -98,7 +112,7 @@ details summary{cursor:pointer;color:var(--mute);font-size:13px}
   </section>
 
   <section class="card">
-    <h2>4. The model, honestly</h2>
+    <h2>5. The model, honestly</h2>
     <div class="grid" id="stats"></div>
     <p class="mute" style="margin:10px 0 0">Numbers come from <code>near/model/reports/</code>. A model score alone only warns;
       <code>block</code> needs the shared blocklist, an on-chain attestation, or high code risk that a high-severity rule agrees with.</p>
@@ -230,6 +244,39 @@ async function analyze() {
   } catch (e) { $("analyzeOut").innerHTML = `<span class="err">${esc(e.message)}</span>`; }
   btn.disabled = false;
 }
+
+// Real mainnet transactions from near/data/intents: one of the 23 exploit txs of the 2026-10-01 incident, and a
+// normal PoA bridge deposit from 2026-11.
+const TX_PRESETS = [
+  {label: "Oct exploit tx (3k91uD…)", hash: "3k91uDpUiezxUe7hBgAR7kc3TBkToMZKGAiv6GqbtKiC"},
+  {label: "Normal deposit (8tTzvG…)", hash: "8tTzvGLMV7x1swmF2A5m3zDugCimdwmDrTXDTvKsJvj"},
+];
+
+async function scoreTx() {
+  const btn = $("scoreBtn"); btn.disabled = true;
+  $("scoreOut").innerHTML = '<span class="mute">Fetching from FastNEAR and scoring…</span>';
+  try {
+    const j = await api("/v1/intents/score", {tx_hash: $("txHash").value.trim()});
+    const hits = j.rule_hits || [];
+    $("scoreOut").innerHTML = `<p>Label <b class="${esc(j.label)}">${esc(j.label)}</b> · risk ${Number(j.risk).toFixed(4)}
+      · flow <code>${esc(j.flow_type)}</code> · anomaly percentile ${Number(j.anomaly_percentile).toFixed(4)}
+      · model ${esc(j.model && j.model.version)}</p>
+      <p class="mute" style="margin:0;overflow-wrap:anywhere">signer <code>${esc(j.signer_id)}</code> → <code>${esc(j.receiver_id)}</code></p>
+      ${hits.length ? `<table><tr><th>Rule</th><th>Severity</th><th>Message</th></tr>
+        ${hits.map(h => `<tr><td><code>${esc(h.rule)}</code></td><td class="${esc(h.severity)}">${esc(h.severity)}</td>
+          <td class="mute">${esc(h.message)}</td></tr>`).join("")}</table>`
+        : '<p class="mute">No rule fired.</p>'}`;
+  } catch (e) { $("scoreOut").innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+  btn.disabled = false;
+}
+
+TX_PRESETS.forEach(p => {
+  const b = document.createElement("button"); b.className = "ghost"; b.textContent = p.label;
+  b.onclick = () => { $("txHash").value = p.hash; scoreTx(); }; $("txPresets").appendChild(b);
+});
+$("txHash").value = TX_PRESETS[0].hash;
+$("scoreBtn").onclick = scoreTx;
+$("txHash").addEventListener("keydown", e => e.key === "Enter" && scoreTx());
 
 PRESETS.forEach(p => {
   const b = document.createElement("button"); b.className = "ghost"; b.textContent = p;

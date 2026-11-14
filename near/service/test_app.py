@@ -1,11 +1,13 @@
 import os
+import threading
+import time
 import unittest
 import unittest.mock
 
 from fastapi.testclient import TestClient
 
 from near.service import app as service
-from near.service import policy
+from near.service import intents, policy, signals
 
 VULN = '''
 #[near_bindgen]
@@ -96,6 +98,59 @@ class EndpointValidationTest(unittest.TestCase):
         r = self.client.get("/", follow_redirects=True)
         self.assertEqual(r.status_code, 200)
         self.assertIn("NEAR Security Oracle", r.text)
+
+
+CLOSED_PORT = "http://127.0.0.1:9"   # nothing listens on the discard port: RPC and NearBlocks fail at once
+
+
+class CheckIntentsTest(unittest.TestCase):
+    """/v1/check on mainnet with RPC and NearBlocks unreachable and FastNEAR answered by a fake transport."""
+
+    def setUp(self):
+        self.client = TestClient(service.app)
+        self.saved = (service.CFG, service.INTENTS_DEADLINE_S, intents.TRANSPORT)
+        service.CFG = signals.load_config({"NEAR_NETWORK": "mainnet", "NEAR_RPC_URL": CLOSED_PORT,
+                                           "NEARBLOCKS_API": CLOSED_PORT})
+        intents.clear_cache()
+
+    def tearDown(self):
+        service.CFG, service.INTENTS_DEADLINE_S, intents.TRANSPORT = self.saved
+        intents.clear_cache()
+
+    def intents_reason(self, body) -> str:
+        return next((r for r in body["reasons"] if "NEAR Intents" in r), "")
+
+    def test_fastnear_body_of_the_wrong_shape_is_a_warn_not_a_500(self):
+        for raw in (b"[]", b'"x"', b'{"account_txs":[{"nohash":1}]}', b'{"account_txs":"abc"}'):
+            with self.subTest(raw):
+                intents.TRANSPORT = lambda path, body, raw=raw: (200, {}, raw)
+                r = self.client.post("/v1/check", json={"receiver_id": "someone.near"})
+                self.assertEqual(r.status_code, 200, r.text)
+                b = r.json()
+                self.assertFalse(b["signals"]["intents_activity"]["available"])
+                self.assertEqual(b["verdict"], "warn")
+                self.assertIn("could not be read", self.intents_reason(b))
+
+    def test_slow_fastnear_times_out_into_a_warn(self):
+        release = threading.Event()
+
+        def stalled(path, body):
+            release.wait(10)
+            raise OSError("test finished")
+
+        intents.TRANSPORT = stalled
+        service.INTENTS_DEADLINE_S = 0.3
+        t0 = time.monotonic()
+        try:
+            r = self.client.post("/v1/check", json={"receiver_id": "someone.near"})
+        finally:
+            release.set()
+        self.assertLess(time.monotonic() - t0, 5.0)
+        self.assertEqual(r.status_code, 200, r.text)
+        ia = r.json()["signals"]["intents_activity"]
+        self.assertFalse(ia["available"])
+        self.assertIn("FastNEAR timed out", ia["error"])
+        self.assertIn("FastNEAR timed out", self.intents_reason(r.json()))
 
 
 if __name__ == "__main__":

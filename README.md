@@ -219,7 +219,7 @@ overlays: they hold only files that are new or changed since the base zips, so u
 | `archives/models.zip` | `models/` (frozen classifiers, tx-hash manifests, `laya_frozen_v7` weights) |
 | `archives/datasets_v12.zip` | overlay: v12 cards, per-category holdouts, test v4, harm/drainer sets, stage-2 flags, new replays |
 | `archives/models_v12.zip` | overlay: `frozen_v12` (current classifier), `dev_v12_tx_hashes.json`, `stage2_v1.json` |
-| `archives/near_datasets.zip`, `near_models.zip`, `near_llm_v2.zip` | NEAR oracle data, frozen models, optional v2 LLM (see `near/README.md`) |
+| `archives/near_datasets.zip`, `near_models.zip`, `near_llm_v2.zip`, `near_intents.zip` | NEAR oracle data, frozen models, optional v2 LLM, NEAR Intents model and labelled txs (see `near/README.md`) |
 
 ```bash
 git lfs install            # once per machine

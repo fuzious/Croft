@@ -9,7 +9,10 @@ combines:
 - a model trained on NEAR Rust smart-contract code, which scores the receiver's contract source;
 - 29 rule detectors for NEAR bug classes;
 - account signals: age, activity, recent code changes, prior interactions;
-- a shared blocklist that other agents can report to, with evidence attached.
+- a shared blocklist that other agents can report to, with evidence attached;
+- a NEAR Intents transaction detector: the receiver's recent `intents.near` transactions, scored by invariant rules
+  plus an anomaly model trained on normal Intents traffic (see
+  [NEAR Intents transaction anomaly detector](#near-intents-transaction-anomaly-detector)).
 
 On top of the service sit three pieces:
 
@@ -28,6 +31,8 @@ flowchart LR
     O --> S[NEP-330 source<br/>GitHub tarball]
     S --> M[Code model + detectors<br/>near/model, near/analyzer]
     O --> BL[Shared blocklist<br/>local + on-chain]
+    O --> FN[FastNEAR tx API<br/>receiver's Intents txs]
+    FN --> IM[Intents rules + anomaly model<br/>near/intents]
     O -->|allow / warn / block + reasons| W[Wrapper<br/>near/agent]
     W -->|block: refuse<br/>warn: ask human| H[Human]
     W -->|allow: sign with function-call key| GR[guarded_router<br/>near/contract]
@@ -48,12 +53,14 @@ Steps 1–5 need only Python. Steps 1 and 5 need internet.
 
 1. **Get the frozen models and data.** Run this from the repo root:
    ```bash
-   git lfs pull --include "archives/near_models.zip,archives/near_datasets.zip"
-   unzip -o archives/near_models.zip && unzip -o archives/near_datasets.zip
+   git lfs pull --include "archives/near_models.zip,archives/near_datasets.zip,archives/near_intents.zip"
+   unzip -o archives/near_models.zip && unzip -o archives/near_datasets.zip && unzip -o archives/near_intents.zip
    uv sync
    ```
-   **You see** `near/models/frozen_near_v1.pkl`, `frozen_near_v2.pkl` and `near/data/train_v2.jsonl`.
+   **You see** `near/models/frozen_near_v1.pkl`, `frozen_near_v2.pkl`, `near/data/train_v2.jsonl` and the frozen
+   NEAR Intents model `near/models/intents_v1.{pkl,json,train_ids.json}`.
    The pull fetches only the NEAR archives; plain `git lfs pull` would also fetch the 1.6 GB EVM models.
+   Without `near_intents.zip`, `/v1/intents/score` returns 503 and 10 NEAR Intents service tests are skipped.
 
    The LLM part of v2 is optional, about 0.9 GB. Get it with `git lfs pull --include archives/near_llm_v2.zip &&
    unzip -o archives/near_llm_v2.zip`. Without it the service serves the v1 model.
@@ -62,16 +69,21 @@ Steps 1–5 need only Python. Steps 1 and 5 need internet.
    ```bash
    uv run python -m unittest discover -s near -t . -p 'test_*.py'
    ```
-   **You see** `Ran 295 tests ... OK`, or `OK (skipped=2)` if you did not unpack the optional v2 LLM. This covers the analyzer, collectors, split checks, model freeze and predict,
-   policy and service.
+   **You see** `Ran 412 tests ... OK (skipped=2)`. The 2 skipped tests replay the Intents exploit in a NEAR sandbox
+   and run only with `INTENTS_SANDBOX_E2E=1`. Tests that need an optional artifact are also skipped without it: 2
+   without the v2 LLM, 10 without the NEAR Intents model (`near/models/intents_v1.*`). This covers the analyzer,
+   collectors, split checks, model freeze and predict, policy and service, and the NEAR Intents collector, features
+   and rules, model, evaluation, supervised head and synthetic sandbox scenarios.
 
 3. **Start the oracle and open the demo.**
    ```bash
    uv run uvicorn near.service.app:app --port 8000
    ```
-   Open <http://localhost:8000/>. **You see** the demo page. It has four sections:
+   Open <http://localhost:8000/>. **You see** the demo page. It has five sections:
    - check a receiver;
    - score contract code;
+   - score a NEAR Intents transaction (needs `near/models/intents_v1.*`, see
+     [below](#near-intents-transaction-anomaly-detector));
    - the attack-demo log;
    - the model's real numbers.
 
@@ -172,6 +184,177 @@ code, training rows and checkpoint; the loader refuses a changed file. Full logs
 - Most real exploits are logic bugs that need the surrounding protocol to understand. Treat code risk as a warning
   signal, and keep the router's limits as the real backstop.
 
+## NEAR Intents transaction anomaly detector
+
+A transaction-level detector for NEAR Intents (`intents.near`). It flags transactions whose receipt graph looks like
+an attack, and it feeds the `intents_activity` signal of `/v1/check`. It is separate from the code-risk model above.
+Full write-up: [`intents/reports/RESULTS.md`](intents/reports/RESULTS.md); build spec:
+[`intents/PLAN.md`](intents/PLAN.md).
+
+**Why anomaly detection, not an exploit classifier.** Real attacks on NEAR Intents are few and come from about 5
+actors. Of 570 labelled transactions, 23 are exploit transactions (strong positives, all from the 2026-10-01 incident)
+and 414 are attempts (weak positives: the April out-of-gas callback attempts and the May token-spoof and admin-method
+fuzzing). A classifier trained on them would learn those actors' fingerprints. So the detector learns what normal
+looks like, scores transactions with interpretable invariant rules plus an anomaly model, and holds every real
+campaign out as a case study.
+
+**Data** (FastNEAR Transactions API, collected by `near.intents.collect`):
+- 100,098 normal intents.near transactions, Nov 2024 to Nov 2026, sampled by month, including those that start on
+  other contracts (HOT Omni, PoA bridge deposits). Split by time: train 69,863 (2024-11 to 2026-05), calibration
+  17,772 (2026-06 to 2026-09), sealed test 12,463 (2026-10 to 2026-11).
+- Of the sealed test, 7,400 rows were sampled by the collector and 5,063 are scouting seeds (transactions pulled
+  around the exploit window and recent blocks). Rule development measured false alarms on the seeds, so the 7,400
+  collector rows are the clean false-alarm estimate.
+- 570 labelled transactions: 23 exploit, 414 attempt, 77 setup, 38 cashout, 1 setup funding (attacker-cluster
+  transactions of ordinary shape, reported separately), and 17 team regression tests (negatives).
+- No labelled transaction is used for training, model selection or thresholds.
+
+**Features and rules** (`near.intents.features`). 63 environment-invariant features of the receipt graph: structure,
+counts, method categories, event mix, relative amounts on a log scale. No account names, heights, timestamps or
+absolute gas. 12 invariant rules, for example: a `*_resolve_*` callback failed (`failed_resolve_callback`), a log near
+the 16 KB limit (`log_limit`), credit kept while the token refunded the sender (`credit_kept`), a refund larger than
+the deposit, a Notify receiver inside a deposit, a private or admin method called directly, out-of-gas in a callback.
+
+**Model** (`near.intents.model`). An IsolationForest on the features, trained on normals only. Label: `high` if a
+high rule fires or the anomaly score reaches the high threshold, `medium` likewise, else `low`. Thresholds were set on
+the calibration months for at most 1/10,000 (`high`) and 1/1,000 (`medium`) alerts on normal transactions. Frozen as
+`near/models/intents_v1.{pkl,json}` with sha256 of the pkl, the feature and model code, and the training ids.
+In practice `high` comes from the high-severity rules: the anomaly model never produced a `high` on calibration, test
+or campaign data (only on 1 of the 69,863 train-month normals it was fitted on).
+
+**Campaign case studies** (held out from training and calibration, but development-informed: see below):
+
+| campaign / role | n | high / medium / missed |
+|---|---|---|
+| 2026-10-01 exploit / exploit | 23 | **23 / 0 / 0**: one technique repeated by one actor, effectively one sample |
+| 2026-10-01 exploit / setup, cashout | 14, 38 | 0 / 0 / all (ordinary shape, not counted as misses) |
+| April out-of-gas attempts | 55 | 0 / 53 / 2 (96.4% medium or above) |
+| May token-spoof attempts | 182 | 0 / 18 / 164 (9.9%) |
+| May admin-method fuzzing | 177 | 0 / 110 / 67 (62.1%) |
+| team regression tests (negatives) | 17 | 0 / 12 / 5: **12 false alarms** at medium |
+
+**False alarms on the sealed test normals** (scored after the freeze; Wilson 95% intervals):
+
+| sealed test normals | rules only, `medium` or above | combined, `medium` or above | combined, `high` |
+|---|---|---|---|
+| **collector rows (clean estimate)** | **0/7,400** (0 to 0.052%) | **84/7,400 = 1.14%** (0.92 to 1.40) | 0/7,400 |
+| collector rows without the 99 paused-contract txs (post hoc) | 0/7,301 | 4/7,301 = 0.055% (0.021 to 0.141) | 0/7,301 |
+| all rows, including the 5,063 scouting seeds | 0/12,463 | 85/12,463 = 0.68% (0.55 to 0.84) | 0/12,463 (0 to 0.031%) |
+
+**Alerts per day:** about **39 medium alerts a day** as a baseline (17 to 92; 53 a day on the collector rows alone),
+plus a burst whenever intents.near is paused, and no `high` (upper bound 30 a day). The baseline is 5/12,364 test
+normals outside the 99 paused-contract transactions, at 97,000 Intents transactions a day. That split is post hoc,
+and 97,000 is the planning figure in `intents/PLAN.md`; FastNEAR's monthly count gives 86.8k a day for 2026-10.
+
+What the numbers mean:
+- **The rules do the detecting.** At medium and above, rules plus anomaly model flag exactly the same campaign
+  transactions as rules alone. The anomaly model detected no attack that the rules missed. On its own it catches the
+  October exploit at medium only, and that catch comes from 11 features that mirror the rules: set to their
+  train-normal medians, 0/23 exploit transactions reach medium. Its value against unseen attacks is not demonstrated.
+- **The medium target (1/1,000) is missed on the sealed test**: 1.14% on the collector rows, all from the anomaly
+  model. 80 of the 84 alerts came from one hour, 2026-10-01 10:00 UTC, when intents.near was paused during the
+  exploit response and bridge deposits failed with "Pausable: Method is paused". 80 of the 99 paused-contract
+  deposits sampled alerted. The exclusion check was done after seeing the numbers.
+- **So the oracle acts only on `high`.** In `/v1/check`, a recent Intents transaction of the receiver at `high`
+  warns, naming the transaction and the rules; `medium` is listed as info and does not change the verdict.
+- **Development-informed case studies.** The rules were written after seeing the October exploit and measuring the
+  April and May campaigns, so 23/23 and the April and May numbers are not out-of-sample estimates.
+- An optional supervised head trained on sandbox-generated attacks was built and **not adopted**: it added no real
+  detections and would have raised the 80 paused-deposit normals to `high`.
+
+### Try it: score the October exploit and a normal transaction
+
+Needs `near/models/intents_v1.{pkl,json}` and `intents_v1.train_ids.json` from `archives/near_intents.zip` (Try it,
+step 1) and internet (FastNEAR, mainnet).
+
+1. **Start the oracle** (Try it, step 3): `uv run uvicorn near.service.app:app --port 8000`.
+2. **Score one of the 23 exploit transactions of the 2026-10-01 incident.**
+   ```bash
+   curl -s localhost:8000/v1/intents/score -H 'content-type: application/json' \
+     -d '{"tx_hash": "3k91uDpUiezxUe7hBgAR7kc3TBkToMZKGAiv6GqbtKiC"}' \
+     | python3 -c "import json,sys; r=json.load(sys.stdin); print(r['label'], r['risk'], r['flow_type'], [h['rule'] for h in r['rule_hits']])"
+   ```
+   **You see** `high 1.0 deposit ['failed_resolve_callback', 'log_limit', 'credit_kept', 'refund_exceeds_deposit',
+   'notify_receiver_in_deposit', 'many_token_ids']`.
+3. **Score a normal transaction**, a PoA bridge deposit from 2026-11: run the same command with
+   `"tx_hash": "8tTzvGLMV7x1swmF2A5m3zDugCimdwmDrTXDTvKsJvj"`. **You see** `low 0.647009 deposit []`.
+4. **Check the exploiter's account as a receiver.**
+   ```bash
+   curl -s localhost:8000/v1/check -H 'content-type: application/json' \
+     -d '{"receiver_id": "20e6bfe4685d99004fc2095d3a0fc6158cd810ce8f801196141e183ed6e19d65"}' \
+     | python3 -c "import json,sys; r=json.load(sys.stdin); print(r['verdict']); print(*r['reasons'], sep='\n')"
+   ```
+   **You see**, at the time of writing (2026-11-14), `warn` with the reason `10 of the receiver's 20 most recent
+   NEAR Intents transactions scored high:
+   GAQKwHdT... (failed_resolve_callback, ...)`. It warns and does not block: the Intents signal never blocks on its
+   own.
+5. **In the browser**, the demo's "Score a NEAR Intents transaction" card has both transactions as presets.
+
+`POST /v1/intents/score {tx_hash, sender_id?}` returns `{risk, label, rule_hits, flow_type, top_features,
+anomaly_score, anomaly_percentile, touches_intents, model: {version, sha256}}`, plus `sender_matches` when
+`sender_id` is given. A malformed hash (not base58 of 32 bytes) is a 422, a hash FastNEAR does not know is a 404,
+a FastNEAR failure is a 502 with the reason, FastNEAR not answering within 6 s is a 504 `FastNEAR did not answer
+within 6 s` (the endpoint makes one FastNEAR request, so it answers within about 6 s), a fetched transaction the model
+cannot score is a 502 `FastNEAR transaction could not be scored (<error type>)`, and a missing or changed intents
+model is a 503. Use `label` for decisions: `risk` is max(rule weight, anomaly percentile), and an ordinary failing
+`execute_intents` has risk around 0.96 and label `low`.
+
+**`intents_activity` in `/v1/check`.** On mainnet the oracle reads the receiver's 40 newest FastNEAR account-index
+rows, fetches those transactions in batches of 20 until it has the 20 most recent that touch `intents.near` (at most 3
+requests, each ending within 6 s of wall-clock time however slowly FastNEAR sends, with answers over 8 MB refused),
+and scores each one. A `high` transaction warns; `medium` is listed as info.
+- **Unreadable warns, for every receiver.** If FastNEAR is down, answers any HTTP error (including a 429 rate limit),
+  sends a body of the wrong shape, leaves out any of the requested transactions (`FastNEAR returned k of n
+  transactions`), returns a transaction the model cannot score, or does not answer within 15 s of the check starting,
+  the signal is unavailable and the check warns with `recent NEAR Intents activity of the receiver could not be read
+  (<error>)`. The same happens when an Intents transaction is found but the intents model is missing. Why:
+  FastNEAR's free quota (about 60 requests a minute) is shared by every check, and anyone can drain it through the
+  unauthenticated endpoints. If "unreadable" passed, draining the quota would turn the warn on an
+  exploiter's account into an allow. The cost is availability: while the quota is drained, every mainnet check warns.
+- **Cache.** Successful reads are cached 5 minutes per receiver, for at most 1,024 receivers; the least recently read
+  is evicted first. Failed reads are not cached.
+- Off mainnet the signal is not applicable and changes nothing. The policy thresholds are in
+  [`service/policy.py`](service/policy.py) (`intents_*`).
+
+### Reproduce
+
+The intents data (`near/data/intents/`) and model (`near/models/intents_v1.*`) are gitignored.
+`archives/near_intents.zip` (Try it, step 1) holds the frozen model and the small data files: `labelled.jsonl.gz`,
+`stats.json`, `windows.json` and the label file `all_labelled_txs.jsonl`. That is enough for `/v1/intents/score`,
+`intents_activity` and the tests. It leaves out the normals (`normals.jsonl.gz`, 239 MB), the feature cache and the
+synthetic data. To re-pull and rebuild (FastNEAR is free and keyless but allows about 60 requests a minute; the
+collector paces at 1 request a second). The collector reads the archived label file and the attacker list in
+`near/intents/fixtures/` by default. **`model freeze` overwrites the shipped `near/models/intents_v1.*`**: skip it to
+keep the shipped model, or back those files up first.
+```bash
+uv run python -m near.intents.collect labelled   # 570 labelled txs, full receipts
+uv run python -m near.intents.collect normals    # month-stratified sample, target 100,000 txs
+uv run python -m near.intents.collect stats      # counts by month, flow type and outcome -> stats.json
+uv run python -m near.intents.model cache        # features and rules for every tx (~15 s)
+uv run python -m near.intents.model freeze       # fit, select, calibrate -> near/models/intents_v1.* (~3 s)
+uv run python -m near.intents.evaluate tables    # re-render reports/evaluation.md from evaluation.json
+```
+A re-pull does not reproduce the exact sample: FastNEAR pages are drawn afresh and the scouting seeds are not in the
+repository, so a refreeze gives a different model from `intents_v1`. The sealed test was already scored (`evaluate
+run` refuses to rescore without `--rescore`).
+
+**Limits.**
+- Per-transaction only: setup, cashout and funding transactions of attackers look ordinary and are not flagged.
+- Few campaigns (about 5 actors, 4 attack campaigns), so intervals are wide and the rates describe these actors. The
+  23/23 on the exploit is one technique repeated by one actor.
+- Rules alone flag 0.47% of training-period normals at medium (mostly `notify_receiver_in_deposit` in 2025-04 to
+  2025-07), so quiet test months do not guarantee low rule false alarms.
+- Calibration has no withdrawals and 227 "other" transactions; the high threshold rests on 17,772 rows.
+- The pooled test numbers are partly in-sample for the rules: they were tuned for false alarms on the 5,063 scouting
+  seeds in the test slice (and 2,672 in calibration). Use the collector rows.
+- 4 train normals were signed by a `setup` account of both May campaigns that the attacker list did not name. The
+  model was not refrozen; the collector now drops such signers on future pulls.
+- **Evasion:** `intents_activity` reads only the receiver's 40 newest account-index rows. 40 unrelated transactions
+  involving the receiver push an attack transaction out of that window, and the check no longer sees it.
+- **Griefing:** any `high` transaction the receiver merely appears in counts against it; its role (signer, notified
+  contract, counterparty) is not checked. So a third party can make an account warn by involving it in a transaction
+  that scores `high`.
+
 ## Signals and where they come from
 
 | Signal | Source | How |
@@ -184,6 +367,7 @@ code, training rows and checkpoint; the loader refuses a changed file. Full logs
 | code risk | `near/model/predict.py` | frozen model plus detectors; detectors only if no model is present |
 | shared blocklist | local store and on-chain `security_oracle` | `POST /v1/report` with an evidence URL (sha256 optional); the operator or attesters confirm; `is_blocked` view |
 | on-chain attestation | `security_oracle.get_verdict` | verdict, code hash, expiry |
+| NEAR Intents activity (mainnet only) | FastNEAR Transactions API + `near/models/intents_v1` | receiver's 40 latest index rows, then full txs in batches of 20 until 20 that touch `intents.near` (at most 3 requests, each ending within 6 s, answers over 8 MB refused; `/v1/check` waits at most 15 s), each scored; unreadable or partial reads warn for every receiver; successful reads cached 5 minutes per receiver, at most 1,024 receivers, least recently read evicted first |
 
 A signal that could not be read is a reason to warn, never a pass. Policy thresholds (account age, recent code
 change, large deposit, detectors-only fallback) are in [`service/policy.py`](service/policy.py). The model's
@@ -254,7 +438,8 @@ instead.
 | `analyzer/` | tree-sitter Rust function extraction, 29 NEAR detectors, features |
 | `collect/` | audits, incidents, corpus, fix-commit mining, mutations, split assembly |
 | `model/` | training, nested CV, freeze, sealed scoring, `predict.py`; `reports/` holds the results |
-| `service/` | FastAPI oracle: `/v1/check`, `/v1/analyze`, `/v1/report`, `/v1/health`, `/demo/` |
+| `service/` | FastAPI oracle: `/v1/check`, `/v1/analyze`, `/v1/report`, `/v1/intents/score`, `/v1/health`, `/demo/` |
+| `intents/` | NEAR Intents transaction detector: FastNEAR collector, receipt-graph features and rules, anomaly model, evaluation; `intents/reports/RESULTS.md` |
 | `contract/` | near-sdk 5.30 contracts `security_oracle` and `guarded_router`, near-workspaces sandbox tests |
 | `agent/` | wrapper, attester relay, simulated agent, attack demo and its log |
 | `demo/` | the browser demo (`index.html`) and the two example contracts |
@@ -282,6 +467,8 @@ Service configuration (environment variables):
   `/v1/check` warn for that receiver until an operator dismisses it (`python -m near.service.blocklist dismiss ID`). Run the
   service on a private network or add authentication and rate limits before exposing it.
 - **NearBlocks free tier.** It rate-limits; set `NEARBLOCKS_API_KEY` for real use.
+- **FastNEAR free quota.** About 60 requests a minute, shared by every check, and any client can drain it. While it is
+  drained, every mainnet `/v1/check` warns (the Intents signal fails closed). That is a nuisance, not a bypass.
 - **Unverifiable source.** Contracts without NEP-330 metadata get `warn`.
 - **Development-informed v2 test.** v2's test numbers are development-informed: v1's results on the same test were
   seen before v2 was built. A fresh sealed test is still needed.
@@ -296,5 +483,7 @@ Service configuration (environment variables):
   (Claude Code), directed and reviewed by the author. The label re-check and fix-commit triage were also done by AI
   agents reading each case, with notes in `archives/near_datasets.zip` (`near/data/relabel/`,
   `near/data/raw/fix_commit_triage*/`).
+- **NEAR Intents detector.** The Intents detector (`intents/`, `service/intents.py`) was also written with AI coding
+  agents (Claude Code) during the hackathon, like the rest of `near/`.
 
 License: [Business Source License 1.1](../LICENSE).

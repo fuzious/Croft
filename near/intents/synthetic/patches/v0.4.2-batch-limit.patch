@@ -1,0 +1,17 @@
+Backport of the deposit half of near/intents b8bcf7dc "chore: limit number of batch tokens (#364)", released in
+defuse v0.4.3 and deployed on mainnet on 2026-10-02 as the fix for the 2026-10-01 exploit. Applied on top of
+v0.4.2 (6dad94cf) so that it builds with rustc 1.86 into wasm the sandbox's protocol accepts.
+--- a/defuse/src/contract/tokens/nep245/deposit.rs
++++ b/defuse/src/contract/tokens/nep245/deposit.rs
+@@ -39,6 +39,11 @@
+             "NEP-245: Contract MUST panic if `previous_owner_ids` length does not equals `token_ids` length"
+         );
+ 
++        require!(
++            token_ids.len() <= 10,
++            format!("too many tokens: max batch size is 10, got {}", token_ids.len())
++        );
++
+         require!(
+             token != env::current_account_id(),
+             "self-wrapping is not allowed"

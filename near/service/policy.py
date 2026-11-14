@@ -3,8 +3,10 @@
 `block` if blocklisted (local confirmed report, on-chain oracle) or code risk is high and a high-severity detector hit
 agrees on one of the high-risk functions; `warn` if code risk is high without that agreement or medium, a public
 function too short for the model has a high-severity detector hit,
-the account is young, its code changed recently, it is a contract with no verifiable source, or the deposit is large
-and the agent never transacted with it before. A signal that could not be read is a reason to warn, never a pass."""
+the account is young, its code changed recently, it is a contract with no verifiable source, the deposit is large
+and the agent never transacted with it before, or one of the receiver's recent NEAR Intents transactions scored
+`high` (intents_activity; never a block on its own). A signal that could not be read is a reason to warn, never a
+pass."""
 from __future__ import annotations
 
 THRESHOLDS = {
@@ -17,6 +19,18 @@ THRESHOLDS = {
     # contract risk = max over functions. Detectors are uncalibrated signals, so alone they warn but never block.
     "detector_weight": {"high": 0.6, "medium": 0.3, "low": 0.1, "info": 0.0},
     "detectors_only_can_block": False,
+    # NEAR Intents activity (near.service.intents): the receiver's recent transactions that touch intents.near,
+    # scored by the frozen intents model. `high` warns; `medium` is listed as info: on the sealed test months'
+    # collector-sampled normal Intents txs, 84/7,400 = 1.14% reached medium (0 high), 80 of them from one hour of
+    # deposits failing while intents.near was paused; without the paused-contract txs, 4/7,301 = 0.055% (post hoc).
+    # Medium is too noisy to act on (near/intents/reports/RESULTS.md).
+    "intents_warn_label": "high",
+    "intents_info_label": "medium",
+    "intents_recent_txs": 20,               # score at most this many of the receiver's latest Intents txs
+    "intents_index_rows": 40,               # latest account-index rows read to find them
+    "intents_max_requests": 3,              # FastNEAR requests per check: 1 index page + up to 2 batches of 20 txs
+    "intents_cache_s": 300,                 # per-receiver cache of a successful read
+    "intents_reasons_max": 3,               # tx hashes named per reason
 }
 ORDER = {"allow": 0, "warn": 1, "block": 2}
 
@@ -44,6 +58,43 @@ def _code_reason(cr: dict) -> str:
 
 def _high_hits(fn: dict) -> bool:
     return any(h.get("severity") == "high" for h in fn.get("detector_hits") or [])
+
+
+def _intents_tx(t: dict) -> str:
+    rules = ", ".join(t.get("rules") or []) or "no rule; anomaly score above the high threshold"
+    return f"{t.get('tx_hash')} ({rules})"
+
+
+def _intents_reasons(s: dict) -> list[tuple[str, str]]:
+    """intents_activity: `warn` when any recent Intents tx of the receiver is high, naming the tx and its rules;
+    medium txs are listed with level `allow` (info, no verdict change). It never blocks: the label rests on
+    per-transaction rules that also fire on the team's own regression tests, and on the receiver's role in a tx
+    (signer, notified contract, counterparty) not being checked.
+
+    Unreadable (FastNEAR down, rate-limited, timed out, answering data of an unexpected shape or leaving out requested
+    transactions): `warn` for every receiver, with the error. FastNEAR's free quota (about 60 requests a minute per
+    IP) is shared by every check, and the scoring endpoint is unauthenticated, so any client can drain it on purpose;
+    if "unreadable" passed, draining the quota would turn the warn on an exploiter's account into an allow. Off
+    mainnet the signal is "not applicable" (available, value None) and adds nothing."""
+    v, ok, err = s.get("value"), bool(s.get("available")), s.get("error")
+    t = THRESHOLDS
+    if not ok:
+        return [("warn", f"recent NEAR Intents activity of the receiver could not be read ({err})")]
+    if not v:
+        return []
+    txs = v.get("txs") or []
+    n, k = len(txs), t["intents_reasons_max"]
+    out = []
+    high = [x for x in txs if x.get("label") == t["intents_warn_label"]]
+    med = [x for x in txs if x.get("label") == t["intents_info_label"]]
+    if high:
+        out.append(("warn", f"{len(high)} of the receiver's {n} most recent NEAR Intents transactions scored "
+                            f"{t['intents_warn_label']}: " + "; ".join(_intents_tx(x) for x in high[:k])))
+    if med:
+        out.append(("allow", f"info: {len(med)} of the receiver's {n} most recent NEAR Intents transactions scored "
+                             f"{t['intents_info_label']} (no verdict change): "
+                             + "; ".join(_intents_tx(x) for x in med[:k])))
+    return out
 
 
 def decide(signals: dict, deposit_yocto=None, network: str = "mainnet", now_ns: int = 0) -> dict:
@@ -139,6 +190,9 @@ def decide(signals: dict, deposit_yocto=None, network: str = "mainnet", now_ns: 
             elif not prior:
                 out.append(("warn", f"no prior transactions from the agent to the receiver and the deposit is "
                                     f"{_near(deposit)} (threshold {_near(t['large_deposit_yocto'])})"))
+
+    if "intents_activity" in signals:
+        out += _intents_reasons(signals["intents_activity"] or {})
 
     verdict = max((lvl for lvl, _ in out), key=ORDER.get, default="allow")
     reasons = [r for lvl in ("block", "warn", "allow") for l2, r in out if l2 == lvl]
