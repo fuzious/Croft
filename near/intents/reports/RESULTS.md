@@ -3,7 +3,8 @@
 [Overview](../../../README.md) · [Accounting validation](accounting_validation.json) · [Release audit](release_evidence_audit.json)
 
 **The accounting check agrees with recorded sandbox state and known exploit labels. This is not unseen-attack accuracy.**
-The served `intents_v1` model and rules are unchanged. No new fits, features, thresholds or sandbox families were added for this release.
+This release serves the `intents_v1` model and rules as shipped; it adds no fits, features, thresholds or sandbox
+families.
 
 ## Accounting first
 
@@ -18,11 +19,13 @@ The served `intents_v1` model and rules are unchanged. No new fits, features, th
 Across **4,014 sandbox executions**, there are 712 positive state measurements, 2,113 zero measurements and
 **1,189 without direct state measurements**. No measured state label disagrees with the check. The 0/3,302 other
 executions include unsuccessful probes and unmeasured flows; they are not all independently proved state-negative.
+State zero means `ghost_credit == 0`; 329 attempt runs (318 in synthetic/attacks.jsonl.gz, 3 in the patched backport, 4 in v2 train, 4 in v2 test)
+show measured unbacked burn (the token side lost backing without extra credit), which the check does not flag high.
 
 Of the historical normals, **25,336 were checked, 4,984 inconclusive and 69,778 unsupported**. No finding is not
-proof of safety. These are existing, correlated samples, not fresh tests. The real exploits repeat one technique
-by one actor. Production accounting reconciles successful events; it does not independently read opening/closing
-balances or establish token authenticity or protocol solvency.
+proof of safety. These are correlated samples from the research collection, not fresh tests. The real exploits
+repeat one technique by one actor. Production accounting reconciles successful events; it does not independently
+read opening/closing balances or establish token authenticity or protocol solvency.
 
 Re-run without training, using the original local data listed and hashed in the report:
 
@@ -45,6 +48,9 @@ additional campaign detections or alerts on the 7,400 historical clean test tran
 | Signed-intent probes | **0 / 194** |
 | Other campaign calls: deposit, withdrawal, transfer or key calls | **0 / 39** |
 
+Groups are defined from the same receipt signals the rules read, so 204/204 describes coverage of those patterns,
+not detection accuracy. [Mechanism script](../audit/mechanism_table.py).
+
 The 233 misses are **signed-intent and other campaign calls**, not all signed-intent fuzzing. These groups were
 defined retrospectively. On the same 7,400 normal transactions, rules + accounting raised **0 medium-or-higher
 alerts**. Adding the served anomaly model raised **84 medium alerts and 0 high alerts**, without more campaign detections.
@@ -58,9 +64,9 @@ alerts**. Adding the served anomaly model raised **84 medium alerts and 0 high a
 | Team regression controls | 0 | 12 false alarms | 5 |
 
 **41 of the 53 April detections only mean “deposit used Notify”.** They do not establish an out-of-gas attack.
-The April demo now uses `Ete7rqrC1EFpj2ZFK4BY2vqDHtTUXmiHqfwsg1mR3k5i`, which also has callback out-of-gas evidence.
+The April demo preset is `Ete7rqrC1EFpj2ZFK4BY2vqDHtTUXmiHqfwsg1mR3k5i`, which also has callback out-of-gas evidence.
 The 18 May token-campaign detections are direct private-method probes, not token-authenticity checks.
-The former token-spoof preset is **“Not flagged: rejected overdraw probe”**; its failure says insufficient balance
+The May token-campaign preset is **“Not flagged: rejected overdraw probe”**; its failure says insufficient balance
 or overflow, not that a successful spoof occurred.
 
 All campaign rows use the frozen served detector: **0 high / 84 medium-or-higher alerts on 7,400 normals**.
@@ -70,7 +76,7 @@ medium alerts came from one paused-contract hour. Zero observed high alerts has 
 
 ## Research candidate: rejected
 
-The previous **204→353/430** family-holdout result pools four refits. The two May families share a funder:
+The **204→353/430** family-holdout result pools four refits. The two May families share a funder:
 it measures **same-attacker-cluster transfer**, not demonstrated unseen-attacker generalization. Each row below
 pairs recall with alerts from that exact refit and its thresholds; do not pair the total with the full-fit model's 14 alerts.
 
@@ -89,9 +95,10 @@ Holding out the funding-linked attacker cluster reduces the pooled improvement t
 | October exploiter | 23 → 23 / 23 | 0 | 0 |
 | April actor | 53 → 53 / 55 | 6 | 6 |
 
-These normal counts cannot be pooled into one deployed-model rate. The prior auditor's saved tool output supplies
-the fold alert counts and rounded thresholds; the fold weights were not saved. We did not refit them for this
-release. Family positive counts also match the saved per-row predictions. [Audit and provenance](release_evidence_audit.json).
+These normal counts cannot be pooled into one deployed-model rate. [holdout_check.py](../audit/holdout_check.py)
+refits each fold deterministically from the research feature matrix and reproduces these alert counts and rounded
+thresholds exactly; the fold weights are not saved. Family positive counts also match the saved per-row
+predictions. [Audit and provenance](release_evidence_audit.json).
 
 The separate full-fit candidate raised **14 high alerts / 7,400 normals** and **26 high alerts / 40 generated benign
 controls**. A source classifier perfectly separated sampled generated and real benign traffic. The candidate
@@ -132,6 +139,6 @@ the shipped model was not retrained. [Sandbox provenance](synthetic_families_v2.
   publish account blocks.
 
 The demo archive supplies the frozen model and labelled records; it omits the full normal/scouting datasets.
-The validator refuses to overwrite an existing report. Preserve the shipped evidence when running research tools.
+The validator refuses to overwrite a report file. Preserve the shipped evidence when running research tools.
 
 </details>

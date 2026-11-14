@@ -63,7 +63,7 @@
   },
   "protocol_sha256": "86b221e73078e1e7b6c36439a66de5880c5d1664e6d19192a1e8b98e88997be8",
   "dataset": {
-    "train_file": "/Users/aman/Desktop/coding/security_oracle/near/data/train_v2.jsonl",
+    "train_file": "near/data/train_v2.jsonl",
     "train_sha256": "92b5f0d78415a2d93384f6f85566a5a109edaf6264249e0c46d445abd15a1a4d",
     "n_raw": 66590
   },

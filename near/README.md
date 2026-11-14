@@ -26,6 +26,7 @@ network failures and rate limits are shown as errors, not clean results.
 
 The April preset has callback out-of-gas evidence. Across that campaign, **41 of 53 detections** only mean
 “deposit used Notify”; they do not establish that an out-of-gas attack occurred. Wallet drainers are not covered.
+Its earlier-activity panel can show “unavailable” when FastNEAR's answer exceeds the 8 MB cap.
 
 For a deterministic replay using recorded mainnet responses:
 
@@ -33,7 +34,7 @@ For a deterministic replay using recorded mainnet responses:
 uv run python -m near.demo.replay
 ```
 
-Expected: exploit high, normal low, and 10 high out of 20 transactions in the exploiter's recorded activity.
+Expected final check: `PASS: exploit high; normal low; account history 10/20 high.`
 This runs the frozen scorer, prints artifact hashes and makes no network requests.
 
 ## API
@@ -53,7 +54,9 @@ curl -s localhost:8000/v1/protocols/scan -H 'content-type: application/json' \
 | `POST /v1/analyze` | Supporting Rust source analysis; input `source_files` mapping |
 | `GET /v1/health` | Model and service configuration |
 
-The existing `/v1/intents/score` and `/v1/intents/scan` routes remain compatible aliases.
+`/v1/intents/score` and `/v1/intents/scan` are aliases of the score and scan routes.
+`/v1/health`'s `model` field describes the optional source-code model; the transaction model identity is in each
+score/scan response.
 Scans also return `assessment_counts` and `n_incomplete`, so unknown evidence is not counted as clean.
 Interactive schemas: **<http://localhost:8000/docs>**.
 
@@ -76,7 +79,7 @@ and caches successful results for five minutes. It is not continuous monitoring 
 
 `include_history` defaults to `false` in the API; the demo enables it. It adds at most four reads for two participant
 accounts, up to 20 earlier index rows each. Each read has a six-second network deadline. If history fails, the
-transaction result remains visible with history marked unavailable. Scans reuse their existing transaction window.
+transaction result remains visible with history marked unavailable. Scans reuse the transaction window they scored.
 History links require matching authenticated participants and earlier completed receipts; shared relayers are excluded.
 
 ## Optional response layer
@@ -87,7 +90,7 @@ to obtain an **account policy verdict**. The [on-chain contracts](contract/READM
 this demo. A high transaction label does not automatically publish a block or prove its signer is an attacker.
 
 Those integrations use `NEAR_NETWORK`, `NEAR_RPC_URL`, `ORACLE_CONTRACT_ID`, `NEARBLOCKS_API_KEY`,
-`ORACLE_BLOCKLIST_PATH` and `ORACLE_ADMIN_TOKEN`. The score/scan data source remains mainnet FastNEAR.
+`ORACLE_BLOCKLIST_PATH` and `ORACLE_ADMIN_TOKEN`. The score/scan data source is mainnet FastNEAR.
 Keep the demo local unless you add request quotas and report authentication.
 
 <details>
@@ -109,8 +112,9 @@ unzip -o archives/near_models.zip
 Without these weights, source analysis uses detectors only; transaction analysis still runs. Optional LLM weights
 (`archives/near_llm_v2.zip`, about 0.9 GB) are not in the repository. They require `uv sync --extra llm`.
 
-**Release freeze:** no new training, features, thresholds or sandbox families. `intents_v1` and its rules are
-unchanged. The transaction research candidate remains rejected. [Results and audit](intents/reports/RESULTS.md).
+**Release freeze:** this release adds no training, features, thresholds or sandbox families. `intents_v1` and its
+rules are what is served. The transaction research candidate is rejected.
+[Results and audit](intents/reports/RESULTS.md).
 
 Optional research artifacts:
 

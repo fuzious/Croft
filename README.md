@@ -1,11 +1,11 @@
 # NEAR Protocol Security Agent
 
-**Inspect a transaction. Find the attack pattern. See the evidence.**
+A security investigation agent for **NEAR Intents** transactions: submit a mainnet transaction hash or scan an
+account's recent activity. It reads receipt graphs, reconciles deposit/refund events, and connects earlier activity
+to explain what looks suspicious.
 
-A protocol investigation agent for NEAR: submit a mainnet transaction hash or scan an account's recent activity.
-It reads receipt graphs, reconciles deposit/refund events, and connects earlier activity to explain what looks suspicious.
-
-[Run it](near/README.md) · [Intents evidence](near/intents/reports/RESULTS.md) · [API reference](http://localhost:8000/docs)
+[Run it](near/README.md) · [Intents evidence](near/intents/reports/RESULTS.md) ·
+[API reference](http://localhost:8000/docs) (after running locally)
 
 ```mermaid
 flowchart LR
@@ -32,7 +32,7 @@ flowchart LR
 | **No known pattern** | Nothing reached an alert threshold in the available, supported data; **not proof of safety** |
 | **Inconclusive / unsupported** | Evidence is incomplete or the transaction is outside calibrated coverage |
 
-You can submit **any well-formed NEAR mainnet transaction hash**. The current detector is calibrated on **NEAR
+You can submit **any well-formed NEAR mainnet transaction hash**. The detector is calibrated on **NEAR
 Intents**, not every NEAR protocol. Unsupported transactions are identified explicitly. It inspects completed
 transactions; it does not simulate pending transactions or automatically stop an exploit.
 
@@ -55,15 +55,18 @@ This is a bounded scan, not continuous monitoring or a complete account audit.
 ## Evidence at a glance
 
 The **accounting check** reconciles deposit, refund and surviving credit events. Against recorded sandbox
-contract state and real case labels:
+contract state and real case labels (checked-in report; the full input datasets are not bundled):
 
 | Evidence set | High accounting findings |
 |---|---:|
 | Sandbox: measured credit defects | **712 / 712** |
 | Sandbox: other unpatched executions | **0 / 2,953** |
 | Sandbox: patched verifier | **0 / 349** |
-| Known real exploits | **23 / 23** |
+| Real exploits: October transactions, one actor, one technique | **23 / 23** |
 | Sampled historical normals | **0 / 100,098** |
+
+Of the sandbox rows without a finding, 1,849 / 2,953 unpatched and 109 / 349 patched were checked; the rest were
+inconclusive or unsupported.
 
 **Agreement with recorded ground truth, not unseen-attack accuracy.** The 4,014 sandbox runs repeat controlled
 recipes; 1,189 lack direct state measurements. Of the historical normals, 25,336 were checked, 4,984 inconclusive
@@ -81,19 +84,28 @@ Categories describe patterns, not verified root causes.
 | Direct private/admin calls | Signatures, replay and historical keys |
 | Callback gas and log failures | Prices, arithmetic, shares, protocol balances and bridge proofs |
 
-**Wallet drainers are not covered.** [Full taxonomy](near/intents/fixtures/attack_taxonomy.json).
-The anomaly model added no campaign detections. The new research candidate was **rejected** because of false
-alarms; the served `intents_v1` model and rules remain unchanged.
+**Wallet drainers are not covered.** [Full taxonomy](near/intents/fixtures/attack_taxonomy.json). In that file,
+"supported" for token spoofing means some direct receiver probes are visible; no served rule maps to it.
+
+The served detector (rules + anomaly model) raised **0 high** and **84 Suspicious** alerts on 7,400 held-out normal
+transactions; 80 came from one paused-contract hour. The anomaly model added no campaign detections. A retrained
+model was **rejected** for false alarms; `intents_v1` and its rules are what is served.
 
 ## Try it
 
+Needs Python 3.12+ and [uv](https://docs.astral.sh/uv/); no Git LFS.
+
 ```bash
-# One-time setup: near/README.md
-uv run uvicorn near.service.app:app --port 8000
-# Open http://localhost:8000/demo/
+git clone -b near-security-oracle https://github.com/fuzious/security_oracle.git && cd security_oracle
+unzip -o archives/near_intents.zip
+uv sync
 
 # Recorded evidence; no network or keys
 uv run python -m near.demo.replay
+# Expected: PASS: exploit high; normal low; account history 10/20 high.
+
+uv run uvicorn near.service.app:app --port 8000
+# Open http://localhost:8000/demo/
 ```
 
 | Demo input | What to show |

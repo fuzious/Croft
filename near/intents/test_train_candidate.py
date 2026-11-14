@@ -2,6 +2,7 @@
 import pickle
 import tempfile
 import unittest
+import warnings
 from pathlib import Path
 from unittest.mock import patch
 
@@ -63,7 +64,14 @@ class ConditionalForestTest(unittest.TestCase):
         cls.X[:, ft.FEATURE_KEYS.index('n_failed')] = 0
         cls.X[-1, ft.FEATURE_KEYS.index('n_failed')] = 1
         cls.flows = np.array(['deposit'] * 22 + ['withdrawal'] * 2)
-        cls.model = ConditionalForest('per_flow_outcome', trees=5, min_rows=4).fit(cls.X, cls.flows)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            cls.model = ConditionalForest('per_flow_outcome', trees=5, min_rows=4).fit(cls.X, cls.flows)
+        # Fixture groups hold fewer rows than IsolationForest's max_samples, so sklearn clips and warns.
+        expected = 'max_samples (2048) is greater than the total number of samples'
+        if not caught or any(w.category is not UserWarning or not str(w.message).startswith(expected)
+                             for w in caught):
+            raise AssertionError(f'unexpected warnings while fitting: {[str(w.message) for w in caught]}')
 
     def test_sparse_outcome_and_unknown_flow_use_fitted_fallback(self):
         probe = self.X[:2].copy()
