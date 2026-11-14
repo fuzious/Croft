@@ -1,4 +1,4 @@
-# Security Oracle
+# Croft
 
 Transaction security research for Ethereum/EVM and NEAR.
 

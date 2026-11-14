@@ -58,7 +58,7 @@ test('sends agent_id, receiver_id and deposit_yocto to /v1/check', async () => {
 });
 
 test('block: refuses to sign and logs the reasons', async () => {
-  const d = deps({ verdict: 'block', reasons: ['the on-chain security oracle lists the receiver as blocked'] });
+  const d = deps({ verdict: 'block', reasons: ['the on-chain Croft oracle lists the receiver as blocked'] });
   const r = await payWithOracle({ receiver: 'bad.test.near', amount: '1', reason: 'x' }, d);
   assert.equal(r.status, 'refused');
   assert.equal(d.calls.signs.length, 0);

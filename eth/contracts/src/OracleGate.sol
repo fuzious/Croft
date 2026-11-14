@@ -6,7 +6,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
 
 /// @title OracleGate
-/// @notice Users sign a ForwardRequest (any target, any calldata) and hand it to the Security Oracle.
+/// @notice Users sign a ForwardRequest (any target, any calldata) and hand it to Croft.
 ///         The oracle simulates and scores the whole transaction; only if it is judged safe does the
 ///         oracle's relayer submit it here. While the request executes, a transient flag marks the
 ///         transaction as gated, so protected protocols (see `Gated`) accept calls anywhere inside it,
@@ -101,7 +101,7 @@ interface IOracleGate {
     function isGated() external view returns (bool);
 }
 
-/// @notice Inherit to put a protocol behind the Security Oracle.
+/// @notice Inherit to put a protocol behind Croft.
 abstract contract Gated {
     IOracleGate public immutable gate;
 

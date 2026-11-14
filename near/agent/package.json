@@ -1,8 +1,8 @@
 {
-  "name": "near-security-oracle-agent",
+  "name": "croft-agent",
   "version": "0.1.0",
   "private": true,
-  "description": "Optional account-policy attester and scoped payment response adapters for the NEAR Protocol Security Agent",
+  "description": "Optional account-policy attester and scoped payment response adapters for Croft",
   "type": "module",
   "engines": {
     "node": ">=22"

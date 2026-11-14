@@ -1,4 +1,4 @@
-# NEAR Security Oracle
+# Croft · NEAR
 
 Investigate completed NEAR Intents transactions and review receipt, accounting and bounded history evidence.
 Findings do not prove safety, stop transactions or automatically block an account. Wallet drainers are outside coverage.

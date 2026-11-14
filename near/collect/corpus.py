@@ -28,7 +28,7 @@ DROPPED = REPOS_DIR / ".dropped.jsonl"
 REPOS_JSONL = RAW / "repos.jsonl"
 MAX_KB = 300 * 1024
 SKIP_DIRS = {".git", "target", "node_modules", "dist", "build", ".next", "vendor"}
-UA = {"User-Agent": "near-security-oracle-research (dataset builder)"}
+UA = {"User-Agent": "croft-research (dataset builder)"}
 
 ORGS = ["near", "near-examples", "Near-One", "aurora-is-near", "ref-finance", "NearDeFi", "Meta-Pool",
         "linear-protocol", "defuse-protocol", "sweatco", "Mintbase", "ParasHQ", "PotLock", "NEARBuilders",

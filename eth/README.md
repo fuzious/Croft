@@ -1,4 +1,4 @@
-# Ethereum / EVM Security Oracle
+# Croft · Ethereum / EVM
 
 The Ethereum project from `main` is preserved here: `oracle/` builds transaction fact
 cards, `scripts/` collects and evaluates data, and `contracts/` contains the Solidity

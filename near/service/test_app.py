@@ -104,7 +104,7 @@ class EndpointValidationTest(unittest.TestCase):
     def test_demo_page_is_served(self):
         r = self.client.get("/", follow_redirects=True)
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Security Oracle", r.text)
+        self.assertIn("Croft", r.text)
 
 
 CLOSED_PORT = "http://127.0.0.1:9"   # nothing listens on the discard port: RPC and NearBlocks fail at once

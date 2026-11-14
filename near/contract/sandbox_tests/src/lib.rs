@@ -1,1 +1,1 @@
-//! Sandbox integration tests for the NEAR Security Oracle contracts live in `tests/`.
+//! Sandbox integration tests for the Croft contracts live in `tests/`.

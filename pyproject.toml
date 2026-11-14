@@ -1,5 +1,5 @@
 [project]
-name = "security-oracle"
+name = "croft"
 version = "0.1.0"
 license = "BUSL-1.1"
 license-files = ["LICENSE"]

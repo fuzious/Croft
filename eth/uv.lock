@@ -1971,7 +1971,7 @@ wheels = [
 ]
 
 [[package]]
-name = "security-oracle"
+name = "croft-evm"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

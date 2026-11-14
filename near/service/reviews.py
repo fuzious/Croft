@@ -12,7 +12,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-router = APIRouter(prefix="/v1/reviews", tags=["Human oracle (demo)"])
+router = APIRouter(prefix="/v1/reviews", tags=["Croft human review (demo)"])
 
 
 @contextmanager

@@ -131,7 +131,7 @@ def decide(signals: dict, deposit_yocto=None, network: str = "mainnet", now_ns: 
     ob, ok, err = _v(signals, "onchain_blocked")
     if ok and ob:
         blocked = True
-        out.append(("block", "the on-chain security oracle lists the receiver as blocked"))
+        out.append(("block", "the on-chain Croft oracle lists the receiver as blocked"))
     elif not ok and err != "not configured":
         out.append(("warn", f"on-chain blocklist could not be checked ({err})"))
     ov, ok, err = _v(signals, "onchain_verdict")

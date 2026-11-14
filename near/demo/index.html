@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Inspect a NEAR transaction's receipt graph for known attack patterns. Calibrated on NEAR Intents; unsupported protocols and incomplete evidence are reported as such.">
 <meta name="theme-color" content="#0F3B38">
-<title>Security Oracle</title>
+<title>Croft</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Chivo+Mono:wght@400;500;600&display=swap">
@@ -339,8 +339,8 @@ textarea{display:block;min-height:300px;padding:12px;font:var(--t-xs)/1.65 var(-
 <body>
 <header class="bar">
   <div class="bar-in">
-    <a class="mark" href="#" aria-label="Security Oracle, back to top"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5" fill="#00EC97"/><path d="M12 6 7 12l5 6 5-6z" fill="none" stroke="#0F3B38" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="6" r="2.3" fill="#0F3B38"/><circle cx="7" cy="12" r="2.3" fill="#0F3B38"/><circle cx="17" cy="12" r="2.3" fill="#0F3B38"/><circle cx="12" cy="18" r="2.4" fill="#00EC97" stroke="#0F3B38" stroke-width="1.8"/></svg><span>Security Oracle</span></a>
-    <nav class="nav" aria-label="Sections"><a href="#check">Inspect</a><a href="#scan">Account scan</a><a href="#record">Validation</a><a href="#code-inspection">Source check</a><a href="/human/">Human oracle ↗</a></nav>
+    <a class="mark" href="#" aria-label="Croft, back to top"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5" fill="#00EC97"/><path d="M12 6 7 12l5 6 5-6z" fill="none" stroke="#0F3B38" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="6" r="2.3" fill="#0F3B38"/><circle cx="7" cy="12" r="2.3" fill="#0F3B38"/><circle cx="17" cy="12" r="2.3" fill="#0F3B38"/><circle cx="12" cy="18" r="2.4" fill="#00EC97" stroke="#0F3B38" stroke-width="1.8"/></svg><span>Croft</span></a>
+    <nav class="nav" aria-label="Sections"><a href="#check">Inspect</a><a href="#scan">Account scan</a><a href="#record">Validation</a><a href="#code-inspection">Source check</a><a href="/human/">Human review ↗</a></nav>
     <div class="status"><span class="net" id="netChip"><i aria-hidden="true"></i><span id="net">Connecting…</span></span><span class="model" id="modelChip" hidden>Model <code id="model"></code></span><a class="api" href="/docs">API</a></div>
   </div>
 </header>
@@ -735,7 +735,7 @@ async function scoreTx() {
     const coverage = j.evidence_coverage || {};
     const complete = coverage.receipts_complete ?? j.receipts_complete;
     const notes = [];
-    if (["suspicious", "malicious_pattern"].includes(j.assessment)) notes.push(notice('<strong>Queued for human review.</strong> <a href="/human/">Open the human oracle dashboard ↗</a> to inspect and record a decision.'));
+    if (["suspicious", "malicious_pattern"].includes(j.assessment)) notes.push(notice('<strong>Queued for human review.</strong> <a href="/human/">Open the Croft human review dashboard ↗</a> to inspect and record a decision.'));
     if (state.key === "unsupported") notes.push(notice("<strong>No calibrated assessment:</strong> the detector supports NEAR Intents. A low raw score outside that scope does not establish safety."));
     if (complete !== true) notes.push(notice("<strong>Incomplete receipt evidence:</strong> missing outcomes can hide attack patterns. Observed rule hits remain visible; no clean assessment can be made from missing evidence."));
     if (KNOWN_MISSES[hash]) notes.push(notice(KNOWN_MISSES[hash]));

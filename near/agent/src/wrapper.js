@@ -49,7 +49,7 @@ export async function askHumanOnStdin({ receiver, amount, reason, reasons }) {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try {
     const answer = await rl.question(
-      `\nThe security oracle WARNS about paying ${amount} NEAR to ${receiver} (${reason}):\n` +
+      `\nCroft WARNS about paying ${amount} NEAR to ${receiver} (${reason}):\n` +
       reasons.map((r) => `  - ${r}`).join('\n') + '\nApprove this payment? type "yes" to approve: ');
     return answer.trim().toLowerCase() === 'yes';
   } finally {
@@ -92,7 +92,7 @@ export async function payWithOracle({ receiver, amount, reason, preapproval }, d
   for (const r of reasons) log(`[wrapper]   - ${r}`);
 
   if (verdict === 'block') {
-    log(`[wrapper] REFUSED to sign: payment to ${receiver} blocked by the security oracle`);
+    log(`[wrapper] REFUSED to sign: payment to ${receiver} blocked by Croft`);
     return { ...result, status: 'refused' };
   }
   if (verdict === 'warn') {

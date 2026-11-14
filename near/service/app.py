@@ -1,4 +1,4 @@
-"""Security Oracle API (`uvicorn near.service.app:app`).
+"""Croft API (`uvicorn near.service.app:app`).
 
 POST /v1/transactions/score {tx_hash, sender_id?, include_history?} -> assessment, accounting, history and coverage
 POST /v1/protocols/scan {account_id} -> bounded recent Intents activity and assessment counts
@@ -47,7 +47,7 @@ INTENTS_DEADLINE_S = 15.0   # /v1/check waits at most this long, from its start,
 DETECTORS_SHA256 = hashlib.sha256(
     (Path(__file__).resolve().parents[1] / "analyzer" / "detectors.py").read_bytes()).hexdigest()
 CFG = signals.load_config()
-app = FastAPI(title="Security Oracle", version="1")
+app = FastAPI(title="Croft", version="1")
 
 
 @app.middleware("http")

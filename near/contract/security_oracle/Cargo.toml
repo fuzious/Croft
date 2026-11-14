@@ -1,6 +1,6 @@
 [package]
 name = "security_oracle"
-description = "NEAR Security Oracle: security_oracle contract"
+description = "Croft: security oracle contract"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.95"
