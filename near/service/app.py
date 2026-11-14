@@ -4,6 +4,7 @@ POST /v1/check    {receiver_id, agent_id?, method?, deposit_yocto?, source_files
 POST /v1/analyze  {source_files} -> contract risk and per-function risk
 POST /v1/report   {account_id, evidence_url, evidence_sha256?, reporter?, note?, confirm?} -> local blocklist
 POST /v1/intents/score {tx_hash, sender_id?} -> NEAR Intents transaction risk, label and rule hits (FastNEAR, mainnet)
+POST /v1/intents/scan  {account_id} -> the account's latest NEAR Intents txs, scored, and the count per label
 GET  /v1/health
 GET  /demo/      browser demo (near/demo/index.html)
 
@@ -79,6 +80,10 @@ class IntentsScoreRequest(BaseModel):
         if not intents.valid_tx_hash(v):
             raise ValueError("tx_hash must be a base58-encoded 32-byte NEAR transaction hash")
         return v
+
+
+class IntentsScanRequest(BaseModel):
+    account_id: str = Field(min_length=2, max_length=64, pattern=ACCOUNT_ID)
 
 
 class AnalyzeRequest(BaseModel):
@@ -271,6 +276,25 @@ def intents_score(req: IntentsScoreRequest):
     except intents.ModelUnavailable as e:   # frozen model missing or refused by its hash checks
         raise HTTPException(503, str(e)) from None
     return out | {"model": info}
+
+
+@app.post("/v1/intents/scan")
+def intents_scan(req: IntentsScanRequest):
+    """The account's latest transactions that touch NEAR Intents (up to THRESHOLDS["intents_recent_txs"], newest
+    first), scored, with the count per label. The same cached read as /v1/check's intents_activity signal: at most
+    THRESHOLDS["intents_max_requests"] FastNEAR requests of at most intents.TIMEOUT_S each."""
+    try:
+        info = intents.model_info()
+        act = intents.recent_activity(req.account_id)
+    except intents.FastNearTimeout as e:
+        raise HTTPException(504, str(e)) from None
+    except (intents.FastNearError, intents.TxUnscorable) as e:
+        raise HTTPException(502, str(e)) from None
+    except intents.ModelUnavailable as e:
+        raise HTTPException(503, str(e)) from None
+    counts = {label: sum(t["label"] == label for t in act["txs"]) for label in ("high", "medium", "low")}
+    return {"account_id": req.account_id, "n_scored": act["n_scored"], "n_index_rows": act["n_index_rows"],
+            "counts": counts, "txs": act["txs"], "model": info}
 
 
 @app.post("/v1/report")

@@ -1,6 +1,6 @@
-# Run the hackathon demo
+# Run it
 
-[Overview](../README.md) · [Agent](agent/README.md) · [Contracts](contract/README.md)
+[Overview](../README.md) · [Intents evidence](intents/reports/RESULTS.md) · [Agent](agent/README.md) · [Contracts](contract/README.md)
 
 ## 1. Install
 
@@ -13,9 +13,9 @@ unzip -o archives/near_intents.zip
 uv sync
 ```
 
-The default code model is v1. No wallet, API key or LLM download is needed for the offline demo.
+The default code model is v1. No wallet, API key or LLM download is needed.
 
-## 2. See the detector
+## 2. Replay it offline
 
 ```bash
 uv run python -m near.demo.replay
@@ -25,22 +25,53 @@ uv run python -m near.demo.replay
 |---|---|
 | October exploit | **high** + failed callback / credit / log reasons |
 | Normal deposit | **low** |
-| Exploiter's recent history | **10 / 20 high**; receiver policy warns |
+| Exploiter's recent history | **10 / 20 high** |
 
 Uses recorded FastNEAR responses and the real frozen model. No network or payments; prints artifact hashes.
 
-## 3. Open the live UI
+## 3. Check a transaction
 
 ```bash
 uv run uvicorn near.service.app:app --port 8000
 ```
 
-Open **<http://localhost:8000/demo/>**. Live checks need internet. Set `NEARBLOCKS_API_KEY` for the account-history
-signals; without it NearBlocks rate-limits them and checks warn.
+Open **<http://localhost:8000/demo/>** and paste any mainnet transaction hash. Needs internet; reads come from
+FastNEAR's free tier, no key. Or from a second terminal:
 
-## 4. Prove the payment guard
+```bash
+curl -s localhost:8000/v1/intents/score -H 'content-type: application/json' \
+  -d '{"tx_hash": "3k91uDpUiezxUe7hBgAR7kc3TBkToMZKGAiv6GqbtKiC"}'
+```
 
-Needs **Rust** and **Node 22+**. The pinned Rust toolchain installs on first use.
+You should see `"label": "high"` with `rule_hits` for `failed_resolve_callback`, `log_limit` and `credit_kept`
+(high) plus three medium rules. The normal deposit `8tTzvGLMV7x1swmF2A5m3zDugCimdwmDrTXDTvKsJvj` gives `"label": "low"`
+and no rule hits.
+
+| Field | Meaning |
+|---|---|
+| `label` | `high` = Malicious pattern, `medium` = Suspicious, `low` = No known attack pattern (not "safe") |
+| `rule_hits` | Each rule that fired, with its severity and a one-line reason |
+| `top_features` | Receipt-graph features furthest from normal Intents traffic |
+| `touches_intents` | `false` means the tx does not touch NEAR Intents; thresholds were calibrated there, so trust it less |
+| `receipts_complete` | `false` means FastNEAR left out receipts; rules may have missed something |
+| `risk` | Rule weight or anomaly percentile; not a probability of attack. Use `label` |
+
+## 4. Scan an account or protocol
+
+```bash
+curl -s localhost:8000/v1/intents/scan -H 'content-type: application/json' \
+  -d '{"account_id": "intents.near"}'
+```
+
+Of the account's 40 most recent transactions, returns up to 20 that touch NEAR Intents, newest first, each with `label`, `rules`
+and `receipts_complete`, plus `counts` per label. On 2026-11-14 `intents.near` gave 20 low; this is live traffic,
+so it changes. The exploiter account `20e6bfe4685d99004fc2095d3a0fc6158cd810ce8f801196141e183ed6e19d65` gives
+10 high and 10 low. Results are cached for 5 minutes. A bad account id is a 422; FastNEAR errors are 502 or 504.
+
+## 5. Agent payment guard (optional)
+
+A separate component: an oracle contract, a guarded payment router and a scoped-key agent wrapper. Needs **Rust**
+and **Node 22+**. The pinned Rust toolchain installs on first use.
 
 ```bash
 cargo +1.95.0 install cargo-near --version 0.23.0 --locked
@@ -50,6 +81,8 @@ cargo +1.95.0 install cargo-near --version 0.23.0 --locked
 
 Expected: **18 contract tests**, **28 agent tests**, **12 attack checks** pass.
 The merchant gets paid; the drainer gets nothing. [Read the log](agent/attack_demo.log).
+`POST /v1/check` (below) is the receiver check it calls. Set `NEARBLOCKS_API_KEY` for its account-history
+signals; without it NearBlocks rate-limits them and checks warn.
 
 ## API
 
@@ -57,11 +90,14 @@ The merchant gets paid; the drainer gets nothing. [Read the log](agent/attack_de
 |---|---|---|
 | `POST /v1/check` | `receiver_id`, optional `agent_id`, `deposit_yocto` | Decision, reasons, source signals |
 | `POST /v1/intents/score` | `tx_hash` | Label, rule hits, model identity |
+| `POST /v1/intents/scan` | `account_id` | Up to 20 Intents txs among the account's 40 most recent, scored, with counts per label |
 | `POST /v1/analyze` | `source_files` mapping path → Rust code | Function risks and detector hits |
 | `POST /v1/report` | `account_id`, `evidence_url` | Pending report; confirmation needs operator token |
 | `GET /v1/health` | — | Active model and network |
 
 Interactive API reference: **<http://localhost:8000/docs>**.
+
+Signals behind `POST /v1/check`, the receiver check used by the payment guard:
 
 | Signal | Data source |
 |---|---|

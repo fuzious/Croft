@@ -2,8 +2,9 @@
 free, no key) and score them with the frozen intents model (near.intents.model.score_tx, near/models/intents_v1.*).
 
 - `score_hash(tx_hash)`: one transaction, for POST /v1/intents/score.
-- `activity_signal(receiver_id)`: the receiver's most recent transactions that touch intents.near, scored, for the
-  intents_activity signal of /v1/check. It reads the receiver's account index (newest first, THRESHOLDS
+- `recent_activity(receiver_id)`: the receiver's most recent transactions that touch intents.near, scored, for
+  POST /v1/intents/scan; `activity_signal(receiver_id)` is the same read as the intents_activity signal of /v1/check.
+  It reads the receiver's account index (newest first, THRESHOLDS
   ["intents_index_rows"] rows), then full transactions in batches of 20 until THRESHOLDS["intents_recent_txs"] Intents
   txs are found, using at most THRESHOLDS["intents_max_requests"] requests. Successful reads are cached per receiver
   for THRESHOLDS["intents_cache_s"], at most CACHE_ENTRIES receivers (least recently read evicted first).
@@ -326,10 +327,11 @@ def clear_cache() -> None:
         _cache.clear()
 
 
-def activity_signal(receiver_id: str, transport: Transport | None = None, now: float | None = None) -> dict:
-    """intents_activity signal: {n_scored, n_index_rows, requests, txs: [{tx_hash, label, risk, flow, rules,
-    receipts_complete}]}, or unavailable (value None) with the reason when FastNEAR cannot be read, parsed or scored,
-    or leaves out any requested transaction. Only successful reads are cached."""
+def recent_activity(receiver_id: str, transport: Transport | None = None, now: float | None = None) -> dict:
+    """{n_scored, n_index_rows, requests, txs: [{tx_hash, label, risk, flow, rules, receipts_complete}]}: the
+    receiver's latest transactions that touch intents.near, newest first, scored. Raises FastNearTimeout,
+    FastNearError (FastNEAR unreadable, a body of an unexpected shape, or a requested transaction left out),
+    TxUnscorable or ModelUnavailable. Only successful reads are cached."""
     now = time.time() if now is None else now
     th = THRESHOLDS
     with _lock:
@@ -354,14 +356,23 @@ def activity_signal(receiver_id: str, transport: Transport | None = None, now: f
         rank = {h: i for i, h in enumerate(hashes)}   # index order: newest first; /transactions does not keep it
         found.sort(key=lambda x: rank.get(x["transaction"]["hash"], len(rank)))
         txs = [_brief(x, score(x)) for x in found[:th["intents_recent_txs"]]]
-    except (FastNearError, ModelUnavailable, TxUnscorable) as e:
-        return sig(None, SOURCE, False, str(e))
+    except (FastNearError, ModelUnavailable, TxUnscorable):
+        raise
     except Exception as e:  # an HTTP 200 body of an unexpected shape
-        return sig(None, SOURCE, False, f"FastNEAR response has an unexpected shape ({type(e).__name__})")
-    out = sig({"n_scored": len(txs), "n_index_rows": len(hashes), "requests": c.requests, "txs": txs}, SOURCE)
+        raise FastNearError(f"FastNEAR response has an unexpected shape ({type(e).__name__})") from None
+    out = {"n_scored": len(txs), "n_index_rows": len(hashes), "requests": c.requests, "txs": txs}
     with _lock:
         _cache[receiver_id] = (now + th["intents_cache_s"], out)
         _cache.move_to_end(receiver_id)
         while len(_cache) > CACHE_ENTRIES:
             _cache.popitem(last=False)
     return out
+
+
+def activity_signal(receiver_id: str, transport: Transport | None = None, now: float | None = None) -> dict:
+    """intents_activity signal: recent_activity as the value, or unavailable (value None) with the reason when
+    FastNEAR cannot be read, parsed or scored, or leaves out any requested transaction."""
+    try:
+        return sig(recent_activity(receiver_id, transport, now), SOURCE)
+    except (FastNearError, ModelUnavailable, TxUnscorable) as e:
+        return sig(None, SOURCE, False, str(e))

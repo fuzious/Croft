@@ -504,5 +504,117 @@ class ScoreValidationTest(unittest.TestCase):
         self.assertEqual(self.client.post("/v1/intents/score", json={}).status_code, 422)
 
 
+SCAN_KEYS = {"account_id", "n_scored", "n_index_rows", "counts", "txs", "model"}
+SCAN_TX_KEYS = {"tx_hash", "label", "risk", "flow", "rules", "receipts_complete"}
+
+
+class ScanEndpointTest(unittest.TestCase):
+    """POST /v1/intents/scan: an account's latest transactions that touch NEAR Intents, scored, with FastNEAR answered
+    by the recorded responses or by a failing transport."""
+
+    def setUp(self):
+        self.client = TestClient(service.app)
+        self.saved = intents.TRANSPORT
+        self.addCleanup(setattr, intents, "TRANSPORT", self.saved)
+        self.addCleanup(intents.clear_cache)
+        intents.clear_cache()
+
+    def scan(self, account_id):
+        return self.client.post("/v1/intents/scan", json={"account_id": account_id})
+
+    @unittest.skipUnless(MODEL.exists(), "frozen intents model not present (near/models/intents_v1.pkl)")
+    def test_exploiter_scan_counts_the_high_exploit_txs(self):
+        intents.TRANSPORT = Replay()
+        r = self.scan(EXPLOITER)
+        self.assertEqual(r.status_code, 200, r.text)
+        b = r.json()
+        self.assertEqual(set(b), SCAN_KEYS)
+        self.assertEqual(b["account_id"], EXPLOITER)
+        self.assertEqual(b["n_index_rows"], THRESHOLDS["intents_index_rows"])
+        self.assertEqual(b["n_scored"], len(b["txs"]))
+        self.assertLessEqual(b["n_scored"], THRESHOLDS["intents_recent_txs"])
+        self.assertEqual(b["counts"]["high"], 10)
+        self.assertEqual(set(b["counts"]), {"high", "medium", "low"})
+        self.assertEqual(sum(b["counts"].values()), b["n_scored"])
+        for label in ("high", "medium", "low"):
+            self.assertEqual(b["counts"][label], sum(t["label"] == label for t in b["txs"]), label)
+        self.assertTrue(all(set(t) == SCAN_TX_KEYS for t in b["txs"]), b["txs"][0])
+        self.assertEqual(b["txs"][0]["tx_hash"], "5d1VV4tyFh3xWomy2tWJbG9qfLDaRdbksjedUZ3A3j3o")  # newest first
+        man = json.loads(MODEL.with_suffix(".json").read_text())
+        self.assertEqual(b["model"], {"version": "intents_v1", "sha256": man["pkl_sha256"]})
+
+    @unittest.skipUnless(MODEL.exists(), "frozen intents model not present (near/models/intents_v1.pkl)")
+    def test_second_scan_is_served_from_the_activity_cache(self):
+        intents.TRANSPORT = Replay()
+        first = self.scan(EXPLOITER).json()
+        intents.TRANSPORT = replay = Replay()
+        r = self.scan(EXPLOITER)
+        self.assertEqual(r.status_code, 200, r.text)
+        self.assertEqual(replay.calls, [])
+        self.assertEqual(r.json(), first)
+
+    def test_account_with_no_intents_txs_scans_empty(self):
+        intents.TRANSPORT = Answer({"/account": EMPTY_INDEX})
+        r = self.scan("someone.near")
+        self.assertEqual(r.status_code, 200, r.text)
+        b = r.json()
+        self.assertEqual((b["n_scored"], b["n_index_rows"], b["txs"]), (0, 0, []))
+        self.assertEqual(b["counts"], {"high": 0, "medium": 0, "low": 0})
+
+    def test_rejects_invalid_account_id(self):
+        for account_id in ("Bad Account!", "a", "x" * 65, "UPPER.near", "a..near", ""):
+            with self.subTest(account_id):
+                self.assertEqual(self.scan(account_id).status_code, 422)
+        self.assertEqual(self.client.post("/v1/intents/scan", json={}).status_code, 422)
+
+    def test_fastnear_down_is_502_with_reason(self):
+        intents.TRANSPORT = intents.transport(CLOSED_PORT, timeout=2.0)
+        r = self.scan("someone.near")
+        self.assertEqual(r.status_code, 502, r.text)
+        self.assertIn("FastNEAR", r.json()["detail"])
+
+    def test_fastnear_timeout_is_504_within_the_timeout(self):
+        server = TrickleServer(gap=0.25)
+        self.addCleanup(server.close)
+        intents.TRANSPORT = intents.transport(server.url, timeout=1.0)
+        t0 = time.monotonic()
+        r = self.scan("someone.near")
+        self.assertLess(time.monotonic() - t0, 1.5)
+        self.assertEqual(r.status_code, 504, r.text)
+        self.assertIn("FastNEAR did not answer within 1 s", r.json()["detail"])
+
+    def test_fastnear_body_of_the_wrong_shape_is_502_without_raw_data(self):
+        cases = [{"/account": b'{"account_txs":"JUNKJUNK"}'},
+                 {"/account": b'{"account_txs":[{"transaction_hash":"JUNKJUNK"}]}'},
+                 {"/account": ONE_ROW, "/transactions": b'{"transactions":"JUNKJUNK"}'},
+                 {"/account": ONE_ROW, "/transactions": b'{"transactions":[null]}'}]
+        for bodies in cases:
+            with self.subTest(bodies):
+                intents.clear_cache()
+                intents.TRANSPORT = Answer(bodies)
+                r = self.scan("someone.near")
+                self.assertEqual(r.status_code, 502, r.text)
+                detail = r.json()["detail"]
+                self.assertIn("FastNEAR", detail)
+                self.assertNotIn("JUNK", detail)
+                self.assertLessEqual(len(detail), 300)
+
+    def test_unreadable_scan_is_not_cached(self):
+        intents.TRANSPORT = Answer({"/account": b"[]"})
+        self.assertEqual(self.scan("someone.near").status_code, 502)
+        intents.TRANSPORT = answer = Answer({"/account": EMPTY_INDEX})
+        self.assertEqual(self.scan("someone.near").status_code, 200)
+        self.assertEqual(answer.calls, ["/account"])
+
+    def test_missing_model_manifest_is_503(self):
+        saved = intents.MODEL_JSON
+        self.addCleanup(setattr, intents, "MODEL_JSON", saved)
+        intents.MODEL_JSON = MODEL.with_name("missing_intents_model.json")
+        intents.TRANSPORT = Answer({"/account": EMPTY_INDEX})
+        r = self.scan("someone.near")
+        self.assertEqual(r.status_code, 503, r.text)
+        self.assertIn("intents model unavailable", r.json()["detail"])
+
+
 if __name__ == "__main__":
     unittest.main()
