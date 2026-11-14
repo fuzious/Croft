@@ -1,4 +1,5 @@
 import unittest
+import importlib.util
 
 import numpy as np
 
@@ -73,6 +74,7 @@ class PairTest(unittest.TestCase):
         self.assertEqual((P, N, W), ([1], [0], [1.0]))
 
 
+@unittest.skipUnless(importlib.util.find_spec("torch"), "optional LLM dependencies: uv sync --extra llm")
 class LossTest(unittest.TestCase):
     def test_bce_only_without_pairs_and_margin_term(self):
         import torch

@@ -411,5 +411,44 @@ async fn removed_attesters_verdicts_are_ignored_but_their_confirmed_blocks_stand
     assert_eq!(v["verdict"], "block");
     assert_eq!(v["attester"], env.attester.id().as_str());
     assert_eq!(v["reasons_hash"], EVIDENCE_SHA);
+
+    env.owner
+        .call(env.oracle.id(), "add_attester")
+        .args_json(json!({ "attester": env.attester.id() }))
+        .deposit(NearToken::from_yoctonear(1))
+        .transact()
+        .await?
+        .into_result()?;
+    assert_eq!(
+        view(
+            &env.oracle,
+            "get_verdict",
+            json!({ "account_id": target.id() })
+        )
+        .await?,
+        Value::Null,
+        "re-adding an attester must not revive its old allow"
+    );
+    assert_eq!(
+        view(
+            &env.oracle,
+            "get_verdict",
+            json!({ "account_id": scam.id() })
+        )
+        .await?["verdict"],
+        "block",
+        "confirmed reports remain blocked after operator recovery"
+    );
+    allow_for_an_hour(&env, target.id()).await?;
+    assert_eq!(
+        view(
+            &env.oracle,
+            "get_verdict",
+            json!({ "account_id": target.id() })
+        )
+        .await?["verdict"],
+        "allow",
+        "a recovered attester can publish a fresh verdict"
+    );
     Ok(())
 }

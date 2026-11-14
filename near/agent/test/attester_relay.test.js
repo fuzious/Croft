@@ -21,14 +21,30 @@ test('maps a /v1/check answer to submit_verdict arguments', () => {
   });
 });
 
-test('missing code hash becomes an empty string; score is clamped to 0..10000 bps', () => {
-  const a = attestationFromCheck({ ...check, score: 1.7, signals: { code_hash: { value: null } } }, 0n, 60);
+test('missing code hash becomes an empty string', () => {
+  const a = attestationFromCheck({ ...check, signals: { code_hash: { value: null } } }, 0n, 60);
   assert.equal(a.code_hash, '');
-  assert.equal(a.score_bps, 10000);
+  assert.equal(a.score_bps, 3000);
 });
 
 test('refuses an answer without a known verdict', () => {
   assert.throws(() => attestationFromCheck({ ...check, verdict: 'maybe' }, 0n, 60), /verdict/);
+});
+
+test('refuses malformed scores and reasons rather than publishing an attestation', () => {
+  for (const score of [undefined, null, '0', NaN, Infinity, -0.1, 1.1]) {
+    assert.throws(() => attestationFromCheck({ ...check, score }, 0n, 60), /score/);
+  }
+  assert.throws(() => attestationFromCheck({ ...check, reasons: 'safe' }, 0n, 60), /reasons/);
+  assert.throws(() => attestationFromCheck(null, 0n, 60), /malformed/);
+  assert.throws(() => attestationFromCheck({ ...check, signals: { code_hash: { value: 123 } } }, 0n, 60), /code hash/);
+});
+
+test('attestation TTL must stay within the contract expiry cap', () => {
+  for (const ttl of [0, -1, 0.5, 604801, NaN, Infinity, '60']) {
+    assert.throws(() => attestationFromCheck(check, 0n, ttl), /TTL/);
+  }
+  assert.equal(attestationFromCheck(check, 0n, 604800).expires_at_ns, '604800000000000');
 });
 
 test('relayVerdict refuses to attest when the service answers about another account', async (t) => {

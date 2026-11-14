@@ -276,18 +276,103 @@ class UnexpectedBodyTest(unittest.TestCase):
         self.assertTrue(any("NEAR Intents" in r for r in d["reasons"]), d["reasons"])
 
     def test_account_index_of_the_wrong_shape(self):
-        for body in (b"[]", b'"x"', b'{"account_txs":[{"nohash":1}]}', b'{"account_txs":"abc"}',
-                     b'{"account_txs":[{"transaction_hash":{"a":1}}]}'):
+        for body in (b"[]", b'"x"', b'{}', b'{"error":"unavailable"}', b'{"account_txs":null}',
+                     b'{"account_txs":[{"nohash":1}]}', b'{"account_txs":"abc"}',
+                     b'{"account_txs":[{"transaction_hash":{"a":1}}]}',
+                     b'{"account_txs":[{"transaction_hash":"not-a-hash"}]}'):
             with self.subTest(body):
                 self.assert_unreadable_and_warns(
                     intents.activity_signal("someone.near", transport=Answer({"/account": body})))
 
     def test_transactions_of_the_wrong_shape(self):
-        for body in (b'"x"', b'{"transactions":"abc"}', b'{"transactions":[{"transaction":[]}]}',
+        for body in (b'"x"', b'{}', b'{"transactions":null}', b'{"transactions":"abc"}',
+                     b'{"transactions":[{"transaction":[]}]}',
                      b'{"transactions":[{"transaction":{"hash":"H"},"receipts":"abc"}]}'):
             with self.subTest(body):
                 answer = Answer({"/account": ONE_ROW, "/transactions": body})
                 self.assert_unreadable_and_warns(intents.activity_signal("someone.near", transport=answer))
+
+    def test_unrequested_transaction_cannot_contaminate_account_history(self):
+        body = json.dumps({"transactions": [recorded_tx(NORMAL), recorded_tx(EXPLOIT)]}).encode()
+        answer = Answer({"/account": ONE_ROW, "/transactions": body})
+        s = intents.activity_signal("someone.near", transport=answer)
+        self.assert_unreadable_and_warns(s)
+        self.assertIn("not requested", s["error"])
+
+    def test_duplicate_transaction_keeps_the_copy_with_most_receipts(self):
+        # FastNEAR repeats an in-flight tx, each copy with the receipts it had seen so far.
+        full = recorded_tx(EXPLOIT)
+        partial = json.loads(json.dumps(full))
+        partial["receipts"] = partial["receipts"][:1]
+        body = json.dumps({"transactions": [partial, full, partial]}).encode()
+        txs = intents._Client(Answer({"/transactions": body})).transactions([EXPLOIT])
+        self.assertEqual(len(txs), 1)
+        self.assertEqual(len(txs[0]["receipts"]), len(full["receipts"]))
+
+    def test_malformed_transaction_response_is_502_not_not_found(self):
+        saved = intents.TRANSPORT
+        self.addCleanup(setattr, intents, "TRANSPORT", saved)
+        for body in (b'{}', b'{"transactions":null}'):
+            with self.subTest(body):
+                intents.TRANSPORT = Answer({"/transactions": body})
+                r = TestClient(service.app).post("/v1/intents/score", json={"tx_hash": NORMAL})
+                self.assertEqual(r.status_code, 502, r.text)
+
+    def test_missing_receipt_evidence_cannot_turn_an_exploit_into_low_risk(self):
+        saved = intents.TRANSPORT
+        self.addCleanup(setattr, intents, "TRANSPORT", saved)
+        for mutation in ("missing_receipts", "missing_outcome", "missing_logs"):
+            with self.subTest(mutation):
+                tx = recorded_tx(EXPLOIT)
+                if mutation == "missing_receipts":
+                    tx.pop("receipts")
+                elif mutation == "missing_outcome":
+                    tx["receipts"][0].pop("execution_outcome")
+                else:
+                    tx["receipts"][0]["execution_outcome"]["outcome"].pop("logs")
+                body = json.dumps({"transactions": [tx]}).encode()
+                intents.TRANSPORT = Answer({"/transactions": body})
+                r = TestClient(service.app).post("/v1/intents/score", json={"tx_hash": EXPLOIT})
+                self.assertEqual(r.status_code, 502, r.text)
+                self.assertIn("incomplete receipt graph", r.json()["detail"])
+
+
+DANGLING = "J9RYnzQb4QBdz3MU8WwAXNydVJjtvyNn6QGcU1cNPDuY"
+DANGLING_BODY = gzip.decompress((FIX.parent / "fastnear_dangling_receipt.json.gz").read_bytes())
+
+
+@unittest.skipUnless(MODEL.exists(), "frozen intents model not present (near/models/intents_v1.pkl)")
+class OmittedReceiptTest(unittest.TestCase):
+    """FastNEAR leaves out some receipts that intents.near spawns (5 of the first 30,000 recorded normal txs, among
+    them the real mainnet tx J9RYnz... in fixtures/fastnear_dangling_receipt.json.gz). Such a tx is still scored, and
+    says so: a missing receipt can only hide evidence, so its label is a lower bound."""
+
+    def setUp(self):
+        intents.clear_cache()
+        self.saved = intents.TRANSPORT
+        self.addCleanup(setattr, intents, "TRANSPORT", self.saved)
+        self.addCleanup(intents.clear_cache)
+        self.client = TestClient(service.app)
+
+    def test_real_tx_with_an_omitted_receipt_is_scored_and_marked(self):
+        intents.TRANSPORT = Answer({"/transactions": DANGLING_BODY})
+        r = self.client.post("/v1/intents/score", json={"tx_hash": DANGLING})
+        self.assertEqual(r.status_code, 200, r.text)
+        self.assertEqual((r.json()["label"], r.json()["receipts_complete"]), ("low", False))
+
+    def test_receiver_history_with_an_omitted_receipt_stays_readable(self):
+        index = json.dumps({"account_txs": [{"transaction_hash": DANGLING}]}).encode()
+        s = intents.activity_signal("someone.near", transport=Answer({"/account": index, "/transactions": DANGLING_BODY}))
+        self.assertTrue(s["available"], s)
+        self.assertEqual([(t["tx_hash"], t["receipts_complete"]) for t in s["value"]["txs"]], [(DANGLING, False)])
+
+    def test_exploit_with_an_omitted_receipt_still_scores_high(self):
+        tx = recorded_tx(EXPLOIT)
+        tx["receipts"].pop()
+        intents.TRANSPORT = Answer({"/transactions": json.dumps({"transactions": [tx]}).encode()})
+        r = self.client.post("/v1/intents/score", json={"tx_hash": EXPLOIT})
+        self.assertEqual(r.status_code, 200, r.text)
+        self.assertEqual((r.json()["label"], r.json()["receipts_complete"]), ("high", False))
 
 
 EMPTY_INDEX = json.dumps({"account_txs": []}).encode()
@@ -350,6 +435,7 @@ class ScoreEndpointTest(unittest.TestCase):
         b = r.json()
         self.assertEqual((b["label"], b["flow_type"], b["rule_hits"]), ("low", "deposit", []))
         self.assertIs(b["sender_matches"], True)
+        self.assertIs(b["receipts_complete"], True)
 
     def test_sender_mismatch_is_reported(self):
         b = self.client.post("/v1/intents/score", json={"tx_hash": NORMAL, "sender_id": "other.near"}).json()

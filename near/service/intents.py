@@ -173,10 +173,63 @@ class _Client:
             raise FastNearError(f"FastNEAR request failed: {why[:240]}") from None
 
     def account_page(self, account_id: str, **q) -> dict:
-        return self._call(self.fn.account_page, account_id, **q)
+        page = self._call(self.fn.account_page, account_id, **q)
+        if not isinstance(page, dict) or not isinstance(page.get("account_txs"), list):
+            raise FastNearError("FastNEAR account response is missing an account_txs list")
+        if any(not isinstance(row, dict) or not valid_tx_hash(row.get("transaction_hash"))
+               for row in page["account_txs"]):
+            raise FastNearError("FastNEAR account response contains an invalid transaction hash")
+        return page
 
     def transactions(self, hashes: list[str]) -> list[dict]:
-        return self._call(self.fn.transactions, hashes)
+        # Validate before the collector's permissive missing-row handling can hide a malformed response.
+        body = self._call(self.fn.post, "/transactions", {"tx_hashes": hashes})
+        if not isinstance(body, dict) or not isinstance(body.get("transactions"), list):
+            raise FastNearError("FastNEAR response is missing a transactions list")
+        by_hash = {}
+        for tx in body["transactions"]:
+            if tx is None:  # FastNEAR uses null for an unknown hash.
+                continue
+            if not isinstance(tx, dict) or not isinstance(tx.get("transaction"), dict):
+                raise FastNearError("FastNEAR response contains a malformed transaction")
+            h = tx["transaction"].get("hash")
+            if not isinstance(h, str) or h not in hashes:
+                raise FastNearError("FastNEAR returned a transaction that was not requested")
+            _validate_receipt_graph(tx)
+            # FastNEAR repeats an in-flight tx with the receipts seen so far; the fullest copy hides the least evidence.
+            if h not in by_hash or len(tx["receipts"]) > len(by_hash[h]["receipts"]):
+                by_hash[h] = tx
+        return list(by_hash.values())
+
+
+def _validate_receipt_graph(tx: dict) -> None:
+    """Missing outcomes must not erase the failed callback or credit/refund evidence from a score."""
+    try:
+        receipts = tx["receipts"]
+        if not isinstance(receipts, list):
+            raise ValueError()
+        ids = {row["receipt"]["receipt_id"] for row in receipts}
+        if len(ids) != len(receipts) or any(not isinstance(rid, str) for rid in ids):
+            raise ValueError()
+        for outcome in _outcomes(tx):
+            if not isinstance(outcome["receipt_ids"], list) or not isinstance(outcome["logs"], list):
+                raise ValueError()
+            if not isinstance(outcome["status"], dict) or not outcome["status"]:
+                raise ValueError()
+    except (KeyError, TypeError, ValueError):
+        raise TxUnscorable("FastNEAR transaction could not be scored (incomplete receipt graph)") from None
+
+
+def _outcomes(tx: dict) -> list[dict]:
+    return [tx["execution_outcome"]["outcome"], *(row["execution_outcome"]["outcome"] for row in tx["receipts"])]
+
+
+def receipts_complete(tx: dict) -> bool:
+    """True when every receipt an outcome spawned is in the tx (validated by _validate_receipt_graph). FastNEAR leaves
+    out some receipts that intents.near spawns; a missing receipt can only hide evidence, so the label is a lower
+    bound when this is False."""
+    ids = {row["receipt"]["receipt_id"] for row in tx["receipts"]}
+    return all(rid in ids for outcome in _outcomes(tx) for rid in outcome["receipt_ids"])
 
 
 def b58decode(s: str) -> bytes:
@@ -252,7 +305,8 @@ def score_hash(tx_hash: str, sender_id: str | None = None, transport: Transport 
         out = {"tx_hash": tx_hash, "signer_id": t.get("signer_id"), "receiver_id": t.get("receiver_id"),
                "risk": r["risk"], "label": r["label"], "rule_hits": r["rule_hits"], "flow_type": r["flow"],
                "top_features": r["top_features"], "anomaly_score": round(r["anomaly_score"], 6),
-               "anomaly_percentile": round(r["anomaly_percentile"], 6), "touches_intents": touches_intents(tx)}
+               "anomaly_percentile": round(r["anomaly_percentile"], 6), "touches_intents": touches_intents(tx),
+               "receipts_complete": receipts_complete(tx)}
         if sender_id is not None:
             out["sender_id"] = sender_id
             out["sender_matches"] = sender_id in _senders(tx)
@@ -264,7 +318,7 @@ def score_hash(tx_hash: str, sender_id: str | None = None, transport: Transport 
 def _brief(tx: dict, r: dict) -> dict:
     rules = [h["rule"] for h in r["rule_hits"] if h.get("severity") in ("high", "medium")]
     return {"tx_hash": tx["transaction"]["hash"], "label": r["label"], "risk": r["risk"], "flow": r["flow"],
-            "rules": rules}
+            "rules": rules, "receipts_complete": receipts_complete(tx)}
 
 
 def clear_cache() -> None:
@@ -273,9 +327,9 @@ def clear_cache() -> None:
 
 
 def activity_signal(receiver_id: str, transport: Transport | None = None, now: float | None = None) -> dict:
-    """intents_activity signal: {n_scored, n_index_rows, requests, txs: [{tx_hash, label, risk, flow, rules}]}, or
-    unavailable (value None) with the reason when FastNEAR cannot be read, parsed or scored, or leaves out any
-    requested transaction. Only successful reads are cached."""
+    """intents_activity signal: {n_scored, n_index_rows, requests, txs: [{tx_hash, label, risk, flow, rules,
+    receipts_complete}]}, or unavailable (value None) with the reason when FastNEAR cannot be read, parsed or scored,
+    or leaves out any requested transaction. Only successful reads are cached."""
     now = time.time() if now is None else now
     th = THRESHOLDS
     with _lock:

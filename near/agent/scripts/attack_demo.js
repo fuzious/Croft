@@ -32,7 +32,7 @@ const DAILY_LIMIT = '5';
 const lines = [];
 const t0 = Date.now();
 function log(line = '') {
-  const s = `[${((Date.now() - t0) / 1000).toFixed(1).padStart(5)}s] ${line}`;
+  const s = `[${((Date.now() - t0) / 1000).toFixed(1).padStart(5)}s]${line ? ` ${line}` : ''}`;
   lines.push(s);
   console.log(s);
 }
@@ -80,7 +80,7 @@ async function freePort() {
 }
 
 function startService(env, port) {
-  const child = spawn('uv', ['run', 'uvicorn', 'near.service.app:app', '--host', '127.0.0.1', '--port', String(port)],
+  const child = spawn('uv', ['run', '--quiet', 'uvicorn', 'near.service.app:app', '--host', '127.0.0.1', '--port', String(port)],
     { cwd: REPO, env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'] });
   const relay = (buf) => buf.toString().split('\n').filter(Boolean).forEach((l) => log(`[service] ${l}`));
   child.stdout.on('data', relay);

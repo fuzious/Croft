@@ -5,22 +5,29 @@
 //   env: ORACLE_SERVICE_URL, NEAR_NODE_URL, NEAR_NETWORK_ID, ORACLE_CONTRACT_ID, ATTESTER_ID, ATTESTER_KEY
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
-import { checkReceiver } from './wrapper.js';
+import { assertCheckResponse, checkReceiver } from './wrapper.js';
 import { connectAccount } from './near_account.js';
 
-const VERDICTS = new Set(['allow', 'warn', 'block']);
 const SUBMIT_GAS = 30_000_000_000_000n;
 
 /** submit_verdict args from a /v1/check answer. reasons_hash = sha256(JSON.stringify(reasons)). */
 export function attestationFromCheck(check, nowNs, ttlSeconds) {
-  if (!VERDICTS.has(check.verdict)) throw new Error(`cannot attest unknown verdict ${JSON.stringify(check.verdict)}`);
-  const bps = Math.round(Number(check.score || 0) * 10_000);
+  assertCheckResponse(check, check?.receiver_id);
+  if (typeof check.score !== 'number' || !Number.isFinite(check.score) || check.score < 0 || check.score > 1) {
+    throw new Error('cannot attest a score outside 0..1');
+  }
+  if (!Number.isSafeInteger(ttlSeconds) || ttlSeconds <= 0 || ttlSeconds > 7 * 24 * 3600) {
+    throw new Error('attestation TTL must be an integer from 1 to 604800 seconds');
+  }
+  const codeHash = check.signals?.code_hash?.value ?? '';
+  if (typeof codeHash !== 'string') throw new Error('cannot attest a malformed code hash');
+  const bps = Math.round(check.score * 10_000);
   return {
     account_id: check.receiver_id,
-    code_hash: check.signals?.code_hash?.value || '',
+    code_hash: codeHash,
     verdict: check.verdict,
-    score_bps: Math.min(10_000, Math.max(0, bps)),
-    reasons_hash: createHash('sha256').update(JSON.stringify(check.reasons || [])).digest('hex'),
+    score_bps: bps,
+    reasons_hash: createHash('sha256').update(JSON.stringify(check.reasons)).digest('hex'),
     expires_at_ns: (BigInt(nowNs) + BigInt(ttlSeconds) * 1_000_000_000n).toString(),
   };
 }
@@ -28,9 +35,7 @@ export function attestationFromCheck(check, nowNs, ttlSeconds) {
 /** Check `accountId` with the service and submit the verdict; returns {check, attestation}. */
 export async function relayVerdict({ serviceUrl, attester, oracleId, accountId, ttlSeconds = 3600, nowNs, log = console.log }) {
   const check = await checkReceiver(serviceUrl, { receiver_id: accountId });
-  if (check.receiver_id !== accountId) {
-    throw new Error(`service answered for ${JSON.stringify(check.receiver_id)}, not ${accountId}: refusing to attest`);
-  }
+  assertCheckResponse(check, accountId);
   const attestation = attestationFromCheck(check, nowNs ?? BigInt(Date.now()) * 1_000_000n, ttlSeconds);
   await attester.functionCall({ contractId: oracleId, methodName: 'submit_verdict', args: attestation, gas: SUBMIT_GAS, attachedDeposit: 0n });
   log(`[relay] ${attester.accountId} attested ${attestation.verdict.toUpperCase()} for ${accountId} on ${oracleId} ` +

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import base64
 import json
+import math
 import os
 import time
 from datetime import date, datetime, timezone
@@ -61,9 +62,19 @@ def rpc(cfg: dict, method: str, params, timeout: float = 10.0) -> dict:
         except (httpx.HTTPError, ValueError) as e:
             last = f"RPC {type(e).__name__}"
             continue
+        if not isinstance(body, dict):
+            last = "malformed RPC response"
+            continue
         if "error" in body:
-            cause = (body["error"].get("cause") or {}).get("name") or body["error"].get("name") or "RPC error"
+            error = body["error"]
+            if not isinstance(error, dict):
+                raise SignalError("malformed RPC error")
+            cause = error.get("cause")
+            cause = (cause.get("name") if isinstance(cause, dict) else None) or error.get("name") or "RPC error"
             raise SignalError(cause)
+        if not isinstance(body.get("result"), dict):
+            last = "malformed RPC result"
+            continue
         return body["result"]
     raise SignalError(last)
 
@@ -71,7 +82,10 @@ def rpc(cfg: dict, method: str, params, timeout: float = 10.0) -> dict:
 def view_account(cfg: dict, account_id: str) -> dict | None:
     """view_account result, or None when the account does not exist."""
     try:
-        return rpc(cfg, "query", {"request_type": "view_account", "finality": "final", "account_id": account_id})
+        account = rpc(cfg, "query", {"request_type": "view_account", "finality": "final", "account_id": account_id})
+        if not isinstance(account.get("code_hash"), str) or not account["code_hash"]:
+            raise SignalError("account response has no code hash")
+        return account
     except SignalError as e:
         if str(e) == "UNKNOWN_ACCOUNT":
             return None
@@ -118,6 +132,8 @@ def nearblocks(cfg: dict, path: str, params: dict | None = None) -> dict:
             wait = float(r.headers.get("retry-after") or 2**attempt)
         except ValueError:
             wait = 2.0**attempt
+        if not math.isfinite(wait) or wait <= 0:
+            wait = 2.0**attempt
         if waited + wait > NEARBLOCKS_MAX_WAIT_S:
             raise SignalError("NearBlocks rate limit (HTTP 429)")
         time.sleep(wait)
@@ -128,6 +144,8 @@ def nearblocks(cfg: dict, path: str, params: dict | None = None) -> dict:
         data = r.json()
     except ValueError:
         raise SignalError("NearBlocks returned non-JSON") from None
+    if not isinstance(data, dict) or "data" not in data:
+        raise SignalError("malformed NearBlocks response")
     _nb_cache[key] = (time.time() + NEARBLOCKS_TTL_S, data)
     return data
 
@@ -148,22 +166,25 @@ def history_signals(cfg: dict, account_id: str, is_contract: bool | None, agent_
         out["tx_count"] = sig(int(st["txns"]) if st.get("txns") is not None else None, f"{src}:/stats")
         out["first_activity"] = sig(st.get("first_day"), f"{src}:/stats")
         out["last_activity"] = sig(st.get("last_day"), f"{src}:/stats")
-    except SignalError as e:
+    except (SignalError, ValueError, TypeError, AttributeError) as e:
         for k in ("tx_count", "first_activity", "last_activity"):
             out[k] = sig(None, f"{src}:/stats", False, str(e))
     # age from the first active day: a lower bound on the true age, so the young-account check errs toward warning.
     # The creation record is fetched only when there is no activity, to spend one NearBlocks call instead of two.
     first = out["first_activity"]["value"]
     if first:
-        today = datetime.fromtimestamp(now_ns / 1e9, tz=timezone.utc).date()
-        out["age_days"] = sig(float((today - date.fromisoformat(first)).days), f"{src}:/stats first_day")
+        try:
+            today = datetime.fromtimestamp(now_ns / 1e9, tz=timezone.utc).date()
+            out["age_days"] = sig(float((today - date.fromisoformat(first)).days), f"{src}:/stats first_day")
+        except (ValueError, TypeError):
+            out["age_days"] = sig(None, f"{src}:/stats first_day", False, "invalid first activity date")
     else:
         try:
             ts = (((nearblocks(cfg, f"/v3/accounts/{account_id}").get("data") or {}).get("created") or {})
                   .get("block_timestamp"))
             out["age_days"] = (sig(_days_since_ns(ts, now_ns), f"{src}:/accounts created") if ts else
                                sig(None, f"{src}:/accounts", False, "no creation record"))
-        except SignalError as e:
+        except (SignalError, ValueError, TypeError, AttributeError, OverflowError) as e:
             out["age_days"] = sig(None, f"{src}:/accounts", False, str(e))
 
     dsrc = f"{src}:/contract/deployments"
@@ -180,7 +201,7 @@ def history_signals(cfg: dict, account_id: str, is_contract: bool | None, agent_
                 out["code_changed_days"] = sig(_days_since_ns(ts, now_ns), dsrc)
             else:
                 out["code_changed_days"] = out["last_deploy_at"] = sig(None, dsrc, False, "no deployment record")
-        except SignalError as e:
+        except (SignalError, ValueError, TypeError, AttributeError, OverflowError) as e:
             out["code_changed_days"] = out["last_deploy_at"] = sig(None, dsrc, False, str(e))
 
     psrc = f"{src}:/accounts/{{agent}}/txns?receiver="
@@ -189,6 +210,8 @@ def history_signals(cfg: dict, account_id: str, is_contract: bool | None, agent_
     else:
         try:
             txs = nearblocks(cfg, f"/v3/accounts/{agent_id}/txns", {"receiver": account_id, "limit": 1})
+            if not isinstance(txs.get("data"), list) or any(not isinstance(tx, dict) for tx in txs["data"]):
+                raise SignalError("invalid transaction history")
             out["prior_interactions"] = sig(bool(txs.get("data")), psrc)
         except SignalError as e:
             out["prior_interactions"] = sig(None, psrc, False, str(e))
@@ -203,6 +226,22 @@ def onchain_oracle_signals(cfg: dict, account_id: str) -> dict:
     out = {}
     for key, method in (("onchain_blocked", "is_blocked"), ("onchain_verdict", "get_verdict")):
         v, err = call_view(cfg, oid, method, {"account_id": account_id})
+        if err is None:
+            if key == "onchain_blocked" and type(v) is not bool:
+                err = "invalid blocklist response"
+            elif key == "onchain_verdict" and v is not None:
+                try:
+                    valid = (isinstance(v, dict) and v.get("verdict") in ("allow", "warn", "block")
+                             and isinstance(v.get("code_hash"), str)
+                             and type(v.get("score_bps")) is int and 0 <= v["score_bps"] <= 10000
+                             and isinstance(v.get("expires_at_ns"), (str, int))
+                             and str(v["expires_at_ns"]).isdigit() and 0 <= int(v["expires_at_ns"]) < 2**64)
+                except (TypeError, ValueError):
+                    valid = False
+                if not valid:
+                    err = "invalid verdict response"
+        if err:
+            v = None
         out[key] = sig(v, f"rpc:{oid}.{method}", err is None, err)
     return out
 

@@ -128,8 +128,10 @@ def decide(signals: dict, deposit_yocto=None, network: str = "mainnet", now_ns: 
         out.append(("block", "the on-chain security oracle lists the receiver as blocked"))
     elif not ok and err != "not configured":
         out.append(("warn", f"on-chain blocklist could not be checked ({err})"))
-    ov, ok, _ = _v(signals, "onchain_verdict")
+    ov, ok, err = _v(signals, "onchain_verdict")
     code_hash, _, _ = _v(signals, "code_hash")
+    if not ok and err != "not configured":
+        out.append(("warn", f"on-chain verdict could not be checked ({err})"))
     if ok and ov and int(ov.get("expires_at_ns") or 0) > now_ns:
         if ov.get("code_hash") and code_hash and ov["code_hash"] != code_hash:
             out.append(("warn", "contract code changed since the on-chain oracle's attestation"))
@@ -162,7 +164,11 @@ def decide(signals: dict, deposit_yocto=None, network: str = "mainnet", now_ns: 
             out.append(("warn", "contract source was supplied by the caller and is not verified against "
                                 "the deployed code"))
         elif src.get("origin") == "nep330" and not src.get("verified") and src.get("repo") and not src.get("error"):
-            out.append(("warn", f"contract source link {src['repo']} is not pinned to a commit"))
+            if src.get("pinned"):
+                out.append(("warn", "contract source is pinned to a commit advertised by the receiver, but has not "
+                                    "been verified against the deployed code"))
+            else:
+                out.append(("warn", f"contract source link {src['repo']} is not pinned to a commit"))
         elif not (src.get("verified") and cr_ok and cr):
             why = src.get("error") or src_err or "no NEP-330 source metadata"
             out.append(("warn", f"receiver is a contract with no verifiable source ({why})"))

@@ -89,6 +89,13 @@ class EndpointValidationTest(unittest.TestCase):
         big = "fn a() {}\n" * (service.MAX_FILE_BYTES // 10 + 1)
         self.assertEqual(self.client.post("/v1/analyze", json={"source_files": {"a.rs": big}}).status_code, 413)
 
+    def test_source_caps_count_utf8_bytes_before_checking_live_signals(self):
+        big = "\u00e9" * (service.MAX_FILE_BYTES // 2 + 1)
+        with unittest.mock.patch.object(signals, "account_signals") as fetch:
+            r = self.client.post("/v1/check", json={"receiver_id": "x.near", "source_files": {"a.rs": big}})
+        self.assertEqual(r.status_code, 413)
+        fetch.assert_not_called()
+
     def test_oversized_body_is_refused_before_parsing(self):
         r = self.client.post("/v1/analyze", content=b"x" * (service.MAX_BODY_BYTES + 1),
                              headers={"content-type": "application/json"})

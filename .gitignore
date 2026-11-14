@@ -1,20 +1,26 @@
 .venv/
 .env
-__pycache__/
-data/raw/
-contracts/out/
-contracts/cache/
-runs/*
-!runs/RESULTS.md
 rpc.json
+__pycache__/
+node_modules/
+target/
+dist/
+.claude/
+
+# Local datasets, model weights and caches
 data/
 models/
 *.zip
-!archives/*.zip
-node_modules/
-target/
-.claude/
+!archives/near_*.zip
+# v2 LLM weights (953 MB) stay local; the service falls back to v1 without them
+archives/near_llm_v2.zip
 
-# NEAR: out-of-fold / test score arrays ship in archives/near_models.zip
+# Evaluation arrays ship in the model archive
 near/model/reports/*.npy
 near/model/reports/*.npz
+
+# Generated report copies; retain compact summaries and raw JSON evidence
+/near/model/reports/*.md
+!/near/model/reports/RESULTS.md
+/near/model/reports/*.log
+/near/intents/reports/evaluation.md

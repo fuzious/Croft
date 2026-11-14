@@ -927,7 +927,7 @@ stripping comments and whitespace, and it still extracts as the same function.
   without state effects is low-impact without `#[private]`. Precision was judged by reading roughly 120 random diffs
   across all operators during development and is not measured.
 - Each mutant differs from its original by a few tokens. Mutation recall therefore overstates real-world recall:
-  report it separately from audit/incident/fix_commit results (as PLAN.md says).
+  report it separately from audit/incident/fix_commit results.
 - Originals are emitted only for functions that carry a protection, so label-0 `mutation_original` rows are
   guarded functions; unguarded safe functions (views, internal helpers) must come from the corpus negatives, or a model
   learns that a missing guard means vulnerable.

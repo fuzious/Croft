@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
@@ -151,7 +152,10 @@ class SelectedModelTest(unittest.TestCase):
             self.assertEqual(predict.selected_model({}, root), "frozen_near_v1")
             os.makedirs(os.path.join(models, "llm_final"))
             open(os.path.join(models, "llm_final", "model.safetensors"), "w").close()
-            self.assertEqual(predict.selected_model({}, root), "frozen_near_v2")
+            with patch("near.model.predict.importlib.util.find_spec", return_value=object()):
+                self.assertEqual(predict.selected_model({}, root), "frozen_near_v2")
+            with patch("near.model.predict.importlib.util.find_spec", return_value=None):
+                self.assertEqual(predict.selected_model({}, root), "frozen_near_v1")
             self.assertEqual(predict.selected_model({"NEAR_ORACLE_MODEL": "frozen_near_v2"}, os.path.join(root, "x")),
                              "frozen_near_v2")
 

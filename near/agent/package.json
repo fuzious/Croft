@@ -8,7 +8,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --test 'test/*.test.js'",
+    "test": "node --test 'test/*.test.js' ../demo/test_amount.mjs",
     "demo": "node scripts/attack_demo.js"
   },
   "dependencies": {

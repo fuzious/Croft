@@ -155,8 +155,9 @@ def code_risk(files: dict[str, str]) -> dict:
 
 
 def _check_files(files: dict[str, str]) -> None:
-    if (len(files) > MAX_SOURCE_FILES or sum(len(s) for s in files.values()) > MAX_SOURCE_BYTES
-            or any(len(s) > MAX_FILE_BYTES for s in files.values())):
+    sizes = [len(s.encode("utf-8")) for s in files.values()]
+    if (len(files) > MAX_SOURCE_FILES or sum(sizes) > MAX_SOURCE_BYTES
+            or any(size > MAX_FILE_BYTES for size in sizes)):
         raise HTTPException(413, f"source_files is limited to {MAX_SOURCE_FILES} files, "
                                  f"{MAX_FILE_BYTES // 1024} KB per file and {MAX_SOURCE_BYTES // 2**20} MB in all")
 
@@ -208,6 +209,8 @@ def _intents_activity(receiver_id: str) -> dict:
 
 @app.post("/v1/check")
 def check(req: CheckRequest):
+    if req.source_files is not None:
+        _check_files(req.source_files)
     now = time.time_ns()
     deadline = time.monotonic() + INTENTS_DEADLINE_S
     pool = ThreadPoolExecutor(1)   # FastNEAR in parallel with RPC and NearBlocks
@@ -231,7 +234,6 @@ def check(req: CheckRequest):
     is_contract = s["is_contract"]["value"] if s["is_contract"]["available"] else None
     files = {}
     if req.source_files:
-        _check_files(req.source_files)
         files = req.source_files
         s["source"] = sig({"origin": "caller", "verified": False, "files": len(files)}, "request.source_files")
     elif is_contract:

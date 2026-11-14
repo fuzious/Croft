@@ -42,6 +42,12 @@ pub struct Verdict {
     pub attester: AccountId,
 }
 
+#[near(serializers = [borsh])]
+struct StoredVerdict {
+    verdict: Verdict,
+    attester_generation: u64,
+}
+
 #[near(serializers = [borsh, json])]
 #[serde(rename_all = "lowercase")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -121,6 +127,7 @@ enum StorageKey {
     Reports,
     ReportsByAccount,
     Blocked,
+    AttesterGenerations,
 }
 
 #[near(
@@ -134,10 +141,11 @@ enum StorageKey {
 pub struct SecurityOracle {
     owner_id: AccountId,
     attesters: IterableSet<AccountId>,
-    verdicts: LookupMap<AccountId, Verdict>,
+    verdicts: LookupMap<AccountId, StoredVerdict>,
     reports: Vector<Report>,
     reports_by_account: LookupMap<AccountId, Vec<u64>>,
     blocked: LookupMap<AccountId, Block>,
+    attester_generations: LookupMap<AccountId, u64>,
 }
 
 #[near]
@@ -155,6 +163,7 @@ impl SecurityOracle {
             reports: Vector::new(StorageKey::Reports),
             reports_by_account: LookupMap::new(StorageKey::ReportsByAccount),
             blocked: LookupMap::new(StorageKey::Blocked),
+            attester_generations: LookupMap::new(StorageKey::AttesterGenerations),
         }
     }
 
@@ -184,14 +193,17 @@ impl SecurityOracle {
         );
         self.verdicts.insert(
             account_id.clone(),
-            Verdict {
-                code_hash,
-                verdict,
-                score_bps,
-                reasons_hash,
-                attested_at_ns: U64(now),
-                expires_at_ns,
-                attester: attester.clone(),
+            StoredVerdict {
+                attester_generation: self.attester_generation(&attester),
+                verdict: Verdict {
+                    code_hash,
+                    verdict,
+                    score_bps,
+                    reasons_hash,
+                    attested_at_ns: U64(now),
+                    expires_at_ns,
+                    attester: attester.clone(),
+                },
             },
         );
         Event::VerdictSubmitted {
@@ -319,7 +331,15 @@ impl SecurityOracle {
     #[payable]
     pub fn remove_attester(&mut self, attester: AccountId) {
         self.assert_owner();
-        self.attesters.remove(&attester);
+        if self.attesters.remove(&attester) {
+            // Re-adding a recovered operator must not revive verdicts signed by its old key.
+            let generation = self
+                .attester_generation(&attester)
+                .checked_add(1)
+                .unwrap_or_else(|| env::panic_str("attester generation overflow"));
+            self.attester_generations
+                .insert(attester.clone(), generation);
+        }
         Event::AttesterRemoved { attester }.emit();
     }
 
@@ -344,13 +364,16 @@ impl SecurityOracle {
 
     /// The attested verdict, overridden to `block` (score 10000, never expiring) when the account
     /// is blocked by a confirmed report. A verdict whose attester has since been removed is not
-    /// served; a block stands whoever confirmed it.
+    /// served, including after re-adding that attester; a block stands whoever confirmed it.
     pub fn get_verdict(&self, account_id: AccountId) -> Option<Verdict> {
         let attested = self
             .verdicts
             .get(&account_id)
-            .filter(|v| self.attesters.contains(&v.attester))
-            .cloned();
+            .filter(|v| {
+                self.attesters.contains(&v.verdict.attester)
+                    && v.attester_generation == self.attester_generation(&v.verdict.attester)
+            })
+            .map(|v| v.verdict.clone());
         match self.blocked.get(&account_id) {
             None => attested,
             Some(b) => Some(Verdict {
@@ -412,6 +435,13 @@ impl SecurityOracle {
 }
 
 impl SecurityOracle {
+    fn attester_generation(&self, attester: &AccountId) -> u64 {
+        self.attester_generations
+            .get(attester)
+            .copied()
+            .unwrap_or(0)
+    }
+
     fn assert_attester(&self) -> AccountId {
         let caller = env::predecessor_account_id();
         require!(

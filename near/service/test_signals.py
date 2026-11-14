@@ -1,6 +1,46 @@
 import unittest
+from unittest.mock import Mock, patch
 
 from near.service import signals
+
+
+class UpstreamValidationTest(unittest.TestCase):
+    def setUp(self):
+        self.cfg = signals.load_config({"NEAR_RPC_URL": "http://rpc", "ORACLE_CONTRACT_ID": "oracle.near"})
+        signals._nb_cache.clear()
+
+    def test_missing_rpc_code_hash_is_unknown_not_an_eoa(self):
+        with patch.object(signals, "rpc", return_value={"amount": "10"}):
+            with self.assertRaisesRegex(signals.SignalError, "no code hash"):
+                signals.view_account(self.cfg, "x.near")
+
+    def test_malformed_rpc_responses_become_signal_errors(self):
+        for body in ([], None, {}, {"result": None}, {"error": "bad"}):
+            with self.subTest(body=body), patch.object(signals.httpx, "post", return_value=Mock(status_code=200, json=lambda: body)):
+                with self.assertRaises(signals.SignalError):
+                    signals.rpc(self.cfg, "query", {})
+
+    def test_malformed_onchain_results_are_unavailable(self):
+        for value in (False, [], "allow", {"verdict": "allow"},
+                      {"verdict": "allow", "score_bps": 0, "expires_at_ns": "oops", "code_hash": "hash"}):
+            with self.subTest(value=value), patch.object(signals, "call_view", return_value=(value, None)):
+                out = signals.onchain_oracle_signals(self.cfg, "x.near")
+                self.assertFalse(out["onchain_verdict"]["available"])
+        with patch.object(signals, "call_view", return_value=("false", None)):
+            self.assertFalse(signals.onchain_oracle_signals(self.cfg, "x.near")["onchain_blocked"]["available"])
+
+    def test_invalid_indexer_fields_do_not_crash_or_count_as_prior_interactions(self):
+        with patch.object(signals, "nearblocks", return_value={"data": {"first_day": "not-a-date"}}):
+            out = signals.history_signals(self.cfg, "x.near", True, "agent.near", 1_800_000_000 * 10**9)
+        for key in ("age_days", "code_changed_days", "prior_interactions"):
+            self.assertFalse(out[key]["available"], out[key])
+
+    def test_zero_retry_after_cannot_loop_forever(self):
+        with patch.object(signals.httpx, "get", return_value=Mock(status_code=429, headers={"retry-after": "0"})), \
+                patch.object(signals.time, "sleep") as sleep:
+            with self.assertRaisesRegex(signals.SignalError, "rate limit"):
+                signals.nearblocks(self.cfg, "/stats")
+        self.assertEqual(sleep.call_count, 3)
 
 
 class ConfigTest(unittest.TestCase):

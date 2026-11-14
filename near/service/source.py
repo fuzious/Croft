@@ -117,11 +117,11 @@ def fetch_github_rust(owner: str, repo: str, rev: str | None, contract_path: str
 
 
 def contract_source(cfg: dict, account_id: str) -> dict:
-    """{files, origin: nep330|none, verified, repo, rev, contract_path, error}. `verified` means the source is
-    pinned to a commit by the contract's own NEP-330 metadata (not that the wasm was rebuilt and compared)."""
+    """Return source advertised by the receiver. A commit pin is provenance, not proof that this source produced
+    the deployed WASM: the receiver controls its metadata. `verified` stays false until that comparison exists."""
     from .signals import call_view
 
-    out = {"files": {}, "origin": "none", "verified": False, "repo": None, "rev": None, "contract_path": None,
+    out = {"files": {}, "origin": "none", "verified": False, "pinned": False, "repo": None, "rev": None, "contract_path": None,
            "error": None}
     meta, err = call_view(cfg, account_id, "contract_source_metadata", {})
     if err:
@@ -141,5 +141,5 @@ def contract_source(cfg: dict, account_id: str) -> dict:
         return out
     if not out["files"]:
         out["error"] = "repository has no Rust files"
-    out["verified"] = bool(p["rev"] and out["files"])
+    out["pinned"] = bool(p["rev"] and out["files"])
     return out

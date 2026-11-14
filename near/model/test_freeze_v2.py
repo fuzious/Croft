@@ -1,4 +1,5 @@
 import os
+import importlib.util
 import pickle
 import tempfile
 import unittest
@@ -12,7 +13,8 @@ from near.model import train_classic_v2 as tc2
 from near.model.test_predict import SRC, nontrivial_rows
 
 PARAMS = dict(tc2.V1_PARAMS, iters=30, leaves=7, top_tokens=20)
-HAS_V2_LLM = (predict.MODELS_DIR / "llm_final" / "model.safetensors").exists()  # archives/near_llm_v2.zip
+HAS_V2_LLM = ((predict.MODELS_DIR / "llm_final" / "model.safetensors").exists()
+              and all(importlib.util.find_spec(m) for m in ("torch", "transformers")))
 
 
 def tiny_v2_artifact(rows):

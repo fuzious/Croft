@@ -1,4 +1,5 @@
-"""Merge real, corpus and mutation samples into the train set and the sealed test set (PLAN.md "Splits").
+"""Merge real, corpus and mutation samples into the train set and the sealed test set (whole repositories per
+split, so no group is in both).
 
 Steps: signatures (norm_hash as in extract_corpus, identifier-renamed shape hash, token 5-gram MinHash), label
 conflicts, group-level sealed test (seeded stratified share + post-2025 time split), per-split dedupe, removal of

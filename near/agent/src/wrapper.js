@@ -10,9 +10,25 @@ const VERDICTS = new Set(['allow', 'warn', 'block']);
 
 /** Decimal NEAR string ("2", "0.5") -> yoctoNEAR string. */
 export function nearToYocto(near) {
-  const m = /^(\d+)(?:\.(\d{1,24}))?$/.exec(String(near));
+  const m = typeof near === 'string' && /^(\d+)(?:\.(\d{1,24}))?$/.exec(near);
   if (!m) throw new Error(`invalid NEAR amount: ${near}`);
   return (BigInt(m[1]) * 10n ** 24n + BigInt((m[2] || '').padEnd(24, '0'))).toString();
+}
+
+/** Bind the service answer to the requested payment before trusting its decision. */
+export function assertCheckResponse(answer, receiver) {
+  if (!answer || typeof answer !== 'object' || Array.isArray(answer)) {
+    throw new Error('oracle returned a malformed response');
+  }
+  if (typeof answer.receiver_id !== 'string' || !answer.receiver_id || answer.receiver_id !== receiver) {
+    throw new Error(`oracle answered for ${JSON.stringify(answer.receiver_id)}, expected ${receiver}`);
+  }
+  if (!VERDICTS.has(answer.verdict)) {
+    throw new Error(`oracle returned an unknown verdict ${JSON.stringify(answer.verdict)}`);
+  }
+  if (!Array.isArray(answer.reasons) || !answer.reasons.every((reason) => typeof reason === 'string')) {
+    throw new Error('oracle returned malformed reasons');
+  }
 }
 
 /** POST {serviceUrl}/v1/check; returns the parsed verdict or throws. */
@@ -49,19 +65,24 @@ export async function askHumanOnStdin({ receiver, amount, reason, reasons }) {
 export async function payWithOracle({ receiver, amount, reason }, deps) {
   const log = deps.log || console.log;
   const amountYocto = nearToYocto(amount);
+  if (BigInt(amountYocto) <= 0n || BigInt(amountYocto) > 2n ** 128n - 1n) {
+    throw new Error('payment amount must be positive and fit in a u128');
+  }
   const base = { receiver, amount, amountYocto, reason };
   let answer;
   try {
     answer = await deps.check({ agent_id: deps.agentId, receiver_id: receiver, deposit_yocto: amountYocto });
   } catch (e) {
-    answer = { verdict: 'warn', reasons: [`oracle service unavailable (${e.message}); cannot verify the receiver`] };
+    answer = { receiver_id: receiver, verdict: e instanceof SyntaxError ? 'block' : 'warn', reasons: [
+      e instanceof SyntaxError ? 'oracle returned invalid JSON' : `oracle service unavailable (${e.message}); cannot verify the receiver`,
+    ] };
   }
-  let verdict = answer.verdict;
-  const reasons = answer.reasons || [];
-  if (!VERDICTS.has(verdict)) {
-    reasons.unshift(`oracle returned an unknown verdict ${JSON.stringify(verdict)}`);
-    verdict = 'block';
+  try {
+    assertCheckResponse(answer, receiver);
+  } catch (e) {
+    answer = { verdict: 'block', reasons: [e.message] };
   }
+  const { verdict, reasons } = answer;
   const result = { ...base, verdict, reasons, score: answer.score };
   log(`[wrapper] oracle verdict for ${receiver} (${amount} NEAR, "${reason}"): ${verdict.toUpperCase()}`);
   for (const r of reasons) log(`[wrapper]   - ${r}`);
@@ -80,7 +101,7 @@ export async function payWithOracle({ receiver, amount, reason }, deps) {
     log('[wrapper] human approved the warned payment; signing router.pay (the router still requires an on-chain allow)');
   }
   const tx = await deps.signPay(receiver, amountYocto);
-  if (tx.paid) {
+  if (tx.paid === true) {
     log(`[wrapper] PAID ${amount} NEAR to ${receiver} through guarded_router`);
     return { ...result, status: 'paid', tx };
   }

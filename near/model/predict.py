@@ -3,7 +3,8 @@
     score_functions(fns) -> [{fn, path, impl, start_line, risk, label, vuln_class_guess, detector_hits, ...}]
     score_source(files)  -> {risk, label, top, functions, n_functions, thresholds, model: {version, sha256}}
 
-Model: `frozen_near_v2` by default when its LLM checkpoint is present, else `frozen_near_v1`; NEAR_ORACLE_MODEL picks one.
+Model: `frozen_near_v2` when its LLM checkpoint and optional dependencies are present, else `frozen_near_v1`;
+NEAR_ORACLE_MODEL picks one explicitly.
 The model loads once, lazily, and refuses to load if the pickle, the feature code or (v2) the LLM checkpoint
 differs from its frozen manifest.
 
@@ -25,6 +26,7 @@ body under 3 lines) are not scored by the model: the corpus negatives exclude th
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import pickle
@@ -64,14 +66,15 @@ def sha256_file(path) -> str:
 
 def selected_model(env=None, root=ROOT) -> str:
     """The frozen model this process serves: $NEAR_ORACLE_MODEL; unset, frozen_near_v2 when its LLM checkpoint is
-    unpacked (archives/near_llm_v2.zip, ~0.9 GB), else frozen_near_v1."""
+    unpacked (archives/near_llm_v2.zip, ~0.9 GB) and the llm extra installed, else frozen_near_v1."""
     name = (os.environ if env is None else env).get("NEAR_ORACLE_MODEL")
     if not name:
         try:
             llm_dir = json.loads((Path(root) / "near/models/frozen_near_v2.json").read_text())["llm_dir"]
         except (OSError, ValueError, KeyError):
             llm_dir = None
-        has_llm = llm_dir and (Path(root) / llm_dir / "model.safetensors").exists()
+        has_llm = (llm_dir and (Path(root) / llm_dir / "model.safetensors").exists()
+                   and all(importlib.util.find_spec(m) is not None for m in ("torch", "transformers")))
         name = DEFAULT_MODEL if has_llm else "frozen_near_v1"
     if name not in MODEL_NAMES:
         raise FrozenModelError(f"NEAR_ORACLE_MODEL={name!r}: expected one of {MODEL_NAMES}")

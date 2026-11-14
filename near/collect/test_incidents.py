@@ -88,6 +88,7 @@ class BuildRowTest(unittest.TestCase):
         self.assertIsNone(row["snippet"])
 
 
+@unittest.skipUnless(incidents.CURATED.exists(), "curated incidents not unpacked (archives/near_datasets.zip)")
 class CuratedListTest(unittest.TestCase):
     def test_entries_are_well_formed(self):
         entries = json.loads(incidents.CURATED.read_text())

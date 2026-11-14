@@ -9,7 +9,7 @@ function deps(verdict, extra = {}) {
   return {
     calls,
     agentId: 'agent.human.test.near',
-    check: async (body) => { calls.checks.push(body); return verdict; },
+    check: async (body) => { calls.checks.push(body); return { receiver_id: body.receiver_id, ...verdict }; },
     signPay: async (receiverId, amountYocto) => { calls.signs.push([receiverId, amountYocto]); return { paid: true, events: [] }; },
     log: (line) => calls.logs.push(line),
     interactive: false,
@@ -22,6 +22,16 @@ test('nearToYocto converts decimal NEAR to a yocto string', () => {
   assert.equal(nearToYocto('0.5'), '5' + '0'.repeat(23));
   assert.throws(() => nearToYocto('-1'));
   assert.throws(() => nearToYocto('abc'));
+  assert.throws(() => nearToYocto(0.1), /invalid/);
+});
+
+test('invalid payment amounts are rejected before checking or signing', async () => {
+  for (const amount of ['0', '0.000000000000000000000000', '340282366920939.463463374607431768211456', 9007199254740993]) {
+    const d = deps({ verdict: 'allow', reasons: [] });
+    await assert.rejects(payWithOracle({ receiver: 'shop.test.near', amount, reason: 'invoice' }, d));
+    assert.equal(d.calls.checks.length, 0);
+    assert.equal(d.calls.signs.length, 0);
+  }
 });
 
 test('sends agent_id, receiver_id and deposit_yocto to /v1/check', async () => {
@@ -101,6 +111,44 @@ test('an unknown verdict value is treated as block', async () => {
   const r = await payWithOracle({ receiver: 'shop.test.near', amount: '1', reason: 'x' }, d);
   assert.equal(r.status, 'refused');
   assert.equal(d.calls.signs.length, 0);
+});
+
+test('an allow for another receiver is refused without human override or signature', async () => {
+  const d = deps({ receiver_id: 'other.test.near', verdict: 'allow', reasons: [] }, {
+    approve: async () => { assert.fail('malformed answers must not ask for approval'); },
+  });
+  const r = await payWithOracle({ receiver: 'shop.test.near', amount: '1', reason: 'invoice' }, d);
+  assert.equal(r.status, 'refused');
+  assert.match(r.reasons[0], /other\.test\.near.*shop\.test\.near/);
+  assert.equal(d.calls.signs.length, 0);
+});
+
+test('malformed oracle responses are refused without crashing or signing', async () => {
+  for (const answer of [null, [], 'allow', {},
+    { verdict: 'allow', reasons: [] },
+    { receiver_id: 'shop.test.near', verdict: 'allow', reasons: 'safe' },
+    { receiver_id: 'shop.test.near', verdict: 'warn', reasons: [null] }]) {
+    const d = deps(null, { check: async () => answer });
+    const r = await payWithOracle({ receiver: 'shop.test.near', amount: '1', reason: 'invoice' }, d);
+    assert.equal(r.status, 'refused');
+    assert.equal(d.calls.signs.length, 0);
+  }
+  const d = deps(null, { check: async () => JSON.parse('not json') });
+  const r = await payWithOracle({ receiver: 'shop.test.near', amount: '1', reason: 'invoice' }, d);
+  assert.equal(r.status, 'refused');
+  assert.equal(d.calls.signs.length, 0);
+});
+
+test('does not mutate a frozen oracle response when refusing an unknown verdict', async () => {
+  const d = deps(Object.freeze({ verdict: 'maybe', reasons: Object.freeze([]) }));
+  const r = await payWithOracle({ receiver: 'shop.test.near', amount: '1', reason: 'invoice' }, d);
+  assert.equal(r.status, 'refused');
+});
+
+test('a truthy non-boolean signer result is not reported as paid', async () => {
+  const d = deps({ verdict: 'allow', reasons: [] }, { signPay: async () => ({ paid: 'false' }) });
+  const r = await payWithOracle({ receiver: 'shop.test.near', amount: '1', reason: 'invoice' }, d);
+  assert.equal(r.status, 'refused_on_chain');
 });
 
 const b64 = (s) => Buffer.from(s).toString('base64');

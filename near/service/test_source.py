@@ -1,6 +1,7 @@
 import io
 import tarfile
 import unittest
+from unittest.mock import patch
 
 from near.service import source
 
@@ -67,6 +68,14 @@ class ParseMetadataTest(unittest.TestCase):
 
 
 class ContractSourceTest(unittest.TestCase):
+    def test_receiver_controlled_commit_pin_does_not_verify_deployed_code(self):
+        with patch("near.service.signals.call_view", return_value=({"link": f"https://github.com/o/r/tree/{SHA}"}, None)), \
+                patch.object(source, "fetch_github_rust", return_value={"src/lib.rs": "fn safe() {}"}):
+            out = source.contract_source({}, "malicious.near")
+        self.assertTrue(out["pinned"])
+        self.assertFalse(out["verified"])
+        self.assertTrue(out["files"])
+
     def test_view_error_text_from_the_contract_is_not_passed_on(self):
         from near.service import signals
         orig = signals.call_view

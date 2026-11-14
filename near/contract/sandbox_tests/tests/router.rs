@@ -138,6 +138,19 @@ async fn allow_from_a_removed_attester_is_refused() -> anyhow::Result<()> {
         .await?
         .into_result()?;
     assert_refused(&r, r.shop.id(), "no_verdict").await?;
+    r.env
+        .owner
+        .call(r.env.oracle.id(), "add_attester")
+        .args_json(json!({ "attester": r.env.attester.id() }))
+        .deposit(NearToken::from_yoctonear(1))
+        .transact()
+        .await?
+        .into_result()?;
+    assert_refused(&r, r.shop.id(), "no_verdict").await?;
+    allow_for_an_hour(&r.env, r.shop.id()).await?;
+    assert!(pay(&r.agent, &r.router, r.shop.id(), near(1))
+        .await?
+        .json::<bool>()?);
     Ok(())
 }
 
