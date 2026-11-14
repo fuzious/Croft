@@ -59,11 +59,12 @@ export async function askHumanOnStdin({ receiver, amount, reason, reasons }) {
 
 /**
  * Pay `amount` NEAR to `receiver` only if the oracle lets it through.
- * deps: {agentId, check(body) -> verdict, signPay(receiverId, amountYocto) -> {paid, events},
+ * Optional preapproval is the proof from /v1/preapprovals; the router verifies it on chain.
+ * deps: {agentId, check(body) -> verdict, signPay(receiverId, amountYocto, preapproval?) -> {paid, events},
  *        approve?(question) -> bool, interactive?: bool, log?(line)}
  * Returns {status: paid|refused|declined|refused_on_chain, verdict, reasons, receiver, amountYocto, ...}.
  */
-export async function payWithOracle({ receiver, amount, reason }, deps) {
+export async function payWithOracle({ receiver, amount, reason, preapproval }, deps) {
   const log = deps.log || console.log;
   const amountYocto = nearToYocto(amount);
   if (BigInt(amountYocto) <= 0n || BigInt(amountYocto) > 2n ** 128n - 1n) {
@@ -72,7 +73,9 @@ export async function payWithOracle({ receiver, amount, reason }, deps) {
   const base = { receiver, amount, amountYocto, reason };
   let answer;
   try {
-    answer = await deps.check({ agent_id: deps.agentId, receiver_id: receiver, deposit_yocto: amountYocto });
+    answer = preapproval
+      ? { receiver_id: receiver, verdict: 'allow', reasons: ['operator pre-approval supplied; signature is verified on chain'] }
+      : await deps.check({ agent_id: deps.agentId, receiver_id: receiver, deposit_yocto: amountYocto });
   } catch (e) {
     answer = { receiver_id: receiver, verdict: e instanceof SyntaxError ? 'block' : 'warn', reasons: [
       e instanceof SyntaxError ? 'oracle returned invalid JSON' : `oracle service unavailable (${e.message}); cannot verify the receiver`,
@@ -101,7 +104,9 @@ export async function payWithOracle({ receiver, amount, reason }, deps) {
     }
     log('[wrapper] human approved the warned payment; signing router.pay (the router still requires an on-chain allow)');
   }
-  const tx = await deps.signPay(receiver, amountYocto);
+  const tx = preapproval
+    ? await deps.signPay(receiver, amountYocto, preapproval)
+    : await deps.signPay(receiver, amountYocto);
   if (tx.paid === true) {
     log(`[wrapper] PAID ${amount} NEAR to ${receiver} through guarded_router`);
     return { ...result, status: 'paid', tx };
@@ -135,7 +140,7 @@ export function assertRouterScopedKey(permission, routerId) {
 }
 
 /**
- * signPay(receiverId, amountYocto) for the agent: checks on chain that its key is a function-call key scoped to
+ * signPay(receiverId, amountYocto, preapproval?) for the agent: checks on chain that its key is a function-call key scoped to
  * routerId/pay, then signs router.pay with it. {nodeUrl, networkId, agentId, agentSecretKey, routerId}
  */
 export async function createRouterPaySigner({ nodeUrl, networkId, agentId, agentSecretKey, routerId }) {
@@ -144,7 +149,9 @@ export async function createRouterPaySigner({ nodeUrl, networkId, agentId, agent
     request_type: 'view_access_key', finality: 'final', account_id: agentId, public_key: keyPair.getPublicKey().toString(),
   });
   assertRouterScopedKey(key.permission, routerId);
-  return async (receiverId, amountYocto) => routerPayOutcome(await account.functionCall({
-    contractId: routerId, methodName: 'pay', args: { receiver_id: receiverId, amount: amountYocto }, gas: PAY_GAS, attachedDeposit: 0n,
+  return async (receiverId, amountYocto, preapproval) => routerPayOutcome(await account.functionCall({
+    contractId: routerId, methodName: 'pay',
+    args: { receiver_id: receiverId, amount: amountYocto, ...(preapproval ? { preapproval } : {}) },
+    gas: PAY_GAS, attachedDeposit: 0n,
   }));
 }

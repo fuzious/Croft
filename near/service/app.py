@@ -6,12 +6,14 @@ POST /v1/analyze {source_files} -> supporting contract-source risk
 Legacy /v1/intents/score and /v1/intents/scan remain compatible aliases.
 Optional response integration:
 POST /v1/check {receiver_id, agent_id?, method?, deposit_yocto?, source_files?} -> account allow|warn|block
+POST /v1/preapprovals {consumer_id, agent_id, receiver_id, amount, nonce, ttl_seconds?} -> signed payment approval
 POST /v1/report {account_id, evidence_url, evidence_sha256?, reporter?, note?, confirm?} -> evidence report
 GET  /v1/health
 GET  /demo/      browser demo (near/demo/index.html)
 
 Config (env): NEAR_NETWORK (mainnet|testnet|sandbox), NEAR_RPC_URL, ORACLE_CONTRACT_ID, NEARBLOCKS_API,
-NEARBLOCKS_API_KEY, ORACLE_BLOCKLIST_PATH, ORACLE_ADMIN_TOKEN (needed to confirm a report through the API)."""
+NEARBLOCKS_API_KEY, ORACLE_BLOCKLIST_PATH, ORACLE_ADMIN_TOKEN (report confirmations and pre-approvals),
+ORACLE_PREAPPROVAL_SEED_BASE64, ORACLE_PREAPPROVAL_KEY_GENERATION."""
 from __future__ import annotations
 
 import hashlib
@@ -32,7 +34,7 @@ from pydantic import BaseModel, Field, field_validator
 from near.analyzer import detect, extract_functions
 from near.analyzer.detectors import SEVERITY
 
-from . import blocklist, intents, policy, reviews, signals, source
+from . import blocklist, intents, policy, preapprovals, reviews, signals, source
 from .policy import THRESHOLDS
 from .signals import sig
 
@@ -63,6 +65,7 @@ async def refuse_large_bodies(request: Request, call_next):
 app.mount("/demo", StaticFiles(directory=Path(__file__).resolve().parents[1] / "demo", html=True), name="demo")
 app.mount("/human", StaticFiles(directory=Path(__file__).resolve().parents[1] / "human", html=True), name="human")
 app.include_router(reviews.router)
+app.include_router(preapprovals.router)
 _risk_cache: dict = {}
 
 

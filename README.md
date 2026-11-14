@@ -131,5 +131,7 @@ review decisions do not execute on-chain actions. [Setup and behavior](near/huma
   The supplied router enforces that policy on future native NEAR payments routed through it. It cannot undo the
   inspected transaction, pause an arbitrary protocol, or turn a transaction label directly into an account block.
   [Contracts](near/contract/README.md) · [Response client](near/agent/README.md)
+- **Signed pre-approvals:** an authenticated backend API signs an exact payment; the oracle verifies it and
+  the router enforces expiry, single use, blocks and spending limits. [Setup](near/README.md#signed-payment-pre-approvals).
 
 [Setup & API](near/README.md) · [License: BUSL-1.1](LICENSE)

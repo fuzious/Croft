@@ -62,6 +62,7 @@ curl -s localhost:8000/v1/protocols/scan -H 'content-type: application/json' \
 | `POST /v1/protocols/scan` | Inspect recent Intents activity; input `account_id` |
 | `POST /v1/analyze` | Supporting Rust source analysis; input `source_files` mapping |
 | `GET /v1/health` | Model and service configuration |
+| `POST /v1/preapprovals` | Operator-authenticated signature for one exact router payment |
 
 `/v1/intents/score` and `/v1/intents/scan` are aliases of the score and scan routes.
 `/v1/health`'s `model` field describes the optional source-code model; the transaction model identity is in each
@@ -101,6 +102,56 @@ this demo. A high transaction label does not automatically publish a block or pr
 Those integrations use `NEAR_NETWORK`, `NEAR_RPC_URL`, `ORACLE_CONTRACT_ID`, `NEARBLOCKS_API_KEY`,
 `ORACLE_BLOCKLIST_PATH` and `ORACLE_ADMIN_TOKEN`. The score/scan data source is mainnet FastNEAR.
 Keep the demo local unless you add request quotas and report authentication.
+
+## Signed payment pre-approvals
+
+Calling `POST /v1/preapprovals` with `ORACLE_ADMIN_TOKEN` is the explicit operator approval.
+It does not infer safety from a transaction score. Keep this token and the signing seed on your backend.
+The API refuses locally blocked receivers; the oracle independently enforces on-chain blocks at verification.
+
+1. Deploy fresh [oracle and router contracts](contract/README.md); their storage layout has changed.
+2. Set `ORACLE_ADMIN_TOKEN`, `ORACLE_CONTRACT_ID`, and `ORACLE_PREAPPROVAL_SEED_BASE64`
+   (base64 of a randomly generated 32-byte Ed25519 seed). Use a separate key per network.
+3. As the oracle owner, call `set_preapproval_key({"public_key":"<base64 raw public key>"})`
+   with exactly 1 yoctoNEAR. Set `ORACLE_PREAPPROVAL_KEY_GENERATION` to the generation returned by
+   `get_preapproval_key({})` (the first registration is `"1"`). Restart the service with these settings.
+4. Read `router.get_preapproval_nonce({"agent_id":"agent.human.testnet"})`, then request approval:
+
+```bash
+curl --fail-with-body localhost:8000/v1/preapprovals \
+  -H "Authorization: Bearer $ORACLE_ADMIN_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"consumer_id":"router.testnet","agent_id":"agent.human.testnet",
+       "receiver_id":"shop.testnet","amount":"1000000000000000000000000",
+       "nonce":"0","ttl_seconds":300}'
+```
+
+Use the actual next nonce, not always `"0"`. The response contains `public_key`, `oracle_id`,
+`verify_args` and `pay_args`. The signing seed is never returned. For example with a NEAR account client:
+
+```js
+const approved = await account.viewFunction({
+  contractId: approval.oracle_id, methodName: 'verify_preapproval', args: approval.verify_args,
+}); // true for a valid, unexpired approval
+const result = await agent.functionCall({
+  contractId: routerId, methodName: 'pay', args: approval.pay_args,
+  gas: 100_000_000_000_000n, attachedDeposit: 0n,
+});
+```
+
+Alternatively pass `approval.pay_args.preapproval` as `preapproval` to `payWithOracle` with
+`createRouterPaySigner`. The existing scoped agent key still only needs the `pay` method.
+The oracle view is read-only; single-use enforcement happens in the router. A refused payment consumes
+its nonce but restores funds. Fetch a fresh nonce before retrying. The TTL is capped at 900 seconds;
+rotating or disabling the public key invalidates outstanding signatures.
+
+To derive the public key from your configured seed locally:
+
+```bash
+uv run python -c 'import os, base64; from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey; print(base64.b64encode(Ed25519PrivateKey.from_private_bytes(base64.b64decode(os.environ["ORACLE_PREAPPROVAL_SEED_BASE64"])).public_key().public_bytes_raw()).decode())'
+```
+
+Run the complete local API-to-contract proof with `cd near/contract && cargo test --test preapprovals`.
 
 <details>
 <summary><b>Tests, optional LLM and research data</b></summary>

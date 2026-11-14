@@ -6,9 +6,11 @@
 //! oracle about the receiver, and transfers in a private callback only when the verdict is `allow`,
 //! unexpired and the receiver is not blocked. Every other outcome restores the debit and logs a
 //! NEP-297 `payment_refused` event with the reason.
+//! An optional signed pre-approval authorizes one exact payment without an allow verdict; the oracle
+//! checks its signature, expiry and blocks, and the router consumes its nonce before the async call.
 //! Receipt-rule findings do not call this router automatically. It cannot revert a historical
 //! transaction, pause another protocol, or restrict payments made outside this contract.
-use near_sdk::json_types::{U128, U64};
+use near_sdk::json_types::{Base64VecU8, U128, U64};
 use near_sdk::serde::Deserialize;
 use near_sdk::serde_json::{self, json};
 use near_sdk::store::LookupMap;
@@ -28,6 +30,15 @@ const GAS_WITHDRAW_TOTAL: Gas = Gas::from_tgas(20);
 /// Gas `pay` needs on top of the receipts it schedules (oracle views + callbacks).
 const GAS_PAY_SELF: Gas = Gas::from_tgas(10);
 const MAX_ORACLE_RESULT_LEN: usize = 4_096;
+
+#[near(serializers = [json])]
+pub struct Preapproval {
+    pub nonce: U64,
+    pub key_generation: U64,
+    pub issued_at_ns: U64,
+    pub expires_at_ns: U64,
+    pub signature: Base64VecU8,
+}
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -98,6 +109,7 @@ pub enum Event {
 #[near]
 enum StorageKey {
     Agents,
+    PreapprovalNonces,
 }
 
 #[near(
@@ -111,6 +123,7 @@ enum StorageKey {
 pub struct GuardedRouter {
     oracle_id: AccountId,
     agents: LookupMap<AccountId, Agent>,
+    preapproval_nonces: LookupMap<AccountId, u64>,
 }
 
 #[near]
@@ -120,6 +133,7 @@ impl GuardedRouter {
         Self {
             oracle_id,
             agents: LookupMap::new(StorageKey::Agents),
+            preapproval_nonces: LookupMap::new(StorageKey::PreapprovalNonces),
         }
     }
 
@@ -221,8 +235,25 @@ impl GuardedRouter {
     }
 
     /// Called by the agent itself (its function-call key). Not payable.
-    pub fn pay(&mut self, receiver_id: AccountId, amount: U128) -> Promise {
+    pub fn pay(
+        &mut self,
+        receiver_id: AccountId,
+        amount: U128,
+        preapproval: Option<Preapproval>,
+    ) -> Promise {
         let agent_id = env::predecessor_account_id();
+        if let Some(ref proof) = preapproval {
+            let nonce = self.get_preapproval_nonce(agent_id.clone()).0;
+            require!(
+                proof.nonce.0 == nonce,
+                "preapproval nonce already used or out of order"
+            );
+            // Consume before the async check, including refused payments, to prevent concurrent replay.
+            self.preapproval_nonces.insert(
+                agent_id.clone(),
+                nonce.checked_add(1).expect("nonce overflow"),
+            );
+        }
         let value = NearToken::from_yoctonear(amount.0);
         require!(!value.is_zero(), "amount must be positive");
         require!(
@@ -257,6 +288,25 @@ impl GuardedRouter {
             .unwrap_or_else(|| env::panic_str("insufficient balance"));
         agent.spent_today = spent;
 
+        if let Some(proof) = preapproval {
+            let expires_at_ns = proof.expires_at_ns;
+            return Promise::new(self.oracle_id.clone())
+                .function_call(
+                    "verify_preapproval".to_string(),
+                    json!({"consumer_id": env::current_account_id(), "agent_id": agent_id,
+                    "receiver_id": receiver_id, "amount": amount, "preapproval": proof})
+                    .to_string()
+                    .into_bytes(),
+                    NearToken::from_yoctonear(0),
+                    GAS_GET_VERDICT,
+                )
+                .then(
+                    Self::ext(env::current_account_id())
+                        .with_static_gas(GAS_ON_VERDICT)
+                        .on_preapproval(agent_id, receiver_id, amount, U64(day), expires_at_ns),
+                );
+        }
+
         let args = json!({ "account_id": receiver_id })
             .to_string()
             .into_bytes();
@@ -279,6 +329,46 @@ impl GuardedRouter {
                     .with_static_gas(GAS_ON_VERDICT)
                     .on_verdict(agent_id, receiver_id, amount, U64(day)),
             )
+    }
+
+    #[private]
+    pub fn on_preapproval(
+        &mut self,
+        agent_id: AccountId,
+        receiver_id: AccountId,
+        amount: U128,
+        day: U64,
+        expires_at_ns: U64,
+    ) -> PromiseOrValue<bool> {
+        let approved = env::promise_results_count() == 1
+            && env::promise_result_checked(0, MAX_ORACLE_RESULT_LEN)
+                .ok()
+                .and_then(|raw| serde_json::from_slice::<bool>(&raw).ok())
+                == Some(true)
+            && env::block_timestamp() < expires_at_ns.0;
+        if !approved {
+            self.restore(&agent_id, amount, day.0);
+            Event::PaymentRefused {
+                agent_id,
+                receiver_id,
+                amount,
+                reason: "preapproval_invalid".into(),
+            }
+            .emit();
+            return PromiseOrValue::Value(false);
+        }
+        Promise::new(receiver_id.clone())
+            .transfer(NearToken::from_yoctonear(amount.0))
+            .then(
+                Self::ext(env::current_account_id())
+                    .with_static_gas(GAS_ON_TRANSFER)
+                    .on_transfer(agent_id, receiver_id, amount, day),
+            )
+            .into()
+    }
+
+    pub fn get_preapproval_nonce(&self, agent_id: AccountId) -> U64 {
+        U64(self.preapproval_nonces.get(&agent_id).copied().unwrap_or(0))
     }
 
     #[private]

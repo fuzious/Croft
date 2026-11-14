@@ -67,12 +67,18 @@ the older npm sandbox cannot load these contracts.
 |---|---|
 | Wrapper `block` | Refuses to sign |
 | Wrapper `warn` | Asks a human; no response means decline |
-| Router `warn`, expired or missing verdict | Refuses even after human approval in the wrapper |
+| Router `warn`, expired or missing verdict | Refuses unless an operator-signed payment pre-approval is provided |
 | Function-call key | One contract, only `pay`, one function-call action, zero attached deposit |
 | Key restrictions | Cannot directly transfer NEAR, manage keys, deploy code, stake, create or delete accounts |
 | Finite gas allowance | Exhaustion stops signing; unlimited allowance exposes the account's gas balance |
 
 Use decimal amount strings, e.g. `"0.1"`. Malformed or mismatched service answers block; service failures warn.
+
+For an [operator-signed pre-approval](../README.md#signed-payment-pre-approvals), pass the API's
+`pay_args.preapproval` as the `preapproval` argument to `payWithOracle`. It forwards that proof through
+`createRouterPaySigner` to `router.pay`; the on-chain oracle verifies it before any transfer.
+The approval is scoped to this router, agent, recipient, exact amount and one nonce. A failed attempt
+requires a fresh nonce and signature. Confirmed blocks and spending limits still apply.
 Only a full-access key or installed recovery mechanism can replace an exhausted or leaked key. An account with
 only function-call keys cannot recover itself. The demo deletes the full-access key; recovery means a replacement
 agent account. The human retains withdrawal control over router funds.

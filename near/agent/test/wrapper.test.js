@@ -4,6 +4,23 @@ import { payWithOracle, routerPayOutcome, assertRouterScopedKey, nearToYocto } f
 
 const ONE = '1000000000000000000000000';
 
+test('preapproval is passed to the router and an on-chain refusal stays refused', async () => {
+  const proof = { nonce: '0', signature: 'test-proof' };
+  for (const paid of [true, false]) {
+    const d = deps(null, {
+      check: async () => { throw new Error('preapproval must use the on-chain check'); },
+      signPay: async (receiver, amount, preapproval) => {
+        assert.equal(receiver, 'shop.test.near');
+        assert.equal(amount, ONE);
+        assert.deepEqual(preapproval, proof);
+        return { paid, events: [] };
+      },
+    });
+    const result = await payWithOracle({ receiver: 'shop.test.near', amount: '1', preapproval: proof }, d);
+    assert.equal(result.status, paid ? 'paid' : 'refused_on_chain');
+  }
+});
+
 function deps(verdict, extra = {}) {
   const calls = { checks: [], signs: [], logs: [], asks: [] };
   return {

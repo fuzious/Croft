@@ -6,7 +6,7 @@
 //! it. A blocked account always reads as `block`, whatever verdict was attested.
 //! Transaction receipt analysis is separate: findings do not automatically invoke these methods.
 //! This contract records account decisions; it cannot reverse transactions or pause other protocols.
-use near_sdk::json_types::U64;
+use near_sdk::json_types::{Base64VecU8, U128, U64};
 use near_sdk::store::{IterableSet, LookupMap, Vector};
 use near_sdk::{
     assert_one_yocto, env, near, require, AccountId, BorshStorageKey, NearToken, PanicOnDefault,
@@ -19,6 +19,16 @@ const MAX_CODE_HASH_LEN: usize = 64;
 const MAX_REPORTS_PAGE: u32 = 50;
 /// Longest lifetime of an attested verdict, so a leaked attester key cannot publish a lasting `allow`.
 const MAX_VERDICT_TTL_NS: u64 = 7 * 24 * 3_600 * 1_000_000_000;
+const MAX_PREAPPROVAL_TTL_NS: u64 = 900 * 1_000_000_000;
+
+#[near(serializers = [json])]
+pub struct Preapproval {
+    pub nonce: U64,
+    pub key_generation: U64,
+    pub issued_at_ns: U64,
+    pub expires_at_ns: U64,
+    pub signature: Base64VecU8,
+}
 
 #[near(serializers = [borsh, json])]
 #[serde(rename_all = "lowercase")]
@@ -148,6 +158,8 @@ pub struct SecurityOracle {
     reports_by_account: LookupMap<AccountId, Vec<u64>>,
     blocked: LookupMap<AccountId, Block>,
     attester_generations: LookupMap<AccountId, u64>,
+    preapproval_key: Option<[u8; 32]>,
+    preapproval_key_generation: u64,
 }
 
 #[near]
@@ -166,6 +178,8 @@ impl SecurityOracle {
             reports_by_account: LookupMap::new(StorageKey::ReportsByAccount),
             blocked: LookupMap::new(StorageKey::Blocked),
             attester_generations: LookupMap::new(StorageKey::AttesterGenerations),
+            preapproval_key: None,
+            preapproval_key_generation: 0,
         }
     }
 
@@ -323,6 +337,21 @@ impl SecurityOracle {
 
     // ---- owner methods (full-access key: one yoctoNEAR) ----
 
+    /// Rotate or disable the backend signing key. Every update revokes all old approvals.
+    #[payable]
+    pub fn set_preapproval_key(&mut self, public_key: Option<Base64VecU8>) {
+        self.assert_owner();
+        self.preapproval_key = public_key.map(|key| {
+            key.0
+                .try_into()
+                .unwrap_or_else(|_| env::panic_str("expected 32-byte Ed25519 key"))
+        });
+        self.preapproval_key_generation = self
+            .preapproval_key_generation
+            .checked_add(1)
+            .expect("key generation overflow");
+    }
+
     #[payable]
     pub fn add_attester(&mut self, attester: AccountId) {
         self.assert_owner();
@@ -363,6 +392,57 @@ impl SecurityOracle {
     }
 
     // ---- views ----
+
+    pub fn get_preapproval_key(&self) -> (Option<Base64VecU8>, U64) {
+        (
+            self.preapproval_key.map(|key| Base64VecU8(key.to_vec())),
+            U64(self.preapproval_key_generation),
+        )
+    }
+
+    /// Verify an exact payment approval. Consumers must enforce/consume the signed nonce.
+    pub fn verify_preapproval(
+        &self,
+        consumer_id: AccountId,
+        agent_id: AccountId,
+        receiver_id: AccountId,
+        amount: U128,
+        preapproval: Preapproval,
+    ) -> bool {
+        let Some(key) = self.preapproval_key else {
+            return false;
+        };
+        let Ok(signature): Result<[u8; 64], _> = preapproval.signature.0.try_into() else {
+            return false;
+        };
+        let now = env::block_timestamp();
+        if amount.0 == 0
+            || preapproval.key_generation.0 != self.preapproval_key_generation
+            || preapproval.issued_at_ns.0 > now
+            || preapproval.expires_at_ns.0 <= now
+            || preapproval.expires_at_ns.0 <= preapproval.issued_at_ns.0
+            || preapproval.expires_at_ns.0 - preapproval.issued_at_ns.0 > MAX_PREAPPROVAL_TTL_NS
+            || self.is_blocked(receiver_id.clone())
+            || self
+                .get_verdict(receiver_id.clone())
+                .is_some_and(|v| v.verdict == VerdictKind::Block)
+        {
+            return false;
+        }
+        let message = format!(
+            "security-oracle:preapproval:v1\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
+            env::current_account_id(),
+            consumer_id,
+            agent_id,
+            receiver_id,
+            amount.0,
+            preapproval.nonce.0,
+            preapproval.key_generation.0,
+            preapproval.issued_at_ns.0,
+            preapproval.expires_at_ns.0,
+        );
+        env::ed25519_verify(&signature, message.as_bytes(), &key)
+    }
 
     /// The attested verdict, overridden to `block` (score 10000, never expiring) when the account
     /// is blocked by a confirmed report. A verdict whose attester has since been removed is not

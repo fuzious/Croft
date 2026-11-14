@@ -37,7 +37,8 @@ cd near/contract
 cargo test
 ```
 
-Expected: **18 tests passing**, using real WASM on a local NEAR sandbox. The first run downloads the sandbox
+Run `uv sync` from the repository root first; the pre-approval tests invoke the Python API from `.venv`.
+Expected: **21 tests passing**, using real WASM on a local NEAR sandbox. The first run downloads the sandbox
 and compiles the contracts. Tests cover payments, refusals and refunds, access-key restrictions, spending limits,
 private callbacks, evidence reports, expiry, and permanent attester revocation.
 
@@ -54,14 +55,47 @@ Full signatures and validation live in the source files above; amounts use yocto
 | Oracle / anyone | `report` | Attach evidence URL + SHA-256 and pay storage; pending reports alone do not block |
 | Oracle / attester | `confirm_report`, `dismiss_report` | Confirm an account block or dismiss a report |
 | Oracle / owner | `add_attester`, `remove_attester`, `unblock` | Manage trust; requires 1 yoctoNEAR |
+| Oracle / owner | `set_preapproval_key` | Set a base64 Ed25519 public key, or `null` to disable; requires 1 yoctoNEAR; revokes old approvals |
+| Oracle / views | `verify_preapproval`, `get_preapproval_key` | Verify a signed payment; read `[public_key, generation]` |
 | Oracle / views | `get_verdict`, `is_blocked`, `get_reports` | Read account verdicts and evidence history |
 | Router / owner | `deposit`, `set_limit`, `withdraw` | Fund a direct sub-account's balance, set cap, reclaim funds |
-| Router / agent | `pay` | Zero attached deposit; use 100 Tgas; returns `true` on transfer, `false` on refusal |
+| Router / agent | `pay` | Optional `preapproval` proof; zero attached deposit; use 100 Tgas; returns `true` on transfer, `false` on refusal |
 | Router / views | `get_agent`, `get_oracle` | Read balance, spending and configured oracle |
+| Router / views | `get_preapproval_nonce` | Read the next nonce for `agent_id` before requesting a signature |
 
 `set_limit` and `withdraw` require 1 yoctoNEAR. Registration pays storage from the first deposit.
 The router reserves funds **before** async calls; private callbacks restore failed payments. NEP-297 events
 record outcomes. The [function-call key](../agent/README.md) cannot withdraw funds or bypass the router.
+
+## Signed pre-approvals
+
+An operator can approve an exact payment through `POST /v1/preapprovals` with the admin token.
+The backend returns an Ed25519 signature; `verify_preapproval` returns `true` only when its scope,
+signature, key generation and expiry are valid and the receiver has no block verdict or confirmed block.
+The router accepts it without an existing allow verdict, while retaining balance and daily-limit checks.
+[Backend setup and example](../README.md#signed-payment-pre-approvals).
+
+The signed UTF-8 message joins these values with `\n`, with no trailing newline:
+
+```text
+security-oracle:preapproval:v1
+<oracle account ID>
+<consumer/router account ID>
+<agent account ID>
+<receiver account ID>
+<amount in yoctoNEAR>
+<nonce>
+<key generation>
+<issued_at_ns>
+<expires_at_ns>
+```
+
+All numbers are canonical decimal strings. Keys and signatures are raw Ed25519 bytes encoded as base64.
+TTL defaults to five minutes and cannot exceed fifteen minutes. Each key update increments the generation,
+including disabling and reinstalling the same key. Use a different signing key for every network.
+The oracle view verifies authorization only; it does not consume the nonce. The router consumes it before
+its asynchronous oracle call, including refused/failed payments. Fetch a fresh nonce and approval after a
+failed attempt. Invalid signatures refuse and restore the reserved funds and daily allowance.
 
 ## Trust and limits
 
@@ -69,8 +103,8 @@ record outcomes. The [function-call key](../agent/README.md) cannot withdraw fun
   revokes old verdicts, even after re-adding the attester. Confirmed reports stay blocked until the owner unblocks them.
 - **Stale code:** the router cannot compare current receiver code with the attested hash. Short TTLs and
   re-attestation after redeployment reduce this gap; they do not eliminate it.
-- **Warnings:** human approval in the wrapper does not override an on-chain `warn`. Proceeding requires a separate
-  payment from the human's own wallet, outside this router.
+- **Warnings:** a terminal confirmation alone does not override an on-chain `warn`; an operator-signed
+  pre-approval can authorize an exact payment. Blocks still take precedence.
 - **Scope:** only this router's payments are restricted. Its daily cap resets at UTC block-timestamp midnight.
-- **Deployment:** sandbox-tested, not audited or deployed to testnet/mainnet. Use a fresh oracle deployment:
-  this revision adds attester generations to storage and includes no migration for older state.
+- **Deployment:** sandbox-tested, not audited or deployed to testnet/mainnet. Use fresh oracle and router
+  deployments: this revision adds signing-key and nonce state and includes no migration for older state.
