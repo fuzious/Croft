@@ -1,7 +1,9 @@
 """Protocol transaction investigation (currently NEAR Intents): fetch transactions from the FastNEAR Transactions API (mainnet,
 free, no key) and score them with the frozen intents model (near.intents.model.score_tx, near/models/intents_v1.*).
 
-- `score_hash(tx_hash)`: one transaction, for POST /v1/transactions/score; includes assessment and evidence coverage.
+- `score_hash(tx_hash)`: one transaction, for POST /v1/transactions/score; includes accounting and coverage.
+  Optional `include_history` adds at most four reads of earlier participant activity; history failures are reported
+  separately and do not erase the target transaction's receipt evidence.
 - `recent_activity(receiver_id)`: the receiver's most recent transactions that touch intents.near, scored, for
   POST /v1/protocols/scan; `activity_signal(receiver_id)` is the same read as the intents_activity signal of /v1/check.
   It reads the receiver's account index (newest first, THRESHOLDS
@@ -17,8 +19,10 @@ untrusted: any failure to read, parse or score it, and a /transactions answer mi
 makes the signal unavailable (which the policy turns into a warn)."""
 from __future__ import annotations
 
+import hashlib
 import json
 import math
+import re
 import threading
 import time
 from collections import OrderedDict
@@ -38,6 +42,9 @@ MAX_ANSWER_BYTES = 8 * 2**20            # larger FastNEAR answers are refused; t
 B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 SOURCE = "fastnear:/v0/account + /v0/transactions, near/models/intents_v1"
 CACHE_ENTRIES = 1024
+HISTORY_ACCOUNT_LIMIT = 2
+HISTORY_ROWS_PER_ACCOUNT = 20
+ACCOUNT_ID = re.compile(r"^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$")
 ASSESSMENTS = ("malicious_pattern", "suspicious", "no_known_pattern", "inconclusive", "unsupported")
 TRANSPORT: Transport | None = None      # set lazily to transport(); tests swap in recorded responses
 _cache: OrderedDict[str, tuple[float, dict]] = OrderedDict()
@@ -205,21 +212,29 @@ class _Client:
 
 
 def _validate_receipt_graph(tx: dict) -> None:
-    """Missing outcomes must not erase the failed callback or credit/refund evidence from a score."""
+    """Bind each outcome to its receipt before interpreting any event or failure as protocol evidence."""
     try:
         receipts = tx["receipts"]
         if not isinstance(receipts, list):
             raise ValueError()
+        root = tx["execution_outcome"]
+        if not isinstance(root, dict) or ("id" in root and root["id"] != tx["transaction"]["hash"]):
+            raise ValueError()
         ids = {row["receipt"]["receipt_id"] for row in receipts}
         if len(ids) != len(receipts) or any(not isinstance(rid, str) for rid in ids):
             raise ValueError()
+        for row in receipts:
+            receipt, execution = row["receipt"], row["execution_outcome"]
+            if (execution["id"] != receipt["receipt_id"]
+                    or execution["outcome"]["executor_id"] != receipt["receiver_id"]):
+                raise ValueError()
         for outcome in _outcomes(tx):
             if not isinstance(outcome["receipt_ids"], list) or not isinstance(outcome["logs"], list):
                 raise ValueError()
             if not isinstance(outcome["status"], dict) or not outcome["status"]:
                 raise ValueError()
     except (KeyError, TypeError, ValueError):
-        raise TxUnscorable("FastNEAR transaction could not be scored (incomplete receipt graph)") from None
+        raise TxUnscorable("FastNEAR transaction could not be scored (incomplete receipt graph or inconsistent outcome identity)") from None
 
 
 def _outcomes(tx: dict) -> list[dict]:
@@ -265,13 +280,13 @@ def assessment(tx: dict, result: dict) -> dict:
         reason = "Receipt evidence is incomplete; the observed label cannot rule out a hidden attack pattern."
     elif result["label"] in ("high", "medium"):
         finding, level = "suspicious", "limited"
-        reason = "Observed receipts trigger a warning rule or anomaly threshold; review the evidence."
+        reason = "Receipt evidence, earlier activity or an anomaly threshold warrants review."
     else:
         finding, level = "no_known_pattern", "limited"
         reason = "No known NEAR Intents attack pattern was detected in these receipts; this is not a safety guarantee."
     basis = ("Outside the detector's supported protocol." if not supported else
              ("A high-severity rule matched observed receipts. " if high_rule else
-              "Assessment uses only the observed rules and anomaly score. ")
+              "Assessment uses the observed rules, optional earlier activity and anomaly score. ")
              + ("Receipt graph is complete." if complete else "Receipt graph is incomplete."))
     return {"assessment": finding, "assessment_reason": reason, "evidence_coverage": coverage,
             "scope": {"network": "mainnet", "supported_protocol": "NEAR Intents", "protocol_supported": supported},
@@ -330,6 +345,104 @@ def score(tx: dict) -> dict:
         raise TxUnscorable(f"FastNEAR transaction could not be scored ({type(e).__name__})") from None
 
 
+def detector_info() -> dict:
+    """Version the added evidence separately from the untouched frozen model."""
+    root = Path(__file__).resolve().parents[1]
+    paths = ("intents/accounting.py", "intents/history.py", "intents/taxonomy.py",
+             "intents/fixtures/attack_taxonomy.json", "service/intents.py")
+    return {"version": "transaction-evidence-v2",
+            "source_sha256": {path: hashlib.sha256((root / path).read_bytes()).hexdigest() for path in paths},
+            "score_basis": "Maximum of the baseline rank score and evidence weights (high 1, medium 0.5); "
+                           "not an attack probability. Use assessment and evidence, not risk alone."}
+
+
+def _history_evidence(tx: dict, prior_txs=None) -> dict:
+    from near.intents.history import analyze_history
+
+    result = analyze_history(tx, [] if prior_txs is None else prior_txs)
+    result["coverage"]["requested"] = prior_txs is not None
+    if prior_txs is None:
+        result.update(status="not_requested", reason="Earlier activity was not requested.")
+    return result
+
+
+def _enhanced(tx: dict, baseline: dict, history: dict) -> dict:
+    from near.intents.accounting import analyze_accounting
+    from near.intents.taxonomy import categories_for_rules
+
+    accounting = analyze_accounting(tx)
+    hits = list(baseline["rule_hits"])
+    label, risk = baseline["label"], baseline["risk"]
+    ranks = {"low": 0, "medium": 1, "high": 2}
+    if touches_intents(tx):
+        additions = [("accounting", hit) for hit in accounting.get("findings", [])]
+        if history["status"] == "available":
+            additions += [("history", hit) for hit in history.get("findings", [])]
+        for layer, hit in additions:
+            severity = hit.get("severity")
+            if severity not in ranks:
+                continue
+            # Earlier activity is context for investigation, never proof that this transaction is malicious.
+            if layer == "history" and severity == "high":
+                severity = "medium"
+            if layer == "accounting" and not receipts_complete(tx):
+                continue
+            hits.append({**hit, "severity": severity, "source": layer})
+            if ranks[severity] > ranks[label]:
+                label = severity
+            risk = max(risk, {"high": 1.0, "medium": 0.5, "low": 0.0}[severity])
+    return {**baseline, "label": label, "risk": risk, "rule_hits": hits,
+            "baseline": {"label": baseline["label"], "risk": baseline["risk"],
+                         "rule_hits": baseline["rule_hits"]},
+            "accounting": accounting, "history": history, "attack_categories": categories_for_rules(hits)}
+
+
+def _fetch_history(tx: dict, client: _Client) -> dict:
+    """Bounded pre-target participant reads; a failed optional read is never a clean history result."""
+    empty = _history_evidence(tx, [])
+    coverage = empty["coverage"]
+    coverage.update(queried_accounts=[], requests=0, index_rows=0, fetched_transactions=0,
+                    account_limit=HISTORY_ACCOUNT_LIMIT, rows_per_account=HISTORY_ROWS_PER_ACCOUNT)
+    if empty["status"] == "unavailable":
+        return empty
+    height = (tx.get("execution_outcome") or {}).get("block_height")
+    if isinstance(height, bool) or not re.fullmatch(r"[0-9]{1,20}", str(height)) or int(height) < 1:
+        empty.update(status="unavailable", reason="Target block height is unavailable; earlier history was not fetched.")
+        return empty
+    accounts = [a for a in empty.get("target_participants", []) if isinstance(a, str)
+                and 2 <= len(a) <= 64 and ACCOUNT_ID.fullmatch(a) and a not in KNOWN_INTENTS_IDS]
+    accounts = unique(accounts)[:HISTORY_ACCOUNT_LIMIT]
+    if not accounts:
+        empty.update(status="unavailable", reason="No attributable protocol participant is available for a history lookup.")
+        return empty
+    before = client.requests
+    prior = []
+    try:
+        for account in accounts:
+            coverage["queried_accounts"].append(account)
+            page = client.account_page(account, desc=True, limit=HISTORY_ROWS_PER_ACCOUNT,
+                                       to_tx_block_height=int(height) - 1)
+            hashes = unique(row["transaction_hash"] for row in page["account_txs"])[:HISTORY_ROWS_PER_ACCOUNT]
+            coverage["index_rows"] += len(hashes)
+            if hashes:
+                got = client.transactions(hashes)
+                if len(got) != len(hashes):
+                    raise FastNearError(f"FastNEAR returned {len(got)} of {len(hashes)} history transactions")
+                prior.extend(got)
+        result = _history_evidence(tx, prior)
+        result["limitations"].append("Account indexes may omit users represented only inside protocol events.")
+        coverage.update(requests=client.requests - before, fetched_transactions=len(prior),
+                        query_max_height=int(height) - 1)
+        result["coverage"].update({k: v for k, v in coverage.items()
+                                   if k in ("requested", "queried_accounts", "requests", "index_rows",
+                                            "fetched_transactions", "account_limit", "rows_per_account", "query_max_height")})
+        return result
+    except (FastNearError, TxUnscorable) as e:
+        coverage["requests"] = client.requests - before
+        empty.update(status="unavailable", reason=f"Earlier activity could not be read: {e}", findings=[])
+        return empty
+
+
 def _senders(tx: dict) -> set[str]:
     t = tx.get("transaction") or {}
     out = {t.get("signer_id")}
@@ -339,21 +452,27 @@ def _senders(tx: dict) -> set[str]:
     return out - {None}
 
 
-def score_hash(tx_hash: str, sender_id: str | None = None, transport: Transport | None = None) -> dict:
-    """Fetch one transaction through FastNEAR (one request, so it ends within TIMEOUT_S) and score it. Raises
+def score_hash(tx_hash: str, sender_id: str | None = None, transport: Transport | None = None,
+               *, include_history: bool = False) -> dict:
+    """Fetch one transaction and score it. Optional history adds at most four TIMEOUT_S-bounded requests. Raises
     FastNearTimeout, FastNearError, TxNotFound, ModelUnavailable, TxUnscorable."""
-    txs = _Client(transport).transactions([tx_hash])
+    client = _Client(transport)
+    txs = client.transactions([tx_hash])
     tx = next((x for x in txs if (x.get("transaction") or {}).get("hash") == tx_hash), None)
     if tx is None:
         raise TxNotFound(f"transaction {tx_hash} not found in FastNEAR (mainnet only)")
     r = score(tx)
     try:
+        history = _fetch_history(tx, client) if include_history else _history_evidence(tx)
+        r = _enhanced(tx, r, history)
         t = tx["transaction"]
         out = {"tx_hash": tx_hash, "signer_id": t.get("signer_id"), "receiver_id": t.get("receiver_id"),
                "risk": r["risk"], "label": r["label"], "rule_hits": r["rule_hits"], "flow_type": r["flow"],
                "top_features": r["top_features"], "anomaly_score": round(r["anomaly_score"], 6),
                "anomaly_percentile": round(r["anomaly_percentile"], 6), "touches_intents": touches_intents(tx),
-               "receipts_complete": receipts_complete(tx)}
+               "receipts_complete": receipts_complete(tx), "baseline": r["baseline"],
+               "accounting": r["accounting"], "history": r["history"], "detector": detector_info(),
+               "attack_categories": r["attack_categories"]}
         out.update(assessment(tx, r))
         if sender_id is not None:
             out["sender_id"] = sender_id
@@ -366,7 +485,9 @@ def score_hash(tx_hash: str, sender_id: str | None = None, transport: Transport 
 def _brief(tx: dict, r: dict) -> dict:
     rules = [h["rule"] for h in r["rule_hits"] if h.get("severity") in ("high", "medium")]
     return {"tx_hash": tx["transaction"]["hash"], "label": r["label"], "risk": r["risk"], "flow": r["flow"],
-            "rules": rules, "receipts_complete": receipts_complete(tx), **assessment(tx, r)}
+            "rules": rules, "receipts_complete": receipts_complete(tx), **assessment(tx, r),
+            "baseline": r["baseline"], "accounting": r["accounting"], "history": r["history"],
+            "attack_categories": r["attack_categories"]}
 
 
 def clear_cache() -> None:
@@ -389,8 +510,9 @@ def recent_activity(receiver_id: str, transport: Transport | None = None, now: f
     c = _Client(transport)
     try:
         page = c.account_page(receiver_id, desc=True, limit=th["intents_index_rows"])
-        hashes = unique(r["transaction_hash"] for r in page.get("account_txs") or [])
+        hashes = unique(r["transaction_hash"] for r in page.get("account_txs") or [])[:th["intents_index_rows"]]
         found: list[dict] = []
+        observed: list[dict] = []
         for i in range(0, len(hashes), 20):
             if len(found) >= th["intents_recent_txs"] or c.requests >= th["intents_max_requests"]:
                 break
@@ -399,10 +521,15 @@ def recent_activity(receiver_id: str, transport: Transport | None = None, now: f
             k = len({x["transaction"]["hash"] for x in got} & set(batch))
             if k < len(batch):   # FastNEAR answers null for a hash it cannot serve; a partial read is not complete
                 raise FastNearError(f"FastNEAR returned {k} of {len(batch)} transactions")
+            observed.extend(got)
             found += [x for x in got if touches_intents(x)]
         rank = {h: i for i, h in enumerate(hashes)}   # index order: newest first; /transactions does not keep it
         found.sort(key=lambda x: rank.get(x["transaction"]["hash"], len(rank)))
-        txs = [_brief(x, score(x)) for x in found[:th["intents_recent_txs"]]]
+        txs = []
+        for tx in found[:th["intents_recent_txs"]]:
+            history = _history_evidence(tx, observed)
+            history["coverage"].update(source="account_scan_window", requests=0, index_rows=len(hashes))
+            txs.append(_brief(tx, _enhanced(tx, score(tx), history)))
     except (FastNearError, ModelUnavailable, TxUnscorable):
         raise
     except Exception as e:  # an HTTP 200 body of an unexpected shape

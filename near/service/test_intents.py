@@ -566,9 +566,9 @@ class ScoreValidationTest(unittest.TestCase):
         self.assertEqual(self.client.post("/v1/intents/score", json={}).status_code, 422)
 
 
-SCAN_KEYS = {"account_id", "n_scored", "n_index_rows", "counts", "txs", "model", "assessment_counts", "n_incomplete", "scope"}
+SCAN_KEYS = {"account_id", "n_scored", "n_index_rows", "counts", "txs", "model", "assessment_counts", "n_incomplete", "scope", "detector"}
 SCAN_TX_KEYS = {"tx_hash", "label", "risk", "flow", "rules", "receipts_complete", "assessment", "assessment_reason",
-                "evidence_coverage", "scope", "confidence"}
+                "evidence_coverage", "scope", "confidence", "baseline", "accounting", "history", "attack_categories"}
 
 
 class ScanEndpointTest(unittest.TestCase):

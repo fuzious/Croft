@@ -1,0 +1,1523 @@
+{
+  "declared_at": "2026-11-14T17:38:19+00:00",
+  "pre_fit_revisions": [
+    {
+      "protocol_sha256": "74ddb31c72ecb297f71efab99d13d52494014f73364e72f9544180abdb8ff2b0",
+      "reason": "Before any fit or feature extraction: canonical family normalization, unsupported controls exclusion and domain audit added."
+    },
+    {
+      "protocol_sha256": "2cb6e3d279ac3ce2988dad3a1326c1c3413b9cfbe9fb0469bbd735c67f9dc897",
+      "reason": "Before all fits: consistent supported/complete normal training/calibration scope, unsupported synthetic controls remain excluded. Original retrospective collector retained."
+    }
+  ],
+  "pre_fit_deterministic_safety_audit": {
+    "collector_n": 7400,
+    "old_rules_high": 0,
+    "extended_rules_high": 0,
+    "old_rules_medium_plus": 0,
+    "extended_rules_medium_plus": 0,
+    "team_n": 17,
+    "old_rules_team_medium_plus": 12,
+    "extended_rules_team_medium_plus": 12,
+    "note": "Requested service safety review on previously studied rows, before model fitting. No candidate predictions inspected or gate revised from test performance."
+  },
+  "status": "complete",
+  "protocol": {
+    "version": 2,
+    "declared_before_fitting": true,
+    "candidates": [
+      "extended_iforest",
+      "real_hgb",
+      "mixed_hgb",
+      "mixed_extra_trees"
+    ],
+    "normal_partitions": {
+      "fit": "<=2026-05",
+      "calibration": "2026-06..2026-07",
+      "selection": "2026-08..2026-09",
+      "retrospective": ">=2026-10"
+    },
+    "contamination": "Exclude known attacker mentions, labelled non-team signers and labelled transaction hashes from normal fitting/calibration/selection.",
+    "normal_coverage": "Normal fitting/calibration/selection use supported Intents calls with complete receipt graphs; retrospective baseline comparison retains the original collector population and reports supported/complete slices.",
+    "positive_coverage": "Real fitting and family-held-out classification use supported, complete Intents cases. Historical labelled attempts that never reach Intents are retained as separate scope records, not trained or counted as Intents detections.",
+    "features": "Frozen receipt features plus accounting and strictly earlier bounded history. No account IDs, hashes, category labels, source labels or absolute timestamps. Coverage/missing-data flags are diagnostics, not model columns. Unsupported synthetic controls are scope tests, excluded from Intents classifier fitting/accuracy.",
+    "history": "Observed records only, at most 100 prior related summaries in one day; prior receipt completion must precede target start in height and timestamp. Partial sampled history is never a complete account history.",
+    "synthetic": "Use generated train only for mixed fitting; validation for selection; test only after selection. Template/actor groups must not overlap splits. Synthetic accuracy remains separate from real-case evidence.",
+    "training": "IsolationForest: 300 trees, 2048 samples. HGB:150 iterations,learning_rate=.05,15 leaves,min_leaf=20,l2=3. ExtraTrees:300 trees,min_leaf=4,max_features=.75. Four threads, fixed seed. Real positive total weight = normal total weight; synthetic rows collectively receive at most20% of real-positive total weight.",
+    "thresholds": "June/July nominal negatives; ML-only high alert budget0.01%, medium0.1%, preserving deterministic rules separately.",
+    "selection": "Eligible if selection normal high and medium+ alerts do not exceed frozen baseline. Maximize macro real leave-family-out medium+ recall, then synthetic validation balanced accuracy, then fewer selection alerts; fixed candidate order breaks ties.",
+    "family_holdout": "Real family-held-out development comparison refits each candidate without that real family and its synthetic family. After selection, synthetic test and leave-family-out tests are diagnostic; all family designs are development-informed.",
+    "final_evaluation": "Previously examined October/November collector normals and known campaigns are retrospective. Newly fetched unknown traffic yields alert rate, never false-positive rate. Other-protocol attacks remain unsupported, not Intents positives.",
+    "promotion": "No historical collector high/medium false-alert regression; no lost real detections; added detections in independently sourced supported attack families; no synthetic domain/duplicate shortcut. No automatic production model replacement.",
+    "domain_audit": "After selection, fit a separate fixed100-tree shallow ExtraTrees domain classifier on real normal fit rows versus synthetic benign train rows; score real selection normals versus synthetic benign test. Report balanced source-classification accuracy as a domain-shift diagnostic, never attack accuracy."
+  },
+  "protocol_sha256": "0ffe5fd4c9f2f981326d42e085e950885be94a2f89f4b11aafb5e88ad13a96ae",
+  "aborted_attempts": [
+    {
+      "ended_at": "2026-11-14T17:53:03+00:00",
+      "protocol_sha256": "e42445917f230ab2a910c54237f4363958ecfa5cb1715593245569e7b262f16f",
+      "trainer_sha256": "51862cf55bb14cf2e9c3ef316f54ec782fa6b9bc592e9f47af2c2f9040fb3c66",
+      "report_sha256": "a3a8b0342e7ff33d3d43eeba0d9305d82120eaa0a8ff332a41e3374ed0b5bf93",
+      "log_sha256": "5d5e0abe7594b79ad6fed402a244c8eaad083f80246ed4b6e70e1334877acb61",
+      "phase": "interrupted during fitting before candidate selection or final diagnostics",
+      "reason": "Coverage correction: seven historical labelled attempts never reached Intents; exclude them from fit and classification counts, preserve them as scope records. No hyperparameters or alert budgets changed.",
+      "development_output": "ExtendedIF development comparisons completed before coverage correction; no selection or final diagnostics had run."
+    }
+  ],
+  "feature_cache_sha256": "a2113e702399dab1e330a6f5004b52b0df9b8ec7f2a9f7c67627baa869b25efb",
+  "run_trainer_sha256": "e13600a9e017481b792c8b51ab3a0e65d92ccbf5cfa1ca1152bbf6a7257083d2",
+  "inputs": {
+    "normal": "7a7ecb374fb03fffa1bbf5f71a26fa611336d938899e59e149178cc286b33aea",
+    "real": "f6557a7580dd7693be272d2c8e3c685da0fb7a512a8548729fba8995c7174d16",
+    "synthetic:train": "55cce7f224ff74d2689c294530af1f6e2e97e0ee94e5582d52c9205598964f5a",
+    "synthetic:validation": "17d7fea1808035d145f6eaa55aadc27adb3374bafa32e55843d60be0ac422f14",
+    "synthetic:test": "b6c73187d96c3aeb07d1653b9156419b3b1e9ae5174d6be7b5dc15bf4633b223"
+  },
+  "feature_code_sha256": {
+    "near/intents/features.py": "3f8110f88717a8557f8cba6183cf2535b236bf5a2ec06776ee0ea90cd233115d",
+    "near/intents/model.py": "046e0a52fe0deefcf3636de0c6f36969766c8c9dc6690082c1286e5dc0b662d4",
+    "near/intents/accounting.py": "6fb77c771bb49a9ff66a5202cdfec04922a956b363e6173252af8096cdd94373",
+    "near/intents/history.py": "e07955e18354ea8e8c65dc8371c7ec1357052241250545bdd9eccdf8c28d67d6",
+    "near/intents/taxonomy.py": "c4c465eb1c82bfb522ecfbebba663c668020978adf7568f186dbb1cd5e1c9c8e",
+    "near/intents/fixtures/attack_taxonomy.json": "22938b2e99256c870253400edf376cb7a11cffb2599b5838dd5a35671f1cb3b2",
+    "near/intents/train_transactions.py": "e13600a9e017481b792c8b51ab3a0e65d92ccbf5cfa1ca1152bbf6a7257083d2"
+  },
+  "feature_keys": [
+    "flow_deposit",
+    "flow_execute_intents",
+    "flow_withdrawal",
+    "flow_other",
+    "n_actions",
+    "has_delegate",
+    "top_args_log_bytes",
+    "n_receipts_log",
+    "n_fc_receipts_log",
+    "n_refund_receipts_log",
+    "max_depth",
+    "n_distinct_receivers",
+    "n_distinct_methods",
+    "n_failed",
+    "frac_failed",
+    "first_receipt_failed",
+    "n_failed_intents",
+    "n_failed_callback",
+    "n_failed_resolve",
+    "fail_log_limit",
+    "fail_value_limit",
+    "fail_oog",
+    "fail_deserialize",
+    "fail_method_missing",
+    "fail_account_missing",
+    "fail_code_missing",
+    "fail_panic",
+    "fail_other",
+    "n_logs_log",
+    "max_log_ratio",
+    "total_log_kb_log",
+    "n_events_log",
+    "n_events_failed_log",
+    "ev_nep245_mt_mint",
+    "ev_nep245_mt_burn",
+    "ev_nep245_mt_transfer",
+    "ev_nep141_ft_transfer",
+    "ev_nep141_ft_mint",
+    "ev_nep141_ft_burn",
+    "ev_nep171_nft_transfer",
+    "ev_dip4_transfer",
+    "ev_dip4_token_diff",
+    "ev_dip4_intents_executed",
+    "ev_dip4_withdraw",
+    "ev_dip4_other",
+    "ev_other_standard",
+    "ev_unparsed",
+    "max_token_ids_per_event_log",
+    "max_dup_token_ids_log",
+    "n_distinct_tokens_log",
+    "dust_fraction",
+    "amount_spread_log10",
+    "n_self_callbacks",
+    "n_resolve_calls",
+    "n_on_transfer_calls",
+    "n_notify_receivers",
+    "n_direct_private_calls",
+    "n_admin_calls",
+    "n_admin_failed",
+    "refund_over_deposit_log10",
+    "credit_excess_log2",
+    "refund_to_sender_frac",
+    "max_gas_use_ratio",
+    "accounting_checked_flows_log",
+    "accounting_refund_flows_log",
+    "accounting_excess_flows_log",
+    "accounting_max_refund_ratio",
+    "accounting_max_excess_ratio",
+    "history_failed_callback_log",
+    "history_retained_credit_log",
+    "history_failed_private_probe_log",
+    "history_probe_methods_log",
+    "history_withdraw_after_callback",
+    "history_withdraw_after_retained_credit",
+    "history_repeated_failed_probe"
+  ],
+  "split_counts": {
+    "fit": 69469,
+    "calibration": 7594,
+    "selection": 10096,
+    "retrospective": 12463
+  },
+  "split_id_hashes": {
+    "fit": "1fdaee76fe834b9c621af862c143afca99170328e0bd1bb0aff8b0ffbca35da3",
+    "calibration": "87ed893787280506fb483d09b2794d3ac9b6890cbb3b4b68d9604ec3256071ad",
+    "selection": "af33d1733cd14b3317f798a1a34c8da9252a8314399635e596ae763979c0acde",
+    "retrospective": "911fc971cbb8881944c5c4bea74f8820e2773d1d823da0e92d08ed55357f6650"
+  },
+  "normal_exclusions": {
+    "labelled_signer": 4
+  },
+  "real_case_coverage": {
+    "all_labelled_positives": 437,
+    "supported_complete": 430,
+    "outside_classification_scope": [
+      {
+        "id": "64meMKw4dVqDG72Y97R5cx5STkBf5fa5Sd8QZWoGVuke",
+        "family": "token_spoofing",
+        "supported": false,
+        "complete": true
+      },
+      {
+        "id": "DJJoPAmWXESSUGFEA13HdjTXUhfK2ExVVTZzCrhqDrHv",
+        "family": "token_spoofing",
+        "supported": false,
+        "complete": true
+      },
+      {
+        "id": "5ehzLrZ4sdLfr8bDrP4SLHNJzuT9BH5HrDYWzzFXZPPd",
+        "family": "token_spoofing",
+        "supported": false,
+        "complete": true
+      },
+      {
+        "id": "9wzE15eMEyt9BK1ikyb7tNPLZjhVXrecEH73aLwiP5k9",
+        "family": "token_spoofing",
+        "supported": false,
+        "complete": true
+      },
+      {
+        "id": "361Vja7n1p9kJ8AFbU6sHzbgC3d6P8hBD43jCqj2aGLf",
+        "family": "access_control",
+        "supported": false,
+        "complete": true
+      },
+      {
+        "id": "GQxtaMjowjoxqs852kG79Gb6P7NW9JLRPpxgcALjXQ1a",
+        "family": "access_control",
+        "supported": false,
+        "complete": true
+      },
+      {
+        "id": "5MDQALeiFmFeRENz8RLS43e7XyxzqXGVscvMVCK18a4V",
+        "family": "access_control",
+        "supported": false,
+        "complete": true
+      }
+    ]
+  },
+  "synthetic_counts": {
+    "train": 86,
+    "validation": 86,
+    "test": 86
+  },
+  "synthetic_unsupported_controls": 15,
+  "synthetic_feature_vector_overlap": {
+    "train_validation": 0,
+    "train_test": 0,
+    "validation_test": 0
+  },
+  "runtime": {
+    "python": "3.12.8",
+    "numpy": "2.5.4",
+    "sklearn": "1.9.1",
+    "threadpoolctl": "3.7.0"
+  },
+  "selected": "real_hgb",
+  "artifact_candidate": "real_hgb",
+  "selected_at": "2026-11-14T17:54:30+00:00",
+  "candidates": {
+    "extended_iforest": {
+      "selection_normals": {
+        "n": 10096,
+        "high": 1,
+        "medium_plus": 50,
+        "medium_plus_rate": 0.004952456418383518
+      },
+      "real_leave_family_out": {
+        "access_control": {
+          "n": 174,
+          "high": 0,
+          "medium_plus": 116,
+          "medium_plus_rate": 0.6666666666666666,
+          "deterministic": {
+            "n": 174,
+            "high": 0,
+            "medium_plus": 110,
+            "medium_plus_rate": 0.632183908045977
+          }
+        },
+        "callback_accounting": {
+          "n": 23,
+          "high": 23,
+          "medium_plus": 23,
+          "medium_plus_rate": 1.0,
+          "deterministic": {
+            "n": 23,
+            "high": 23,
+            "medium_plus": 23,
+            "medium_plus_rate": 1.0
+          }
+        },
+        "resource_exhaustion": {
+          "n": 55,
+          "high": 0,
+          "medium_plus": 53,
+          "medium_plus_rate": 0.9636363636363636,
+          "deterministic": {
+            "n": 55,
+            "high": 0,
+            "medium_plus": 53,
+            "medium_plus_rate": 0.9636363636363636
+          }
+        },
+        "token_spoofing": {
+          "n": 178,
+          "high": 0,
+          "medium_plus": 19,
+          "medium_plus_rate": 0.10674157303370786,
+          "deterministic": {
+            "n": 178,
+            "high": 0,
+            "medium_plus": 18,
+            "medium_plus_rate": 0.10112359550561797
+          }
+        }
+      },
+      "real_family_macro_recall": 0.6842611508341845,
+      "synthetic_validation": {
+        "access_control": {
+          "positive": {
+            "n": 10,
+            "high": 0,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 0,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 1
+        },
+        "callback_accounting": {
+          "positive": {
+            "n": 16,
+            "high": 2,
+            "medium_plus": 16,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 0,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 2
+        },
+        "resource_exhaustion": {
+          "positive": {
+            "n": 10,
+            "high": 0,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 0,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 1
+        },
+        "token_spoofing": {
+          "positive": {
+            "n": 10,
+            "high": 0,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 0,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 1
+        }
+      },
+      "synthetic_validation_balanced_accuracy": 0.5,
+      "thresholds": {
+        "high": 0.7258640178192542,
+        "medium": 0.6437638360011966
+      },
+      "fit_and_development_seconds": 0.91
+    },
+    "real_hgb": {
+      "selection_normals": {
+        "n": 10096,
+        "high": 1,
+        "medium_plus": 2,
+        "medium_plus_rate": 0.00019809825673534074
+      },
+      "real_leave_family_out": {
+        "access_control": {
+          "n": 174,
+          "high": 36,
+          "medium_plus": 145,
+          "medium_plus_rate": 0.8333333333333334,
+          "deterministic": {
+            "n": 174,
+            "high": 0,
+            "medium_plus": 110,
+            "medium_plus_rate": 0.632183908045977
+          }
+        },
+        "callback_accounting": {
+          "n": 23,
+          "high": 23,
+          "medium_plus": 23,
+          "medium_plus_rate": 1.0,
+          "deterministic": {
+            "n": 23,
+            "high": 23,
+            "medium_plus": 23,
+            "medium_plus_rate": 1.0
+          }
+        },
+        "resource_exhaustion": {
+          "n": 55,
+          "high": 0,
+          "medium_plus": 53,
+          "medium_plus_rate": 0.9636363636363636,
+          "deterministic": {
+            "n": 55,
+            "high": 0,
+            "medium_plus": 53,
+            "medium_plus_rate": 0.9636363636363636
+          }
+        },
+        "token_spoofing": {
+          "n": 178,
+          "high": 127,
+          "medium_plus": 132,
+          "medium_plus_rate": 0.7415730337078652,
+          "deterministic": {
+            "n": 178,
+            "high": 0,
+            "medium_plus": 18,
+            "medium_plus_rate": 0.10112359550561797
+          }
+        }
+      },
+      "real_family_macro_recall": 0.8846356826693905,
+      "synthetic_validation": {
+        "access_control": {
+          "positive": {
+            "n": 10,
+            "high": 9,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 1
+        },
+        "callback_accounting": {
+          "positive": {
+            "n": 16,
+            "high": 16,
+            "medium_plus": 16,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 2
+        },
+        "resource_exhaustion": {
+          "positive": {
+            "n": 10,
+            "high": 6,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 1
+        },
+        "token_spoofing": {
+          "positive": {
+            "n": 10,
+            "high": 3,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 1
+        }
+      },
+      "synthetic_validation_balanced_accuracy": 0.5,
+      "thresholds": {
+        "high": 0.9523540401997058,
+        "medium": 0.9523540401997058
+      },
+      "fit_and_development_seconds": 8.83
+    },
+    "mixed_hgb": {
+      "selection_normals": {
+        "n": 10096,
+        "high": 2,
+        "medium_plus": 3,
+        "medium_plus_rate": 0.0002971473851030111
+      },
+      "real_leave_family_out": {
+        "access_control": {
+          "n": 174,
+          "high": 34,
+          "medium_plus": 145,
+          "medium_plus_rate": 0.8333333333333334,
+          "deterministic": {
+            "n": 174,
+            "high": 0,
+            "medium_plus": 110,
+            "medium_plus_rate": 0.632183908045977
+          }
+        },
+        "callback_accounting": {
+          "n": 23,
+          "high": 23,
+          "medium_plus": 23,
+          "medium_plus_rate": 1.0,
+          "deterministic": {
+            "n": 23,
+            "high": 23,
+            "medium_plus": 23,
+            "medium_plus_rate": 1.0
+          }
+        },
+        "resource_exhaustion": {
+          "n": 55,
+          "high": 0,
+          "medium_plus": 53,
+          "medium_plus_rate": 0.9636363636363636,
+          "deterministic": {
+            "n": 55,
+            "high": 0,
+            "medium_plus": 53,
+            "medium_plus_rate": 0.9636363636363636
+          }
+        },
+        "token_spoofing": {
+          "n": 178,
+          "high": 130,
+          "medium_plus": 133,
+          "medium_plus_rate": 0.7471910112359551,
+          "deterministic": {
+            "n": 178,
+            "high": 0,
+            "medium_plus": 18,
+            "medium_plus_rate": 0.10112359550561797
+          }
+        }
+      },
+      "real_family_macro_recall": 0.886040177051413,
+      "synthetic_validation": {
+        "access_control": {
+          "positive": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 1
+        },
+        "callback_accounting": {
+          "positive": {
+            "n": 16,
+            "high": 16,
+            "medium_plus": 16,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 2
+        },
+        "resource_exhaustion": {
+          "positive": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 1
+        },
+        "token_spoofing": {
+          "positive": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 1
+        }
+      },
+      "synthetic_validation_balanced_accuracy": 0.5,
+      "thresholds": {
+        "high": 0.5536703853313523,
+        "medium": 0.5536703853313523
+      },
+      "fit_and_development_seconds": 8.45
+    },
+    "mixed_extra_trees": {
+      "selection_normals": {
+        "n": 10096,
+        "high": 2,
+        "medium_plus": 3,
+        "medium_plus_rate": 0.0002971473851030111
+      },
+      "real_leave_family_out": {
+        "access_control": {
+          "n": 174,
+          "high": 101,
+          "medium_plus": 148,
+          "medium_plus_rate": 0.8505747126436781,
+          "deterministic": {
+            "n": 174,
+            "high": 0,
+            "medium_plus": 110,
+            "medium_plus_rate": 0.632183908045977
+          }
+        },
+        "callback_accounting": {
+          "n": 23,
+          "high": 23,
+          "medium_plus": 23,
+          "medium_plus_rate": 1.0,
+          "deterministic": {
+            "n": 23,
+            "high": 23,
+            "medium_plus": 23,
+            "medium_plus_rate": 1.0
+          }
+        },
+        "resource_exhaustion": {
+          "n": 55,
+          "high": 0,
+          "medium_plus": 53,
+          "medium_plus_rate": 0.9636363636363636,
+          "deterministic": {
+            "n": 55,
+            "high": 0,
+            "medium_plus": 53,
+            "medium_plus_rate": 0.9636363636363636
+          }
+        },
+        "token_spoofing": {
+          "n": 178,
+          "high": 93,
+          "medium_plus": 99,
+          "medium_plus_rate": 0.5561797752808989,
+          "deterministic": {
+            "n": 178,
+            "high": 0,
+            "medium_plus": 18,
+            "medium_plus_rate": 0.10112359550561797
+          }
+        }
+      },
+      "real_family_macro_recall": 0.8425977128902352,
+      "synthetic_validation": {
+        "access_control": {
+          "positive": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 1
+        },
+        "callback_accounting": {
+          "positive": {
+            "n": 16,
+            "high": 16,
+            "medium_plus": 16,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 2
+        },
+        "resource_exhaustion": {
+          "positive": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 1
+        },
+        "token_spoofing": {
+          "positive": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "benign": {
+            "n": 10,
+            "high": 10,
+            "medium_plus": 10,
+            "medium_plus_rate": 1.0
+          },
+          "balanced_accuracy": 0.5,
+          "specificity": 0.0,
+          "actor_groups": 1
+        }
+      },
+      "synthetic_validation_balanced_accuracy": 0.5,
+      "thresholds": {
+        "high": 0.8673735951383934,
+        "medium": 0.8673735951383934
+      },
+      "fit_and_development_seconds": 26.85
+    }
+  },
+  "selection_baseline": {
+    "n": 10096,
+    "high": 1,
+    "medium_plus": 13,
+    "medium_plus_rate": 0.0012876386687797148
+  },
+  "retrospective_normals": {
+    "baseline": {
+      "collector": {
+        "n": 7400,
+        "high": 0,
+        "medium_plus": 84,
+        "medium_plus_rate": 0.011351351351351352
+      },
+      "collector_supported_complete": {
+        "n": 7395,
+        "high": 0,
+        "medium_plus": 84,
+        "medium_plus_rate": 0.011359026369168357
+      },
+      "collector_failed": {
+        "n": 1566,
+        "high": 0,
+        "medium_plus": 81,
+        "medium_plus_rate": 0.05172413793103448
+      },
+      "all": {
+        "n": 12463,
+        "high": 0,
+        "medium_plus": 85,
+        "medium_plus_rate": 0.006820187755757041
+      }
+    },
+    "deterministic": {
+      "collector": {
+        "n": 7400,
+        "high": 0,
+        "medium_plus": 0,
+        "medium_plus_rate": 0.0
+      },
+      "collector_supported_complete": {
+        "n": 7395,
+        "high": 0,
+        "medium_plus": 0,
+        "medium_plus_rate": 0.0
+      },
+      "collector_failed": {
+        "n": 1566,
+        "high": 0,
+        "medium_plus": 0,
+        "medium_plus_rate": 0.0
+      },
+      "all": {
+        "n": 12463,
+        "high": 0,
+        "medium_plus": 0,
+        "medium_plus_rate": 0.0
+      }
+    },
+    "candidate": {
+      "collector": {
+        "n": 7400,
+        "high": 14,
+        "medium_plus": 14,
+        "medium_plus_rate": 0.0018918918918918919
+      },
+      "collector_supported_complete": {
+        "n": 7395,
+        "high": 14,
+        "medium_plus": 14,
+        "medium_plus_rate": 0.0018931710615280595
+      },
+      "collector_failed": {
+        "n": 1566,
+        "high": 14,
+        "medium_plus": 14,
+        "medium_plus_rate": 0.008939974457215836
+      },
+      "all": {
+        "n": 12463,
+        "high": 18,
+        "medium_plus": 18,
+        "medium_plus_rate": 0.0014442750541603145
+      }
+    },
+    "learned_only": {
+      "collector": {
+        "n": 7400,
+        "high": 14,
+        "medium_plus": 14,
+        "medium_plus_rate": 0.0018918918918918919
+      },
+      "collector_supported_complete": {
+        "n": 7395,
+        "high": 14,
+        "medium_plus": 14,
+        "medium_plus_rate": 0.0018931710615280595
+      },
+      "collector_failed": {
+        "n": 1566,
+        "high": 14,
+        "medium_plus": 14,
+        "medium_plus_rate": 0.008939974457215836
+      },
+      "all": {
+        "n": 12463,
+        "high": 18,
+        "medium_plus": 18,
+        "medium_plus_rate": 0.0014442750541603145
+      }
+    }
+  },
+  "in_sample_known_real_cases": {
+    "baseline": {
+      "access_control": {
+        "n": 174,
+        "high": 0,
+        "medium_plus": 110,
+        "medium_plus_rate": 0.632183908045977
+      },
+      "callback_accounting": {
+        "n": 23,
+        "high": 23,
+        "medium_plus": 23,
+        "medium_plus_rate": 1.0
+      },
+      "resource_exhaustion": {
+        "n": 55,
+        "high": 0,
+        "medium_plus": 53,
+        "medium_plus_rate": 0.9636363636363636
+      },
+      "token_spoofing": {
+        "n": 178,
+        "high": 0,
+        "medium_plus": 18,
+        "medium_plus_rate": 0.10112359550561797
+      }
+    },
+    "deterministic": {
+      "access_control": {
+        "n": 174,
+        "high": 0,
+        "medium_plus": 110,
+        "medium_plus_rate": 0.632183908045977
+      },
+      "callback_accounting": {
+        "n": 23,
+        "high": 23,
+        "medium_plus": 23,
+        "medium_plus_rate": 1.0
+      },
+      "resource_exhaustion": {
+        "n": 55,
+        "high": 0,
+        "medium_plus": 53,
+        "medium_plus_rate": 0.9636363636363636
+      },
+      "token_spoofing": {
+        "n": 178,
+        "high": 0,
+        "medium_plus": 18,
+        "medium_plus_rate": 0.10112359550561797
+      }
+    },
+    "candidate": {
+      "access_control": {
+        "n": 174,
+        "high": 174,
+        "medium_plus": 174,
+        "medium_plus_rate": 1.0
+      },
+      "callback_accounting": {
+        "n": 23,
+        "high": 23,
+        "medium_plus": 23,
+        "medium_plus_rate": 1.0
+      },
+      "resource_exhaustion": {
+        "n": 55,
+        "high": 54,
+        "medium_plus": 54,
+        "medium_plus_rate": 0.9818181818181818
+      },
+      "token_spoofing": {
+        "n": 178,
+        "high": 176,
+        "medium_plus": 176,
+        "medium_plus_rate": 0.9887640449438202
+      }
+    },
+    "learned_only": {
+      "access_control": {
+        "n": 174,
+        "high": 174,
+        "medium_plus": 174,
+        "medium_plus_rate": 1.0
+      },
+      "callback_accounting": {
+        "n": 23,
+        "high": 23,
+        "medium_plus": 23,
+        "medium_plus_rate": 1.0
+      },
+      "resource_exhaustion": {
+        "n": 55,
+        "high": 54,
+        "medium_plus": 54,
+        "medium_plus_rate": 0.9818181818181818
+      },
+      "token_spoofing": {
+        "n": 178,
+        "high": 176,
+        "medium_plus": 176,
+        "medium_plus_rate": 0.9887640449438202
+      }
+    }
+  },
+  "learned_contribution": {
+    "in_sample_real_additional_medium_plus": 223,
+    "retrospective_collector_additional_medium_plus": 14,
+    "note": "Full-fit real cases are in-sample. Use family-held-out development counts for generalization diagnostics."
+  },
+  "synthetic_test": {
+    "baseline": {
+      "access_control": {
+        "positive": {
+          "n": 10,
+          "high": 0,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "benign": {
+          "n": 10,
+          "high": 0,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "balanced_accuracy": 0.5,
+        "specificity": 0.0,
+        "actor_groups": 1
+      },
+      "callback_accounting": {
+        "positive": {
+          "n": 16,
+          "high": 2,
+          "medium_plus": 16,
+          "medium_plus_rate": 1.0
+        },
+        "benign": {
+          "n": 10,
+          "high": 0,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "balanced_accuracy": 0.5,
+        "specificity": 0.0,
+        "actor_groups": 2
+      },
+      "resource_exhaustion": {
+        "positive": {
+          "n": 10,
+          "high": 0,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "benign": {
+          "n": 10,
+          "high": 0,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "balanced_accuracy": 0.5,
+        "specificity": 0.0,
+        "actor_groups": 1
+      },
+      "token_spoofing": {
+        "positive": {
+          "n": 10,
+          "high": 2,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "benign": {
+          "n": 10,
+          "high": 0,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "balanced_accuracy": 0.5,
+        "specificity": 0.0,
+        "actor_groups": 1
+      }
+    },
+    "deterministic": {
+      "access_control": {
+        "positive": {
+          "n": 10,
+          "high": 0,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "benign": {
+          "n": 10,
+          "high": 0,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "balanced_accuracy": 0.5,
+        "specificity": 0.0,
+        "actor_groups": 1
+      },
+      "callback_accounting": {
+        "positive": {
+          "n": 16,
+          "high": 2,
+          "medium_plus": 16,
+          "medium_plus_rate": 1.0
+        },
+        "benign": {
+          "n": 10,
+          "high": 0,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "balanced_accuracy": 0.5,
+        "specificity": 0.0,
+        "actor_groups": 2
+      },
+      "resource_exhaustion": {
+        "positive": {
+          "n": 10,
+          "high": 0,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "benign": {
+          "n": 10,
+          "high": 0,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "balanced_accuracy": 0.5,
+        "specificity": 0.0,
+        "actor_groups": 1
+      },
+      "token_spoofing": {
+        "positive": {
+          "n": 10,
+          "high": 2,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "benign": {
+          "n": 10,
+          "high": 0,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "balanced_accuracy": 0.5,
+        "specificity": 0.0,
+        "actor_groups": 1
+      }
+    },
+    "candidate": {
+      "access_control": {
+        "positive": {
+          "n": 10,
+          "high": 9,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "benign": {
+          "n": 10,
+          "high": 6,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "balanced_accuracy": 0.5,
+        "specificity": 0.0,
+        "actor_groups": 1
+      },
+      "callback_accounting": {
+        "positive": {
+          "n": 16,
+          "high": 15,
+          "medium_plus": 16,
+          "medium_plus_rate": 1.0
+        },
+        "benign": {
+          "n": 10,
+          "high": 8,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "balanced_accuracy": 0.5,
+        "specificity": 0.0,
+        "actor_groups": 2
+      },
+      "resource_exhaustion": {
+        "positive": {
+          "n": 10,
+          "high": 9,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "benign": {
+          "n": 10,
+          "high": 5,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "balanced_accuracy": 0.5,
+        "specificity": 0.0,
+        "actor_groups": 1
+      },
+      "token_spoofing": {
+        "positive": {
+          "n": 10,
+          "high": 9,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "benign": {
+          "n": 10,
+          "high": 7,
+          "medium_plus": 10,
+          "medium_plus_rate": 1.0
+        },
+        "balanced_accuracy": 0.5,
+        "specificity": 0.0,
+        "actor_groups": 1
+      }
+    },
+    "learned_only": {
+      "access_control": {
+        "positive": {
+          "n": 10,
+          "high": 9,
+          "medium_plus": 9,
+          "medium_plus_rate": 0.9
+        },
+        "benign": {
+          "n": 10,
+          "high": 6,
+          "medium_plus": 6,
+          "medium_plus_rate": 0.6
+        },
+        "balanced_accuracy": 0.6499999999999999,
+        "specificity": 0.4,
+        "actor_groups": 1
+      },
+      "callback_accounting": {
+        "positive": {
+          "n": 16,
+          "high": 15,
+          "medium_plus": 15,
+          "medium_plus_rate": 0.9375
+        },
+        "benign": {
+          "n": 10,
+          "high": 8,
+          "medium_plus": 8,
+          "medium_plus_rate": 0.8
+        },
+        "balanced_accuracy": 0.56875,
+        "specificity": 0.19999999999999996,
+        "actor_groups": 2
+      },
+      "resource_exhaustion": {
+        "positive": {
+          "n": 10,
+          "high": 9,
+          "medium_plus": 9,
+          "medium_plus_rate": 0.9
+        },
+        "benign": {
+          "n": 10,
+          "high": 5,
+          "medium_plus": 5,
+          "medium_plus_rate": 0.5
+        },
+        "balanced_accuracy": 0.7,
+        "specificity": 0.5,
+        "actor_groups": 1
+      },
+      "token_spoofing": {
+        "positive": {
+          "n": 10,
+          "high": 7,
+          "medium_plus": 7,
+          "medium_plus_rate": 0.7
+        },
+        "benign": {
+          "n": 10,
+          "high": 7,
+          "medium_plus": 7,
+          "medium_plus_rate": 0.7
+        },
+        "balanced_accuracy": 0.5,
+        "specificity": 0.30000000000000004,
+        "actor_groups": 1
+      }
+    }
+  },
+  "synthetic_leave_family_out_test": {
+    "access_control": {
+      "positive": {
+        "n": 10,
+        "high": 2,
+        "medium_plus": 10,
+        "medium_plus_rate": 1.0
+      },
+      "benign": {
+        "n": 10,
+        "high": 6,
+        "medium_plus": 10,
+        "medium_plus_rate": 1.0
+      },
+      "balanced_accuracy": 0.5,
+      "specificity": 0.0,
+      "actor_groups": 1
+    },
+    "callback_accounting": {
+      "positive": {
+        "n": 16,
+        "high": 2,
+        "medium_plus": 16,
+        "medium_plus_rate": 1.0
+      },
+      "benign": {
+        "n": 10,
+        "high": 0,
+        "medium_plus": 10,
+        "medium_plus_rate": 1.0
+      },
+      "balanced_accuracy": 0.5,
+      "specificity": 0.0,
+      "actor_groups": 2
+    },
+    "resource_exhaustion": {
+      "positive": {
+        "n": 10,
+        "high": 2,
+        "medium_plus": 10,
+        "medium_plus_rate": 1.0
+      },
+      "benign": {
+        "n": 10,
+        "high": 0,
+        "medium_plus": 10,
+        "medium_plus_rate": 1.0
+      },
+      "balanced_accuracy": 0.5,
+      "specificity": 0.0,
+      "actor_groups": 1
+    },
+    "token_spoofing": {
+      "positive": {
+        "n": 10,
+        "high": 9,
+        "medium_plus": 10,
+        "medium_plus_rate": 1.0
+      },
+      "benign": {
+        "n": 10,
+        "high": 10,
+        "medium_plus": 10,
+        "medium_plus_rate": 1.0
+      },
+      "balanced_accuracy": 0.5,
+      "specificity": 0.0,
+      "actor_groups": 1
+    }
+  },
+  "domain_audit": {
+    "status": "complete",
+    "fit_real": 1000,
+    "fit_generated": 40,
+    "test_real": 1000,
+    "test_generated": 40,
+    "real_correct_rate": 1.0,
+    "generated_correct_rate": 1.0,
+    "balanced_domain_accuracy": 1.0,
+    "interpretation": "Source separability, not attack accuracy. Shared generator/WASM and unmatched benign operations can create shortcuts."
+  },
+  "prediction_audit": {
+    "path": "near/models/transactions_v2_research.predictions.npz",
+    "sha256": "1c5de278292fdefb2ad4dee506e59c6be350125318e6fd93bb5ef7b3ce4de576",
+    "format": "NumPy arrays; allow_pickle=False"
+  },
+  "artifact_fit_rows_by_source": {
+    "normal": 69469,
+    "real": 430
+  },
+  "artifact_fit_ids_sha256": "ca084785884077cef73831d542fad2f271f5e777ac97a19b722ca17d57116b21",
+  "external_evaluation": {
+    "fresh_unknown": {
+      "status": "complete",
+      "sha256": "6f1170060b24e418276435f053234a960b5d1650c25d99a2fe90c90fc224b7aa",
+      "ground_truth": "unknown; these are alert rates, not false-positive rates or accuracy",
+      "n": 500,
+      "complete": 498,
+      "systems": {
+        "baseline": {
+          "n": 500,
+          "high": 0,
+          "medium_plus": 0,
+          "medium_plus_rate": 0.0
+        },
+        "deterministic": {
+          "n": 500,
+          "high": 0,
+          "medium_plus": 0,
+          "medium_plus_rate": 0.0
+        },
+        "candidate": {
+          "n": 500,
+          "high": 0,
+          "medium_plus": 0,
+          "medium_plus_rate": 0.0
+        }
+      },
+      "prediction_audit": {
+        "path": "near/models/transactions_v2_research.audit.npz",
+        "sha256": "26d340633ca16486cbef4b72556b4665166c08befbd1aca94f254d76b17cf1ae",
+        "rows": 500,
+        "arrays": "fresh_id,baseline,candidate,deterministic,supported,complete"
+      }
+    },
+    "external_attack_cases": {
+      "manifest_sha256": "b1897c55a8aa1f7ae56e6a6ddac4f67089aba94894d80dab24c5c4632529ac4c",
+      "cases": [
+        {
+          "id": "44tWhQmmkTJgchgFVkYpPrgyKvaH7wRLu1jZWXD3Du1x",
+          "sha256": "fb8c2369a148d55a88954aa920042e97d0d5692462e2d7ba1951f867cf9e220b",
+          "supported": false,
+          "declared_protocol": "contract.main.burrow.near",
+          "use": "external scope check only; not a new Intents accuracy observation"
+        },
+        {
+          "id": "92Gq7zehKPwSSnpoZ7LGGtSmgmBb4wP2XNDVJqUZRGqz",
+          "sha256": "a854a7bbbe311cd1ca35cc960fe2164d4278359fe6a356dcd9a3a1cbbe4445ad",
+          "supported": false,
+          "declared_protocol": "skyward.near",
+          "use": "external scope check only; not a new Intents accuracy observation"
+        },
+        {
+          "id": "GcXEKmcJrfGVkPxZR89nNrmXqbR5VjTii45X7wzCfnFT",
+          "sha256": "1b5d74521f75ebdf553e9eab55a93654c110436b3aa2b10192789a1a45075b4b",
+          "supported": false,
+          "declared_protocol": "contract.main.burrow.near",
+          "use": "external scope check only; not a new Intents accuracy observation"
+        }
+      ]
+    }
+  },
+  "artifact": {
+    "path": "/Users/aman/Desktop/coding/security_oracle/near/models/transactions_v2_research.pkl",
+    "sha256": "64787e3d04225ca41b91babaac8a5a2b9e35cf5aea6d2b494211cec6ecb56b1e",
+    "bytes": 278322
+  },
+  "adoption": {
+    "deployed": false,
+    "recommendation": "retain_served_model; research artifact only",
+    "reason": "Rejected: collector high false alerts0\u219214 and generated benign high alerts0\u219226/40; generated versus real benign traffic is perfectly separable in the domain audit. No independent supported positive family is available. No threshold retuning or deployment followed these results.",
+    "checks": {
+      "no_collector_high_false_alert_regression": false,
+      "no_collector_medium_plus_regression": true,
+      "no_lost_family_held_out_real_detections": true,
+      "no_generated_benign_high_severity_regression": false,
+      "independent_supported_positive_family_available": false,
+      "no_cross_split_generated_feature_duplicates": true
+    },
+    "meets_checks": false,
+    "lost_family_held_out_detections": 0,
+    "reviewed_after_run": true
+  },
+  "history_coverage": {
+    "fit": {
+      "n": 69469,
+      "with_prior_evidence": 42568
+    },
+    "calibration": {
+      "n": 7594,
+      "with_prior_evidence": 3998
+    },
+    "selection": {
+      "n": 10096,
+      "with_prior_evidence": 4798
+    },
+    "retrospective": {
+      "n": 12463,
+      "with_prior_evidence": 5979
+    },
+    "real": {
+      "n": 430,
+      "with_prior_evidence": 271
+    },
+    "synthetic": {
+      "n": 258,
+      "with_prior_evidence": 229
+    }
+  },
+  "completed_at": "2026-11-14T17:54:42+00:00",
+  "real_family_holdout_audit": {
+    "path": "near/models/transactions_v2_research.audit.npz",
+    "sha256": "26d340633ca16486cbef4b72556b4665166c08befbd1aca94f254d76b17cf1ae",
+    "rows": 1720,
+    "arrays": "holdout_candidate,id,family,label,baseline,deterministic"
+  },
+  "post_run_packaging": {
+    "at": "2026-11-14T17:58:53+00:00",
+    "original_executed_report": "near/models/transactions_v2_research.executed_report.json.gz",
+    "original_executed_report_sha256": "603a7129fa3746a1aea0df666b8992fbcfef5105a2696806473d269a399600ec",
+    "changes": "Moved per-row decisions to hash-pinned pickle-free NPZ; appended adoption review and runtime versions. No source, model weights, thresholds, predictions or split changed.",
+    "raw_prediction_sha256": "006140c89165f9943d244c6d2395c3b88d8149bc73272bb5c8cc5d4c2cd657c9"
+  },
+  "post_run_uncertainty_review": {
+    "groups": 4,
+    "unit": "attack family",
+    "paired_macro_recall_gain": 0.2103997158724009,
+    "exact_bootstrap_resamples": 256,
+    "percentile95_interval": [
+      0.0,
+      0.4803370786516854
+    ],
+    "limitation": "Exploratory paired family bootstrap with only four development-informed families; correlated transactions do not create independent attacks. Interval does not establish unseen-attack performance."
+  },
+  "evaluation_limitations": [
+    "Only four real supported attack families; these cases and feature designs were previously examined. Family-held-out results are retrospective development comparisons.",
+    "Historical collector negatives are presumed normal, not an independently adjudicated security ground truth.",
+    "Generated mode/method holdouts share scenario code and deployed WASM; benign controls are related operations, not exact counterfactuals for every attempt. Six state-measured exploits repeat one known mechanism.",
+    "Fresh500unlabelled transactions cover112seconds; zero alerts is not a false-positive-rate or safety estimate.",
+    "Seven labelled positive transactions are outside actual Intents-call coverage; denominators430and437 must not be conflated."
+  ]
+}

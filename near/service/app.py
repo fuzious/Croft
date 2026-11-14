@@ -1,6 +1,6 @@
 """NEAR Protocol Security Agent API (`uvicorn near.service.app:app`).
 
-POST /v1/transactions/score {tx_hash, sender_id?} -> assessment, receipt evidence, scope and coverage
+POST /v1/transactions/score {tx_hash, sender_id?, include_history?} -> assessment, accounting, history and coverage
 POST /v1/protocols/scan {account_id} -> bounded recent Intents activity and assessment counts
 POST /v1/analyze {source_files} -> supporting contract-source risk
 Legacy /v1/intents/score and /v1/intents/scan remain compatible aliases.
@@ -75,6 +75,7 @@ class CheckRequest(BaseModel):
 class IntentsScoreRequest(BaseModel):
     tx_hash: str = Field(min_length=32, max_length=44)
     sender_id: Optional[str] = Field(None, min_length=2, max_length=64, pattern=ACCOUNT_ID)
+    include_history: bool = False
 
     @field_validator("tx_hash")
     @classmethod
@@ -266,10 +267,11 @@ def check(req: CheckRequest):
 @app.post("/v1/transactions/score")
 @app.post("/v1/intents/score")
 def intents_score(req: IntentsScoreRequest):
-    """One FastNEAR request, so the endpoint answers within intents.TIMEOUT_S; a FastNEAR timeout is a 504."""
+    """One target read; optional history adds at most four reads, each bounded by intents.TIMEOUT_S.
+    A target timeout is a 504; an optional history failure is returned separately with the target evidence."""
     try:
         info = intents.model_info()
-        out = intents.score_hash(req.tx_hash, req.sender_id)
+        out = intents.score_hash(req.tx_hash, req.sender_id, include_history=req.include_history)
     except intents.FastNearTimeout as e:
         raise HTTPException(504, str(e)) from None
     except (intents.FastNearError, intents.TxUnscorable) as e:
@@ -301,7 +303,7 @@ def intents_scan(req: IntentsScanRequest):
     incomplete = sum(not t["receipts_complete"] for t in act["txs"])
     return {"account_id": req.account_id, "n_scored": act["n_scored"], "n_index_rows": act["n_index_rows"],
             "counts": counts, "txs": act["txs"], "model": info, "assessment_counts": assessments,
-            "n_incomplete": incomplete,
+            "n_incomplete": incomplete, "detector": intents.detector_info(),
             "scope": {"network": "mainnet", "supported_protocol": "NEAR Intents",
                       "summary": "A bounded sample of recent NEAR Intents transactions, not a protocol safety audit."}}
 

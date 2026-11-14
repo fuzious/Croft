@@ -1,7 +1,7 @@
 # Optional sandbox reproduction
 
 This research harness reproduces retained credit after a failed deposit callback. It is **not needed for the
-hackathon demo** and does not train the shipped detector. [Results](../reports/RESULTS.md)
+transaction demo** and does not train the served model. [Results](../reports/RESULTS.md)
 
 | Verifier | Expected outcome |
 |---|---|
@@ -11,7 +11,7 @@ hackathon demo** and does not train the shipped detector. [Results](../reports/R
 ## Setup
 
 Use near-sandbox **2.10.2** (`NEAR_SANDBOX_BIN_PATH`), Rust **1.86.0**, and Binaryen **116**.
-This differs from the newer sandbox used for the agent/router demo.
+This differs from the newer sandbox used for optional response-contract tests.
 Set `REPO` to this repository and `INTENTS` to a local clone of `near/intents`. Create the WASM output directory
 and set `INTENTS_SYN_WASM_DIR` to it; set `WASM` to that same path for the commands below.
 
@@ -61,6 +61,17 @@ uv run python -m near.intents.synthetic.generate --version v0.4.2 --attacks 700 
 Outputs go to `near/data/intents/synthetic/`. An `exploit` label requires positive unbacked credit measured from
 contract state; an attempted attack without gain is an `attempt`. Recorded fixtures support ordinary unit tests.
 
+For categorized training data with separate actor and method/mode partitions:
+
+```bash
+uv run python -m near.intents.synthetic.families_v2
+uv run python -m near.intents.synthetic.families_v2 --supplement
+```
+
+This produces 273 executions across callback accounting, access control, token spoofing and resource exhaustion:
+6 measured exploits, 132 attempts and 135 benign controls. Existing outputs are protected; use fresh `--out` and
+`--report` paths for another run. [Recorded protocol and hashes](../reports/synthetic_families_v2.json).
+
 ## Limits
 
 - A custom token fits the sandbox's 300 TGas cap; mainnet used 1 PGas. Gas, methods and logs differ from HOT Omni.
@@ -68,4 +79,5 @@ contract state; an attempted attack without gain is an `attempt`. Recorded fixtu
 - RPC omits data receipts; the harness reconstructs them with synthetic IDs and transaction-local indexes.
 - Accounts, timestamps and blocks are synthetic. Sandbox error text differs from mainnet.
 - Benign traffic lacks solver swaps and some real bridge flows; it cannot replace mainnet negatives.
-- The synthetic classifier was rejected: it added no detections and raised 80 normal transactions to high.
+- The earlier synthetic-only classifier was rejected: it added no detections and raised 80 normal transactions to high.
+  The newer mixed-data comparison is reported separately in [transaction training results](../reports/transactions_v2.json).

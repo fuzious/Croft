@@ -1,0 +1,172 @@
+{
+  "status": "complete",
+  "protocol": {
+    "source": "sandbox",
+    "version": "v0.4.2",
+    "templates": {
+      "callback_accounting": [
+        "ReturnValue",
+        "ReturnValues",
+        "MaliciousRefund"
+      ],
+      "access_control": [
+        "mt_resolve_deposit",
+        "ft_resolve_deposit",
+        "nft_resolve_deposit"
+      ],
+      "token_spoofing": [
+        "ft_on_transfer",
+        "mt_on_transfer",
+        "mt_on_transfer_notify_overflow"
+      ],
+      "resource_exhaustion": [
+        "Panic",
+        "ReturnBytes",
+        "LargeReturn"
+      ]
+    },
+    "split_order": [
+      "train",
+      "validation",
+      "test"
+    ],
+    "selection": "Templates fixed before execution; never selected by detector output.",
+    "partitions": "Disjoint receiver-mode or called-method templates and actor/token namespaces; seeds are fixed.",
+    "labels": "1 means a purpose-controlled attack attempt; exploit role requires measured positive ghost_credit. 0 means a benign-purpose control, including ordinary failed calls. A failed call alone does not establish malicious intent.",
+    "controls": "Family-matched normal/refund flows, not exact counterfactual pairs; additional insufficient-funds and low-gas failures.",
+    "unavailable_families": {
+      "async_reentrancy": "No verified interleaved callback/state race scenario; refund defects alone do not prove reentrancy.",
+      "replay_signature": "Requires signed-message/nonce state and a verified replay exploit.",
+      "oracle_price": "Requires oracle observations and a protocol valuation model.",
+      "arithmetic": "Requires exact contract arithmetic and before/after state.",
+      "share_accounting": "Requires share supply, underlying asset state and valuation rules.",
+      "bridge_validation": "Requires the bridge verification proof and source-chain state."
+    },
+    "limits": "Only four observable families are exercised. Generated accuracy is not mainnet detection accuracy. Method/mode holdouts share contract and scenario infrastructure, so they are not independent implementations."
+  },
+  "pairs_per_family_per_split": 10,
+  "seed": 20261114,
+  "script_sha256": "a6674b604c550e2a513306079a0b25272e49d7040839baf438a63d0a8dcbd7a3",
+  "inputs_sha256": {
+    "/Users/aman/.near/near-sandbox-2.10.2/near-sandbox": "662b8efe2f3263b899f7eb8b12c59441f766ee1cf474d556ede64099e38f9013",
+    "/tmp/claude-501/-Users-aman-Desktop-coding-security-oracle/009fb2b9-14f8-4379-ac60-ddae68ac44a1/scratchpad/syn/wasm/defuse-v0.4.2.wasm": "c070454d5dc4d555b72e68029c7fa06c1f8991f1606f72701715424aff023085",
+    "/tmp/claude-501/-Users-aman-Desktop-coding-security-oracle/009fb2b9-14f8-4379-ac60-ddae68ac44a1/scratchpad/syn/wasm/synthetic_mt_token.wasm": "b20eb7773a8fde442dfa139897eb7110bba55200dc901aa5fa58bc5c51bc9100",
+    "/tmp/claude-501/-Users-aman-Desktop-coding-security-oracle/009fb2b9-14f8-4379-ac60-ddae68ac44a1/scratchpad/syn/wasm/multi_token_receiver_stub.wasm": "e0f8ed1c055bdacf1a0761c732962b92b998df74b9b21c22086c1235f194767b",
+    "/tmp/claude-501/-Users-aman-Desktop-coding-security-oracle/009fb2b9-14f8-4379-ac60-ddae68ac44a1/scratchpad/syn/src/intents-v042-batchlimit/releases/fungible-token.wasm": "12c5f9bd9136b4396823478281a61368b4c74cdaf35ab5743b302c3aac55a354",
+    "/tmp/claude-501/-Users-aman-Desktop-coding-security-oracle/009fb2b9-14f8-4379-ac60-ddae68ac44a1/scratchpad/syn/src/intents-v042-batchlimit/releases/wnear.wasm": "b72c26d390b23f4517d091a8aab06b0369d465356ec5fb337d5fda076da38ac0",
+    "/Users/aman/Desktop/coding/security_oracle/near/intents/synthetic/scenarios.py": "404e20f6df03b5c25b2cc4e5509cea7d997d9fe7287ea4217caf44624333122d",
+    "/Users/aman/Desktop/coding/security_oracle/near/intents/synthetic/generate.py": "a34f108969d732cbac46d1765ebc8bc9788c8a48f89d3c46c747e454ef22d5e3"
+  },
+  "counts": {
+    "test|access_control|attempt": 10,
+    "test|access_control|benign": 10,
+    "test|benign_failure|benign": 5,
+    "test|callback_accounting|attempt": 14,
+    "test|callback_accounting|benign": 10,
+    "test|callback_accounting|exploit": 2,
+    "test|resource_exhaustion|attempt": 10,
+    "test|resource_exhaustion|benign": 10,
+    "test|token_spoofing|attempt": 10,
+    "test|token_spoofing|benign": 10,
+    "train|access_control|attempt": 10,
+    "train|access_control|benign": 10,
+    "train|benign_failure|benign": 5,
+    "train|callback_accounting|attempt": 13,
+    "train|callback_accounting|benign": 10,
+    "train|callback_accounting|exploit": 3,
+    "train|resource_exhaustion|attempt": 10,
+    "train|resource_exhaustion|benign": 10,
+    "train|token_spoofing|attempt": 10,
+    "train|token_spoofing|benign": 10,
+    "validation|access_control|attempt": 10,
+    "validation|access_control|benign": 10,
+    "validation|benign_failure|benign": 5,
+    "validation|callback_accounting|attempt": 15,
+    "validation|callback_accounting|benign": 10,
+    "validation|callback_accounting|exploit": 1,
+    "validation|resource_exhaustion|attempt": 10,
+    "validation|resource_exhaustion|benign": 10,
+    "validation|token_spoofing|attempt": 10,
+    "validation|token_spoofing|benign": 10
+  },
+  "failed_receipt_rows": {
+    "train|1": 24,
+    "train|0": 5,
+    "validation|1": 15,
+    "validation|0": 5,
+    "test|1": 30,
+    "test|0": 5
+  },
+  "partition_audit": {
+    "transactions": 273,
+    "templates": 30,
+    "actor_groups": 6,
+    "signer_accounts": 9
+  },
+  "duration_seconds": 402.8,
+  "files": {
+    "train": {
+      "path": "/Users/aman/Desktop/coding/security_oracle/near/data/intents/v2_synthetic/train.jsonl.gz",
+      "sha256": "55cce7f224ff74d2689c294530af1f6e2e97e0ee94e5582d52c9205598964f5a"
+    },
+    "validation": {
+      "path": "/Users/aman/Desktop/coding/security_oracle/near/data/intents/v2_synthetic/validation.jsonl.gz",
+      "sha256": "17d7fea1808035d145f6eaa55aadc27adb3374bafa32e55843d60be0ac422f14"
+    },
+    "test": {
+      "path": "/Users/aman/Desktop/coding/security_oracle/near/data/intents/v2_synthetic/test.jsonl.gz",
+      "sha256": "b6c73187d96c3aeb07d1653b9156419b3b1e9ae5174d6be7b5dc15bf4633b223"
+    }
+  },
+  "supplement": {
+    "status": "complete",
+    "rows_per_split": 6,
+    "seed": 20261114,
+    "orders_by_split": {
+      "train": "dust_first",
+      "validation": "main_first",
+      "test": "interleaved"
+    },
+    "generator": "attack_notify_log_overflow",
+    "selection": "Exactly six draws per split, no retries or selection by detector output. Exploit role only when measured ghost_credit >0; retain unsuccessful attempts.",
+    "script_sha256": "8868fb332d9629d2280017381f867055a3b849e807dcba829949e8fed581127d",
+    "limitations": "Ordering-template holdouts share one exploited mechanism and implementation. The original family-associated benign controls are not exact large-batch counterfactuals.",
+    "counts": {
+      "train|attempt": 3,
+      "train|exploit": 3,
+      "validation|attempt": 5,
+      "validation|exploit": 1,
+      "test|exploit": 2,
+      "test|attempt": 4
+    },
+    "duration_seconds": 110.07
+  },
+  "metadata_normalization": {
+    "train": {
+      "before_sha256": "fe5c41cab909243d39b24f39ed4588578690226835ecf5e0aca59f01a21c49d5",
+      "after_sha256": "d274dccaab43f1947333b8aa2218306485ff5119834b91112a6e35a21b3db976",
+      "unchanged_transaction_evidence_sha256": "3bbacf86ded69a3b5894c48539e7024f872f5f624ddc45529f96ec5cc21c3bbf"
+    },
+    "validation": {
+      "before_sha256": "544173779d06767e65ae4b3dd01a9a21799c996951b07906849db7a38c41717d",
+      "after_sha256": "0fa9485913f5f5b57f7f08c17471720883712b4982b23f622686c22a6bc29074",
+      "unchanged_transaction_evidence_sha256": "2720924759b23e5552b18073f7fb47938a6b1c0e96c3cf3429fba029093338e5"
+    },
+    "test": {
+      "before_sha256": "744db6057644e25691f845578cfaf6575a0a9651660f00689bbe34103d146a89",
+      "after_sha256": "960565c2b3d1e06ebd436d9f36f9b0832fb0cb674b7bfed6cc3fed3b68ac0eb9",
+      "unchanged_transaction_evidence_sha256": "50ad8ded2f1ac46798adfba0ead21c95034d0fc2dbbb52f15ce30905f49939f1"
+    }
+  },
+  "distributed_script_sha256": "bcdea318d6fb2addd83b48b8d338fbacc14f641aa6e68ef9c39e78ac2f20d315",
+  "base_failed_receipt_rows": {
+    "train|1": 20,
+    "train|0": 5,
+    "validation|1": 14,
+    "validation|0": 5,
+    "test|1": 27,
+    "test|0": 5
+  },
+  "total_execution_seconds": 512.87,
+  "post_execution_summary_note": "After execution, aggregate failed-receipt counts were corrected to include the supplement and total execution time was added. No transaction evidence, labels, splits, or executed-source hashes changed. The distributed generator contains the same summary correction."
+}

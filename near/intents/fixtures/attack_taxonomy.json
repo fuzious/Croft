@@ -1,0 +1,136 @@
+{
+  "version": "near_attack_taxonomy_v1",
+  "scope": "Categories describe mechanisms and evidence coverage, not a promise that every attack in a category is detected. Labels are research metadata, never model inputs.",
+  "main_review": {
+    "commit": "f567294de9fdfc040e34b128cf2eb61d16f0e0bc",
+    "paths": ["oracle/category.py", "oracle/card.py", "scripts/category_holdout.py", "scripts/stage2.py", "README.md"],
+    "protocol_types": ["bridge", "lending", "dex", "vault/yield", "token", "nft", "drainer-token", "drainer-nft", "other"],
+    "distinction": "Main groups evaluations by protocol type; re-entry, flash loans and value flows are separate card features. Protocol type is not an exploit root cause. EVM transactions and accuracy numbers are not transferred to NEAR.",
+    "transferred_methods": [
+      {"method": "Value-flow reconciliation", "near_evidence": "Exact token-unit deposits, refunds and surviving credit from authenticated receipt emitters", "limit": "Event accounting is not a historical balance proof or USD-valued protocol solvency check."},
+      {"method": "Prior interaction context", "near_evidence": "Earlier receipt-backed participant activity; chronological, bounded and deduplicated", "limit": "Shared relayers and later transactions must not become attacker labels or predictive identity features."},
+      {"method": "Execution mechanics", "near_evidence": "Asynchronous receipts, callbacks and failures", "limit": "NEAR receipt ancestry is not the synchronous EVM call stack; a callback is not reentrancy evidence by itself."},
+      {"method": "Operation-aware benign controls", "near_evidence": "Legitimate withdrawals, refunds, failed deposits and authorized administration", "limit": "An outflow or failed call alone does not prove an exploit."},
+      {"method": "Grouped category evaluation", "near_evidence": "Hold out incident/actor/template groups within families and entire families", "limit": "Randomized copies of one exploit are not independent incidents."}
+    ]
+  },
+  "observability": {
+    "supported": "The detector has a specific receipt-pattern check for part of this category; this is not full-category coverage.",
+    "detectable_with_context": "Requires additional authenticated protocol state or authorization semantics; generic receipt shape is insufficient.",
+    "not_observable": "The current Intents receipt detector does not validate the required external-chain evidence."
+  },
+  "families": [
+    {
+      "id": "callback_accounting", "label": "Callback accounting",
+      "evm_analogue": "Unbacked mint, double refund, broken balance accounting",
+      "near_mechanism": "A deposit leaves internal credit after the backing token is refunded, or a failed callback skips reconciliation.",
+      "observability": "supported",
+      "checked_scope": "Matched successful Intents deposit, token refund and credit events, with complete receipt ancestry.",
+      "requires": ["trusted protocol emitter", "same token and deposit flow", "successful outcomes", "complete receipts"],
+      "sources": ["near_refunds", "intents_balances", "nep141"]
+    },
+    {
+      "id": "async_reentrancy", "label": "Async state race",
+      "evm_analogue": "Reentrancy and read-only reentrancy",
+      "near_mechanism": "Another call uses stale or prematurely credited state before a callback settles an earlier operation.",
+      "observability": "detectable_with_context",
+      "checked_scope": "A suspicious history sequence is a clue; proving a race needs ordered interleaving and protocol state.",
+      "requires": ["interleaved receipt ordering", "state before and after callbacks", "balance ownership"],
+      "sources": ["near_reentrancy", "intents_execution"]
+    },
+    {
+      "id": "access_control", "label": "Access-control probe",
+      "evm_analogue": "Missing access control, tx.origin misuse, unauthorized upgrade",
+      "near_mechanism": "An outsider calls a private callback or administrative method; signer and immediate predecessor are different identities.",
+      "observability": "supported",
+      "checked_scope": "Direct private/admin call patterns and repeated rejected probes. A rejected call is an attempt, not a successful privilege bypass.",
+      "requires": ["authenticated predecessor", "protocol method semantics", "role state to establish successful unauthorized access"],
+      "sources": ["near_callbacks", "intents_accounts"]
+    },
+    {
+      "id": "token_spoofing", "label": "Token or receiver spoofing",
+      "evm_analogue": "Fake-token deposits and forged receiver callbacks",
+      "near_mechanism": "An untrusted token or caller supplies false deposit claims or impersonates a token receiver callback.",
+      "observability": "supported",
+      "checked_scope": "Some direct receiver probes are visible; token authenticity and economic backing require a protocol-specific registry or state proof.",
+      "requires": ["token contract identity", "authenticated receipt emitter", "receiver-call ancestry", "trusted asset registry for authenticity"],
+      "sources": ["nep141", "intents_balances"]
+    },
+    {
+      "id": "resource_exhaustion", "label": "Callback resource exhaustion",
+      "evm_analogue": "Gas griefing and denial of service",
+      "near_mechanism": "Gas, log or returned-value limits interrupt a callback; storage growth can also consume protocol funds.",
+      "observability": "supported",
+      "checked_scope": "Receipt gas/log/value-limit failures. Intentional griefing and storage-cost abuse are not established by failure alone.",
+      "requires": ["failure outcome", "callback identity", "storage state for storage-cost abuse"],
+      "sources": ["near_storage", "near_callbacks"]
+    },
+    {
+      "id": "replay_signature", "label": "Replay or signature authorization",
+      "evm_analogue": "Permit replay, signature forgery and authorization theft",
+      "near_mechanism": "A reused nonce, wrong verifying contract, expired intent or unauthorized key is accepted.",
+      "observability": "detectable_with_context",
+      "checked_scope": "The current detector does not independently verify signatures, historical nonce state or key authority.",
+      "requires": ["signed payload", "signature validation", "historical key and nonce state", "deadline and domain checks"],
+      "sources": ["intents_signing", "intents_execution", "intents_accounts"]
+    },
+    {
+      "id": "oracle_price", "label": "Oracle or price manipulation",
+      "evm_analogue": "Oracle manipulation and flash-loan-assisted economic attacks",
+      "near_mechanism": "A protocol accepts manipulated or stale prices and transfers excessive value.",
+      "observability": "detectable_with_context",
+      "checked_scope": "A large transfer, swap or loan is not sufficient; no generic price-abuse rule is claimed.",
+      "requires": ["historical trusted prices", "market and collateral state", "protocol valuation rules"],
+      "sources": []
+    },
+    {
+      "id": "arithmetic", "label": "Arithmetic or rounding",
+      "evm_analogue": "Overflow, precision loss and rounding exploitation",
+      "near_mechanism": "Protocol arithmetic awards more assets or claims than its state transition permits.",
+      "observability": "detectable_with_context",
+      "checked_scope": "A receipt discrepancy can expose an effect, but cannot identify an arithmetic bug without protocol math and state.",
+      "requires": ["protocol arithmetic", "integer units and rounding rules", "state deltas"],
+      "sources": []
+    },
+    {
+      "id": "share_accounting", "label": "Share or claim accounting",
+      "evm_analogue": "Vault donation, share inflation and excess redemption",
+      "near_mechanism": "A withdrawal pays more than the burned shares, claims or internal balance authorize.",
+      "observability": "detectable_with_context",
+      "checked_scope": "Legitimate withdrawals must include surrendered claims and exchange rates; the current deposit check is not a vault adapter.",
+      "requires": ["share supply", "claim ownership and burn", "historical redemption rate", "protocol-specific fees"],
+      "sources": []
+    },
+    {
+      "id": "accounting_logic", "label": "Protocol accounting logic",
+      "evm_analogue": "Business-logic accounting and circular-route output inflation",
+      "near_mechanism": "A protocol counts intermediate or reused assets as final output and accepts an underbacked position.",
+      "observability": "detectable_with_context",
+      "checked_scope": "Rhea is a sourced external-protocol example; the Intents deposit checker does not validate its margin solvency.",
+      "requires": ["protocol accounting rules", "net final output by asset", "collateral and debt state"],
+      "sources": ["rhea_analysis"]
+    },
+    {
+      "id": "bridge_validation", "label": "Bridge message validation",
+      "evm_analogue": "Forged bridge messages and duplicate bridge claims",
+      "near_mechanism": "A bridge accepts an invalid source-chain proof or processes the same external claim twice.",
+      "observability": "not_observable",
+      "checked_scope": "Receiving bridged tokens in Intents does not prove that their source-chain backing or bridge proof was valid.",
+      "requires": ["source-chain finality and proof", "bridge verifier state", "message replay state"],
+      "sources": []
+    }
+  ],
+  "sources": {
+    "near_callbacks": "https://docs.near.org/smart-contracts/security/cross-contract-calls/callbacks",
+    "near_refunds": "https://docs.near.org/smart-contracts/security/cross-contract-calls/refunds",
+    "near_reentrancy": "https://docs.near.org/smart-contracts/security/cross-contract-calls/reentrancy",
+    "near_storage": "https://docs.near.org/smart-contracts/security/storage",
+    "nep141": "https://github.com/near/NEPs/blob/master/neps/nep-0141.md",
+    "intents_balances": "https://docs.near-intents.org/integration/verifier-contract/deposits-and-withdrawals/balances",
+    "intents_execution": "https://docs.near-intents.org/integration/verifier-contract/intent-types-and-execution",
+    "intents_signing": "https://docs.near-intents.org/integration/verifier-contract/signing-intents",
+    "intents_accounts": "https://docs.near-intents.org/integration/verifier-contract/account-abstraction",
+    "rhea_analysis": "https://blocksec.com/blog/weekly-web3-security-incident-roundup-apr-13-apr-19-2026"
+  },
+  "inference_note": "Mappings to price, arithmetic, share and bridge categories are engineering generalizations of the reviewed main-branch mechanisms, not claims of a demonstrated NEAR Intents vulnerability."
+}

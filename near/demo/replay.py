@@ -34,7 +34,7 @@ def main() -> None:
     intents.clear_cache()
     print("Historical FastNEAR replay recorded 2026-11-14; no live requests or payments.")
     print(json.dumps({"recording_sha256": hashlib.sha256(RECORDING.read_bytes()).hexdigest(),
-                      "model": intents.model_info()}))
+                      "model": intents.model_info(), "detector": intents.detector_info()}))
     for name, tx_hash, expected in (("exploit", EXPLOIT, "high"), ("normal", NORMAL, "low")):
         result = intents.score_hash(tx_hash, transport=replay)
         if result["label"] != expected:
@@ -42,6 +42,9 @@ def main() -> None:
         print(json.dumps({"case": name, "tx_hash": tx_hash, "label": result["label"],
                           "assessment": result["assessment"], "assessment_reason": result["assessment_reason"],
                           "evidence_coverage": result["evidence_coverage"],
+                          "accounting": {"status": result["accounting"]["status"],
+                                         "checks": result["accounting"]["checks"]},
+                          "baseline_label": result["baseline"]["label"],
                           "rules": [h["rule"] for h in result["rule_hits"]]}))
 
     value = intents.recent_activity(EXPLOITER, transport=replay)
@@ -50,6 +53,8 @@ def main() -> None:
         raise RuntimeError(f"Expected 10 high / 20 scored; got {high} / {value['n_scored']}")
     print(json.dumps({"case": "account_activity", "account_id": EXPLOITER,
                       "high": high, "scored": value["n_scored"],
+                      "transactions_with_earlier_context": sum(t["history"]["status"] == "available"
+                                                               for t in value["txs"]),
                       "assessments": {a: sum(t["assessment"] == a for t in value["txs"])
                                       for a in sorted({t["assessment"] for t in value["txs"]})}}))
     print("PASS: exploit high; normal low; account history 10/20 high.")

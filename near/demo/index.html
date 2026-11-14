@@ -82,6 +82,8 @@ input[aria-invalid="true"]{border-color:var(--warn)}
 textarea{min-height:260px;padding:12px;font:var(--fs-mono)/1.6 var(--mono);resize:vertical;white-space:pre;overflow-x:auto}
 .field-err{font-size:var(--fs-xs);color:var(--warn);margin-top:8px}
 .field-err:empty{display:none}
+.history-option{display:flex;flex-direction:row;align-items:center;gap:8px;min-height:36px;min-width:0;margin-top:8px;cursor:pointer}
+.history-option input{width:16px;height:16px;flex:none;margin:0;accent-color:var(--accent)}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 20px;border:1px solid transparent;border-radius:8px;background:var(--accent);color:var(--on-accent);font-size:var(--fs-sm);font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;transition:filter .15s,background-color .15s,border-color .15s}
 .btn:hover{filter:brightness(1.08);opacity:1}
@@ -136,6 +138,29 @@ textarea{min-height:260px;padding:12px;font:var(--fs-mono)/1.6 var(--mono);resiz
 details>summary{cursor:pointer;color:var(--text-2);width:max-content;max-width:100%}
 details>summary:hover{color:var(--text)}
 .out details{margin-top:16px}
+.evidence-panel{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+.evidence-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.evidence-heading h3{font-weight:600}
+.accounting-flow{margin-top:12px;container-type:inline-size}
+.accounting-token{font-size:var(--fs-xs);color:var(--text-2);padding-bottom:6px}
+.accounting-token code{font-size:var(--fs-xs);color:var(--text);overflow-wrap:anywhere}
+.accounting-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px;margin:0}
+.accounting-values>div{padding:8px 0;border-top:1px solid var(--line);min-width:0}
+.accounting-values .long-amount{grid-column:1/-1}
+.accounting-values dt{font-size:var(--fs-xs);color:var(--text-2)}
+.accounting-values dd{font:var(--fs-xs)/1.6 var(--mono);white-space:nowrap;overflow-x:auto;margin:4px 0 0}
+.accounting-values .excess{color:var(--warn);font-weight:500}
+@container (max-width:310px){.accounting-values{grid-template-columns:minmax(0,1fr)}}
+.evidence-reason{font-size:var(--fs-xs);color:var(--text-2);margin-top:4px}
+.history-list{list-style:none;margin:12px 0 0;padding:0 0 0 10px;border-left:1px solid var(--field-line)}
+.history-list li{position:relative;margin-left:8px;padding:0 0 12px 4px}
+.history-list li:before{content:"";position:absolute;left:-22px;top:7px;width:7px;height:7px;border:1px solid var(--text-2);border-radius:50%;background:var(--surface)}
+.history-list .history-meta{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:var(--fs-xs);color:var(--text-2)}
+.history-list a{font:var(--fs-xs)/1.6 var(--mono);color:var(--text)}
+.history-list p{font-size:var(--fs-xs);color:var(--text-2);margin-top:3px}
+.history-findings{padding:0;list-style:none;display:grid;gap:8px;margin-top:12px}
+.evidence-categories{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:12px 0 4px}
+.evidence-categories .chip{white-space:normal;height:auto;min-height:28px}
 
 .counts{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px}
 .count{background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:12px}
@@ -230,7 +255,7 @@ pre{background:var(--raised);border:1px solid var(--line);border-radius:12px;pad
   <div class="top-in">
     <div class="top-row">
       <div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M16 6.5 8.5 9.5v6c0 4.6 3.1 8 7.5 9.5 4.4-1.5 7.5-4.9 7.5-9.5v-6L16 6.5Z" fill="none" stroke="var(--on-accent)" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="15.5" r="2.6" fill="var(--on-accent)"/></svg><h1>NEAR protocol security agent</h1></div>
-      <div class="chips"><span class="chip" id="netChip"><span class="dot" aria-hidden="true"></span><span id="net">Connecting…</span></span><span class="chip" id="modelChip" hidden>Detector <span class="num" id="model"></span></span><span class="chip"><a href="/docs">API docs</a></span></div>
+      <div class="chips"><span class="chip" id="netChip"><span class="dot" aria-hidden="true"></span><span id="net">Connecting…</span></span><span class="chip" id="modelChip" hidden>Model <span class="num" id="model"></span></span><span class="chip"><a href="/docs">API docs</a></span></div>
     </div>
     <p class="lede">Paste a NEAR transaction to inspect its receipt graph for known attack patterns. Calibrated coverage: NEAR Intents. Other protocols are marked unsupported.</p>
   </div>
@@ -238,11 +263,11 @@ pre{background:var(--raised);border:1px solid var(--line);border-radius:12px;pad
 <main>
   <div class="grid">
     <section class="card" id="check" aria-labelledby="check-title">
-      <div class="card-head"><h2 id="check-title">Check a transaction</h2><p class="sub">Loads the transaction and its receipts from FastNEAR (mainnet) and runs the receipt rules and the anomaly model.</p></div>
+      <div class="card-head"><h2 id="check-title">Check a transaction</h2><p class="sub">Inspect receipt rules, observed token accounting and earlier related activity.</p></div>
       <form id="scoreForm" novalidate><div class="row">
         <label for="txHash">Transaction hash or NearBlocks link<input id="txHash" class="mono-input" placeholder="3k91uDpUiezxUe7hBgAR7kc3TBkToMZKGAiv6GqbtKiC" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="txErr"></label>
         <button class="btn" id="scoreBtn" type="submit">Check</button>
-      </div><p class="field-err" id="txErr" role="alert"></p></form>
+      </div><p class="field-err" id="txErr" role="alert"></p><label class="history-option"><input type="checkbox" id="includeHistory" checked>Include earlier activity <span class="small muted">· bounded account window</span></label></form>
       <div class="presets" id="txPresets" aria-label="Example transactions"><span>Try</span></div>
       <div class="out" id="scoreOut" aria-live="polite"><div class="empty">Pick an example or paste a hash to see the assessment, evidence coverage and rules that fired.</div></div>
     </section>
@@ -317,8 +342,12 @@ const VERDICT = {
 };
 const SEV_RANK = {high: 0, medium: 1, low: 2};
 
-// One sentence per receipt rule (near/intents/features.py RULES): the invariant the transaction broke.
+// Human-readable descriptions for receipt and history findings.
 const RULE_TEXT = {
+  accounting_credit_exceeds_backing: ["Credit exceeds observed backing", "Successful events retain more credit than the linked deposit can back after its refund. The accounting table shows the exact amounts."],
+  history_repeated_failed_private_probes: ["Repeated private-call failures", "Earlier failed calls involve the same directly observed caller. Review this pattern; repeated failures alone do not prove an exploit."],
+  history_withdrawal_after_callback: ["Withdrawal after a failed callback", "Earlier callback failure is linked by an observed participant. This is context, not evidence that the withdrawal used stolen funds."],
+  history_withdrawal_after_retained_credit: ["Withdrawal after retained credit", "Earlier event accounting found retained credit for a related participant. This link does not establish the source of withdrawn funds."],
   failed_resolve_callback: ["Deposit callback failed", "A deposit settlement callback failed. Inspect the credit and refund receipts to determine whether accounting was restored."],
   log_limit: ["Log at the 16 KB limit", "A receipt approached or exceeded NEAR's 16 KB log limit. A limit failure can abort receipt execution; this was part of the October exploit."],
   credit_kept: ["Credit kept after a refund", "Observed receipt events show a token refund while Intents retained a matching credit. This is evidence of a potential backing mismatch."],
@@ -490,6 +519,53 @@ function assessmentState(j, hits = j.rule_hits || []) {
   return {key, ...states[key], summary: j.assessment === key && j.assessment_reason ? j.assessment_reason : states[key].fallback};
 }
 
+function atomicAmount(value) {
+  // Keep atomic amounts as strings: token values routinely exceed JavaScript's exact integer range.
+  return typeof value === "string" && /^-?\d+$/.test(value) ? value : "—";
+}
+
+function categoryEvidence(categories = []) {
+  return categories.length ? `<ul class="evidence-categories" aria-label="Observed pattern categories">${categories.map(c => `<li class="chip">${esc(c.label)}</li>`).join("")}</ul><p class="small muted">Observed patterns, not a verified root cause.</p>` : "";
+}
+
+function accountingEvidence(accounting) {
+  const a = accounting || {}, coverage = a.coverage || {}, checks = a.checks || [];
+  const statuses = {checked: "Observed", inconclusive: "Incomplete", unsupported: "Unsupported"};
+  const status = statuses[a.status] || "Unavailable";
+  const count = Number.isInteger(coverage.checked_deposit_flows) ? `${coverage.checked_deposit_flows} checked · ${coverage.unchecked_deposit_flows || 0} uncheckable deposit flows` : "Deposit-flow coverage is unavailable.";
+  const rows = checks.slice().sort((x, y) => Number(y.status === "excess_credit") - Number(x.status === "excess_credit"));
+  const table = c => `<div class="accounting-flow"><p class="accounting-token"><code>${esc(c.token_id || "Unknown token")}</code>${c.owner_ids?.length ? `<br>Credited owner: ${esc(c.owner_ids.join(", "))}` : ""}</p>
+    <dl class="accounting-values">${[["Deposited", c.deposited], ["Refunded", c.refunded], ["Credit retained", c.credit_retained], ["Excess", c.excess]].map(([label, raw]) => {
+      const value = atomicAmount(raw), long = value.length > 20;
+      return `<div${long ? ' class="long-amount"' : ""}><dt>${label}</dt><dd${long ? ' tabindex="0"' : ""}${label === "Excess" && c.status === "excess_credit" ? ' class="excess"' : ""}>${value}</dd></div>`;
+    }).join("")}</dl><p class="evidence-reason">${esc(c.reason || (c.status === "inconclusive" ? "This flow could not be reconciled." : ""))}</p></div>`;
+  return `<section class="evidence-panel" aria-label="Observed event accounting"><div class="evidence-heading"><h3>Observed event accounting</h3><span class="sev ${a.status === "inconclusive" ? "medium" : "low"}">${status}</span></div>
+    <p class="small muted">${esc(count)}</p>${rows.length ? rows.slice(0, 3).map(table).join("") : `<p class="evidence-reason">${a.status === "unsupported" ? "No supported Intents deposit accounting is available." : "No deposit flow could be reconciled from the available events."}</p>`}
+    ${rows.length > 3 ? `<details><summary>${rows.length - 3} more deposit flows</summary>${rows.slice(3).map(table).join("")}</details>` : ""}
+    <p class="caveat">Exact atomic units from observed successful events. This is not a balance query or a solvency check.</p></section>`;
+}
+
+function historyEvidence(history) {
+  const h = history || {}, coverage = h.coverage || {}, rows = h.related_transactions || [];
+  const status = {available: "Bounded context", no_prior_evidence: "No earlier match", not_requested: "Not requested", unavailable: "Unavailable"}[h.status] || "Unavailable";
+  const finding = (h.findings || []).map(f => `<li>${notice(esc(f.message || "Earlier activity needs review."))}</li>`).join("");
+  const txRow = t => {
+    const [hash, invalid] = readHash(t.tx_hash || "");
+    const identity = invalid ? `<code>${esc(shortHash(t.tx_hash || "Unknown transaction"))}</code>` : `<a href="https://nearblocks.io/txns/${encodeURIComponent(hash)}" target="_blank" rel="noopener noreferrer" aria-label="View earlier transaction ${esc(hash)}">${esc(shortHash(hash))} ↗</a>`;
+    return `<li><div class="history-meta">${identity}${t.block_height ? `<span>Block ${esc(t.block_height)}</span>` : ""}</div>
+      ${t.shared_accounts?.length ? `<p>Shared participant: ${esc(t.shared_accounts.join(", "))}</p>` : ""}
+      ${t.observations?.length ? `<p>${esc(t.observations.map(s => String(s).replaceAll("_", " ")).join(" · "))}</p>` : ""}</li>`;
+  };
+  const summary = h.status === "not_requested" ? "Enable earlier activity to inspect a bounded history window." :
+    h.status === "unavailable" || !h.status ? (h.reason || h.message || "Earlier activity could not be checked. The transaction result above still applies to the observed receipts.") :
+    `${coverage.eligible_prior_transactions ?? 0} earlier transactions considered · ${coverage.related_transactions ?? rows.length} linked by participant${coverage.window_seconds ? ` · at most ${coverage.window_seconds / 3600} hours` : ""}.`;
+  return `<section class="evidence-panel" aria-label="Earlier related activity"><div class="evidence-heading"><h3>Earlier related activity</h3><span class="sev low">${status}</span></div>
+    <p class="small muted">${esc(summary)}</p>${finding ? `<ul class="history-findings">${finding}</ul>` : ""}
+    ${rows.length ? `<ol class="history-list">${rows.slice(0, 5).map(txRow).join("")}</ol>` : ""}
+    ${rows.length > 5 ? `<details><summary>${rows.length - 5} more earlier transactions</summary><ol class="history-list">${rows.slice(5).map(txRow).join("")}</ol></details>` : ""}
+    <p class="caveat">A partial history window, not a complete account audit. A shared participant does not prove an attack or establish where funds came from.</p></section>`;
+}
+
 let scoreSeq = 0;
 async function scoreTx() {
   const [hash, bad] = readHash($("txHash").value);
@@ -498,9 +574,9 @@ async function scoreTx() {
   $("txHash").value = hash;
   const my = ++scoreSeq, btn = $("scoreBtn");
   btn.disabled = true;
-  $("scoreOut").innerHTML = loading("Reading the receipt graph from FastNEAR and checking it…");
+  $("scoreOut").innerHTML = loading("Reading receipts and accounting" + ($("includeHistory").checked ? ", then earlier activity…" : "…"));
   try {
-    const j = await api("/v1/transactions/score", {tx_hash: hash});
+    const j = await api("/v1/transactions/score", {tx_hash: hash, include_history: $("includeHistory").checked});
     if (my !== scoreSeq) return;
     setModel(j.model);
     const hits = (j.rule_hits || []).slice().sort((a, b) => (SEV_RANK[a.severity] ?? 3) - (SEV_RANK[b.severity] ?? 3));
@@ -511,10 +587,11 @@ async function scoreTx() {
     if (state.key === "unsupported") notes.push(notice("<strong>No calibrated assessment:</strong> the detector supports NEAR Intents. A low raw score outside that scope does not establish safety."));
     if (complete !== true) notes.push(notice("<strong>Incomplete receipt evidence:</strong> missing outcomes can hide attack patterns. Observed rule hits remain visible; no clean assessment can be made from missing evidence."));
     if (KNOWN_MISSES[hash]) notes.push(notice(KNOWN_MISSES[hash]));
-    const rules = hits.length ? `<h3 class="section-label">Observed receipt evidence</h3><ul class="rules">${hits.map(h => {
+    const ruleRow = h => {
         const [title, text] = RULE_TEXT[h.rule] || [h.rule, ""];
         return `<li><span class="sev ${esc(h.severity)}">${esc(cap(h.severity))}</span><div><div class="rule-title"><h3>${esc(title)}</h3><code>${esc(h.rule)}</code></div>${text ? `<p>${esc(text)}</p>` : ""}<p class="detail">${esc(h.message)}</p></div></li>`;
-      }).join("")}</ul>`
+      };
+    const rules = hits.length ? `<h3 class="section-label">Observed receipt evidence</h3><ul class="rules">${hits.slice(0, 3).map(ruleRow).join("")}</ul>${hits.length > 3 ? `<details><summary>${hits.length - 3} more findings</summary><ul class="rules">${hits.slice(3).map(ruleRow).join("")}</ul></details>` : ""}`
       : `<p class="section-label small muted">No receipt rule fired.</p>`;
     $("scoreOut").innerHTML = `<div class="verdict ${state.tone}" data-assessment="${state.key}">${state.icon}<div><p class="verdict-word">${esc(state.word)}</p><p>${esc(state.summary)}</p></div></div>
       <dl class="facts">
@@ -524,7 +601,10 @@ async function scoreTx() {
         <dt>Detector scope</dt><dd>${state.key === "unsupported" ? "Unsupported protocol" : "NEAR Intents"}</dd>
       </dl>
       ${notes.length ? `<div class="notes">${notes.join("")}</div>` : ""}
+      ${accountingEvidence(j.accounting)}
       ${rules}
+      ${categoryEvidence(j.attack_categories)}
+      ${historyEvidence(j.history)}
       <div class="links"><a href="https://nearblocks.io/txns/${encodeURIComponent(hash)}" target="_blank" rel="noopener noreferrer">View on NearBlocks</a></div>
       <details><summary>Score and confidence details</summary><p class="small muted">Raw score <span class="num">${esc(Number(j.risk).toFixed(4))}</span> is a rule/rank score, not an attack probability. ${j.confidence?.basis ? esc(j.confidence.basis) : ""}</p><p class="small muted">Anomaly percentile <span class="num">${esc(Number(j.anomaly_percentile).toFixed(4))}</span> against normal Intents traffic · model ${esc(j.model && j.model.version)} · sha256 <span class="num">${esc(String((j.model && j.model.sha256) || "").slice(0, 12))}</span></p></details>`;
   } catch (e) { if (my === scoreSeq) $("scoreOut").innerHTML = failure(e); }

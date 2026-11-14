@@ -20,7 +20,7 @@ network failures and rate limits are shown as errors, not clean results.
 ## Demo flow
 
 1. **Inspect a transaction:** paste a NEAR mainnet hash or select an exploit/normal preset.
-2. **Read the evidence:** assessment, rule hits, receipt coverage and transaction identities.
+2. **Read the evidence:** assessment, attack categories, deposit accounting, receipt coverage and earlier activity.
 3. **Scan a protocol:** enter `intents.near` or the exploiter account, then open a transaction from the results.
 4. **Show the limitation:** the missed token-spoof preset demonstrates that a low score does not establish safety.
 
@@ -45,7 +45,7 @@ curl -s localhost:8000/v1/protocols/scan -H 'content-type: application/json' \
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /v1/transactions/score` | Inspect one transaction; input `tx_hash`, optional `sender_id` |
+| `POST /v1/transactions/score` | Inspect one transaction; input `tx_hash`, optional `sender_id`, `include_history` |
 | `POST /v1/protocols/scan` | Inspect recent Intents activity; input `account_id` |
 | `POST /v1/analyze` | Supporting Rust source analysis; input `source_files` mapping |
 | `GET /v1/health` | Model and service configuration |
@@ -61,11 +61,20 @@ Interactive schemas: **<http://localhost:8000/docs>**.
 | `rule_hits` | Observed rules, severity and reasons |
 | `touches_intents` | Whether the transaction is within the detector's intended protocol scope |
 | `evidence_coverage`, `receipts_complete` | Observed/missing receipts and pending outcomes; whether the graph is complete |
+| `accounting` | Exact token-unit deposit/refund/credit checks; successful events, not independently verified balances |
+| `history` | Strictly earlier related activity; unavailable or bounded coverage stays explicit |
+| `attack_categories` | Categories of observed patterns, not verified root causes |
+| `baseline`, `detector` | Original model result and separate identities for the added evidence checks |
 | `risk` | Rule weight or anomaly percentile; **not an attack probability** |
 
 Any well-formed mainnet hash can be submitted. Detection is calibrated on **NEAR Intents**; unsupported or incomplete
 results are identified explicitly. A scan considers 40 recent account-index rows, scores up to 20 Intents transactions,
 and caches successful results for five minutes. It is not continuous monitoring or a complete protocol audit.
+
+`include_history` defaults to `false` in the API; the demo enables it. It adds at most four reads for two participant
+accounts, up to 20 earlier index rows each. Each read has a six-second network deadline. If history fails, the
+transaction result remains visible with history marked unavailable. Scans reuse their existing transaction window.
+History links require matching authenticated participants and earlier completed receipts; shared relayers are excluded.
 
 ## Optional response layer
 
@@ -102,7 +111,31 @@ Training data: fetch and unpack `archives/near_datasets.zip`. Reproduction detai
 [Intents evaluation](intents/reports/RESULTS.md) · [code-model evaluation](model/reports/RESULTS.md).
 Do not refreeze over the shipped artifacts unless you intend to replace them.
 
-The November 14 experiments retained the served models. To reproduce in fresh output directories:
+The transaction research archive contains the trained candidate, hash-pinned feature matrix, generated data,
+fresh unlabelled sample and per-row evaluation records. **The candidate failed promotion checks and is not served.**
+
+```bash
+git lfs pull --include "archives/near_transaction_research.zip"
+unzip -o archives/near_transaction_research.zip
+
+# Refit from the recorded feature matrix into a new directory
+uv run python -m near.intents.train_transactions run \
+  --feature-cache near/models/transactions_v2_features.pkl --output-dir /tmp/near-transaction-experiment
+
+# Inspect the research candidate separately from the API
+uv run python -m near.intents.train_transactions score \
+  --transaction near/intents/fixtures/features/exploit_3k91uD.json.gz
+```
+
+Matrix reproduction avoids downloading the original normals; raw feature extraction still needs them.
+The [sandbox setup](intents/synthetic/README.md) supplies the binary/WASMs for generating new controlled cases:
+
+```bash
+uv run python -m near.intents.synthetic.families_v2 --out /tmp/near-family-data --report /tmp/near-family-data.json
+uv run python -m near.intents.synthetic.families_v2 --out /tmp/near-family-data --report /tmp/near-family-data.json --supplement
+```
+
+Earlier parameter-only experiments also retained the served models. To reproduce those separately:
 
 ```bash
 uv run python -m near.model.train_candidate --output-dir /tmp/near-code-experiment

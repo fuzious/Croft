@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-11-14T17:36:32Z",
+  "network": "mainnet",
+  "collector_sha256": "06454c6f65760816cf1b4ed24fe4bf6b27643f6ab0ab78322f4432e686d51374",
+  "source": "https://tx.main.fastnear.com/v0",
+  "dedupe_sources": {
+    "near/data/intents/all_labelled_txs.jsonl": "85d26167a753c5281a2f86c2876e08f0ea3bba00f0593edc3fca2aba22701b9e",
+    "near/data/intents/normals.jsonl.gz": "7a7ecb374fb03fffa1bbf5f71a26fa611336d938899e59e149178cc286b33aea"
+  },
+  "cases": [
+    {
+      "tx_hash": "GcXEKmcJrfGVkPxZR89nNrmXqbR5VjTii45X7wzCfnFT",
+      "campaign": "rhea_margin_circular_swap_2026_04",
+      "role": "exploit",
+      "label": 1,
+      "protocol": "contract.main.burrow.near",
+      "intents_supported": false,
+      "source_url": "https://blocksec.com/blog/weekly-web3-security-incident-roundup-apr-13-apr-19-2026",
+      "attribution": "BlockSec original incident analysis explicitly identifies this transaction as its Rhea attack example.",
+      "status": "fetched",
+      "file": "GcXEKmcJrfGVkPxZR89nNrmXqbR5VjTii45X7wzCfnFT.json.gz",
+      "sha256": "1b5d74521f75ebdf553e9eab55a93654c110436b3aa2b10192789a1a45075b4b",
+      "signer": "d39fd6da5eda882fe5f6716212552356cde2613054c670ffd6b49b3b25aef473",
+      "receiver": "d39fd6da5eda882fe5f6716212552356cde2613054c670ffd6b49b3b25aef473",
+      "block_height": 194229821,
+      "block_timestamp": 1776329734905867430,
+      "receipts": 21,
+      "receipt_coverage": {
+        "receipts_complete": true,
+        "observed_receipts": 21,
+        "missing_receipts": 0,
+        "pending_outcomes": 0
+      },
+      "chain_time_utc": "2026-04-16T08:55:34.905868+00:00"
+    },
+    {
+      "tx_hash": "44tWhQmmkTJgchgFVkYpPrgyKvaH7wRLu1jZWXD3Du1x",
+      "campaign": "rhea_margin_circular_swap_2026_04",
+      "role": "exploit",
+      "label": 1,
+      "protocol": "contract.main.burrow.near",
+      "intents_supported": false,
+      "source_url": "https://www.quillaudits.com/blog/hack-analysis/rhea-finance-hack",
+      "attribution": "QuillAudits original incident analysis explicitly lists this hash as an example attack transaction.",
+      "status": "fetched",
+      "file": "44tWhQmmkTJgchgFVkYpPrgyKvaH7wRLu1jZWXD3Du1x.json.gz",
+      "sha256": "fb8c2369a148d55a88954aa920042e97d0d5692462e2d7ba1951f867cf9e220b",
+      "signer": "5a7695e3626aeae7c0d340b6e58f813c71455d1be490eeb44e90bd9682343040",
+      "receiver": "5a7695e3626aeae7c0d340b6e58f813c71455d1be490eeb44e90bd9682343040",
+      "block_height": 194235055,
+      "block_timestamp": 1776332832618678559,
+      "receipts": 21,
+      "receipt_coverage": {
+        "receipts_complete": true,
+        "observed_receipts": 21,
+        "missing_receipts": 0,
+        "pending_outcomes": 0
+      },
+      "chain_time_utc": "2026-04-16T09:47:12.618679+00:00"
+    },
+    {
+      "tx_hash": "92Gq7zehKPwSSnpoZ7LGGtSmgmBb4wP2XNDVJqUZRGqz",
+      "campaign": "skyward_duplicate_redemption_2022_11",
+      "role": "exploit",
+      "label": 1,
+      "protocol": "skyward.near",
+      "intents_supported": false,
+      "source_url": "https://twitter.com/BlockSecTeam/status/1587998109648683010",
+      "source_mirror": "https://threadreaderapp.com/thread/1587998109648683010.html",
+      "attribution": "BlockSec original analyst thread links this transaction as the Skyward exploit; mirror preserves the link.",
+      "status": "fetched",
+      "file": "92Gq7zehKPwSSnpoZ7LGGtSmgmBb4wP2XNDVJqUZRGqz.json.gz",
+      "sha256": "a854a7bbbe311cd1ca35cc960fe2164d4278359fe6a356dcd9a3a1cbbe4445ad",
+      "signer": "5ebc5ecca14a44175464d0e6a7d3b2a6890229cd5f19cfb29ce8b1651fd58d39",
+      "receiver": "skyward.near",
+      "block_height": 77507447,
+      "block_timestamp": 1667322289916064022,
+      "receipts": 2,
+      "receipt_coverage": {
+        "receipts_complete": true,
+        "observed_receipts": 2,
+        "missing_receipts": 0,
+        "pending_outcomes": 0
+      },
+      "chain_time_utc": "2022-11-01T17:04:49.916064+00:00"
+    }
+  ],
+  "limits": [
+    "New sourced cases are outside the current Intents detector scope.",
+    "Two Rhea transactions belong to one attack family, not independent techniques.",
+    "Fresh traffic is unlabelled, correlated recent activity; alert rate is not false-positive rate.",
+    "Raw receipt responses are provider evidence, not independent balance-state proofs."
+  ],
+  "unknown_sample": {
+    "path": "near/data/intents/v2_fresh_unknown.jsonl.gz",
+    "n": 500,
+    "sha256": "6f1170060b24e418276435f053234a960b5d1650c25d99a2fe90c90fc224b7aa",
+    "label": null,
+    "ground_truth": "unknown",
+    "exclusions": {
+      "missing_transactions": 0
+    },
+    "pages": [
+      {
+        "index_rows": 200,
+        "unique_hashes": 200,
+        "resume_token_sha256": "dc937b59892604f5a86ac96936cd7ff09e25f18ae6b758e8014a24c7fa039e91"
+      },
+      {
+        "index_rows": 200,
+        "unique_hashes": 200,
+        "resume_token_sha256": "b32ccfc945efbc36d64f447e9af758e319a41cad606997feff3853f739122248"
+      },
+      {
+        "index_rows": 200,
+        "unique_hashes": 200,
+        "resume_token_sha256": "7e15c7618b3eb39a1a8b3a558aad03b1c0abcd04f7feb91cd5d33bebcb9a5986"
+      }
+    ]
+  },
+  "completed_at": "2026-11-14T17:37:12Z",
+  "requests": {
+    "requests": 34,
+    "ok": 34,
+    "http_429": 0,
+    "http_err": 0,
+    "net_err": 0,
+    "retries": 0
+  },
+  "postcollection_audit": {
+    "scoring_performed": false,
+    "unknown_unique_hashes": 500,
+    "unknown_time_min_ns": "1794677679306715694",
+    "unknown_time_max_ns": "1794677791331373432",
+    "unknown_complete_receipt_graphs": 498,
+    "note": "Coverage and source-role checks only; no detector outcomes used to select records.",
+    "distributed_collector_sha256": "1c1c260364c3882b55da14fa69104449e168e3463b2f253768be1681e82dc61e",
+    "source_change_after_collection": "Added --output-dir convenience and preflight overwrite guard only; collector_sha256 preserves exact executed version. No collection or scoring rerun."
+  },
+  "research_exclusions": [
+    {
+      "case": "SWEAT missing-private callback incident",
+      "tx_hash": "DvrSMfY85Anc6AuLUmoEDkDdab7qX5NUZLu76HN8NoPn",
+      "label": null,
+      "reason": "Exact-hash alert and later rescue attribution conflict; not fetched or used as a labelled example. Primary Fireblocks incident research gives no exact attack hash.",
+      "source_url": "https://www.fireblocks.com/blog/near-zero-day-sweat-hot-token-exploit"
+    },
+    {
+      "case": "Rainbow Bridge 2022 attempts",
+      "reason": "Exploit attempts occurred on Ethereum; outside this NEAR transaction collection."
+    },
+    {
+      "case": "Additional NEAR Intents attack families",
+      "reason": "No additional independently verified family with an attributable NEAR attack hash found during this bounded search. Existing October exploit hashes were not counted as new techniques."
+    }
+  ]
+}

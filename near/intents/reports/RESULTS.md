@@ -2,7 +2,37 @@
 
 [Overview](../../../README.md) · [Raw evaluation](evaluation.json) · [Paused-traffic diagnostic](paused_diagnostic.json)
 
-**Rules supplied every campaign detection. The anomaly model added none.**
+**In the served baseline evaluation, rules supplied every campaign detection. The anomaly model added none.**
+
+## Accounting, history and family training
+
+The served detector now adds exact deposit/refund event accounting, strictly earlier participant history, and
+[11 attack categories](../fixtures/attack_taxonomy.json). These checks added **no alerts on the 7,400 historical
+normal transactions**. The frozen ML model remains active.
+
+| New research experiment | Existing baseline / rules | Selected learned model |
+|---|---:|---:|
+| Real cases flagged, family-held-out development tests | 204/430 | **353/430** |
+| High alerts on historical normal transactions | 0/7,400 | **14/7,400** |
+| High alerts on held-out sandbox benign flows | 0/40 | **26/40** |
+
+**Candidate rejected.** Higher development recall came with high-severity false alarms. Generated benign flows
+were also perfectly distinguishable from sampled real traffic in a separate source-classification check.
+No thresholds were retuned after these results. This is development evidence, not a new sealed accuracy claim.
+
+Training used four fixed configurations with separate calibration/selection windows, category holdouts, and
+held-out sandbox methods, receiver modes and actors. Four attacker-adjacent normal rows were excluded. Seven of
+the original 437 attack-labelled transactions never reach Intents; they retain their labels outside the classifier's
+430-case scope. Historical measurements below retain their original denominators.
+
+| Added data | What it establishes |
+|---|---|
+| **273 sandbox executions**: 6 measured exploits, 132 attempts, 135 benign | Four observable families; 91 rows per split, with shared generator/WASM limitations |
+| **3 sourced exploit transactions**: Rhea and Skyward | Two additional families, currently outside Intents coverage |
+| **500 fresh transactions**, labels unknown | No alerts observed; a correlated 112-second sample, not a false-positive-rate estimate |
+
+[Training results](transactions_v2.json) · [Sandbox provenance](synthetic_families_v2.json) ·
+[Real case sources](../fixtures/cases_v2/manifest.json) · [Run or reproduce](../../README.md)
 
 ## Results
 
