@@ -3,357 +3,446 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Inspect a NEAR transaction receipt graph for known attack patterns. Calibrated coverage is limited to NEAR Intents; unsupported protocols and incomplete evidence are reported explicitly.">
-<title>NEAR protocol security agent</title>
+<meta name="description" content="Inspect a NEAR transaction's receipt graph for known attack patterns. Calibrated on NEAR Intents; unsupported protocols and incomplete evidence are reported as such.">
+<meta name="theme-color" content="#0F3B38">
+<title>NEAR Protocol Security Agent</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2300EC97'/%3E%3Cpath d='M16 6.5 8.5 9.5v6c0 4.6 3.1 8 7.5 9.5 4.4-1.5 7.5-4.9 7.5-9.5v-6L16 6.5Z' fill='none' stroke='%2304140D' stroke-width='2.2' stroke-linejoin='round'/%3E%3Ccircle cx='16' cy='15.5' r='2.6' fill='%2304140D'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Chivo+Mono:wght@400;500;600&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%2300EC97'/%3E%3Cpath d='M12 6 7 12l5 6 5-6z' fill='none' stroke='%230F3B38' stroke-width='1.8' stroke-linejoin='round'/%3E%3Ccircle cx='12' cy='6' r='2.3' fill='%230F3B38'/%3E%3Ccircle cx='7' cy='12' r='2.3' fill='%230F3B38'/%3E%3Ccircle cx='17' cy='12' r='2.3' fill='%230F3B38'/%3E%3Ccircle cx='12' cy='18' r='2.4' fill='%2300EC97' stroke='%230F3B38' stroke-width='1.8'/%3E%3C/svg%3E">
 <style>
-/* Preserve the compact transaction-inspection type scale and evidence severity colors. */
+/* Each check reads as an audit finding: petrol shell, ruled work panes, square-cornered severity tags.
+   Assessments always carry a word and a mark, never color alone. */
 :root{
-  color-scheme:dark;
-  --fs-xs:12px;--fs-mono:13px;--fs-sm:14px;--fs-md:16px;--fs-lg:20px;
-  --bg:#0A0C0D;--surface:#101314;--field:#0A0C0D;--raised:#161A1B;
-  --line:rgba(255,255,255,.075);--field-line:rgba(255,255,255,.18);
-  --text:#ECEFEE;--text-2:#8C9693;--icon:#B8C2BF;
-  --accent:#00EC97;--on-accent:#04140D;--focus:#00EC97;
-  --allow:#17C964;--warn:#F5A524;--block:#F31260;
-  --allow-bg:rgba(23,201,100,.12);--warn-bg:rgba(245,165,36,.12);--block-bg:rgba(243,18,96,.14);
-  --track:rgba(255,255,255,.08);--shadow:none;
-  --sans:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
-}
-@media (prefers-color-scheme:light){:root{
   color-scheme:light;
-  --bg:#F2F5F4;--surface:#fff;--field:#fff;--raised:#F2F5F4;
-  --line:rgba(8,24,18,.10);--field-line:rgba(8,24,18,.28);
-  --text:#0A1210;--text-2:#55605C;--icon:#34403C;--focus:#0A1210;
-  --accent:#00D688;
-  --allow:#0E7A3C;--warn:#8A5A00;--block:#C20E4D;
-  --allow-bg:rgba(14,122,60,.10);--warn-bg:rgba(138,90,0,.10);--block-bg:rgba(194,14,77,.10);
-  --track:rgba(8,24,18,.08);--shadow:0 1px 2px rgba(8,24,18,.04);
+  --font:"Archivo",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Chivo Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --t-label:11px;--t-xs:12px;--t-sm:13px;--t-md:14px;--t-lg:16px;--t-xl:20px;--t-h1:30px;
+  --pad:28px;
+  --shell:#0F3B38;--on-shell:#EFF6F4;--on-shell-2:#A7C2BC;
+  --ground:#EDF1F0;--pane:#FFFFFF;--sunk:#F4F7F6;--skel:#E4EAE8;
+  --ink:#0F1A19;--ink-2:#4A5957;--ink-3:#5E6B68;
+  --rule:#D6DEDC;--rule-2:#8A9895;
+  --btn:#0F3B38;--btn-hover:#1B524D;--on-btn:#EFF6F4;
+  --focus:#007E5B;--select:rgba(0,126,91,.16);
+  --high:#B3261E;--high-fill:#C4302B;--on-high:#FFFFFF;--high-tint:#FBEBE9;
+  --med:#9A5800;--med-fill:#E8890C;--on-med:#1F1300;--med-tint:#FCF2E1;
+  --shadow:0 1px 0 rgba(15,26,25,.04),0 12px 28px -20px rgba(15,26,25,.28);
+}
+@media (prefers-color-scheme:dark){:root{
+  color-scheme:dark;
+  --shell:#0C2E2B;--on-shell:#E6F0ED;--on-shell-2:#93B2AB;
+  --ground:#0A100F;--pane:#111918;--sunk:#0D1514;--skel:#1C2725;
+  --ink:#E3EBE9;--ink-2:#A0B0AD;--ink-3:#889995;
+  --rule:rgba(255,255,255,.09);--rule-2:rgba(255,255,255,.38);
+  --btn:#D3E4DF;--btn-hover:#E9F2EF;--on-btn:#0A100F;
+  --focus:#00EC97;--select:rgba(0,236,151,.22);
+  --high:#FF8A80;--high-fill:#F0625A;--on-high:#1C0504;--high-tint:rgba(240,98,90,.11);
+  --med:#F5B04A;--med-fill:#F5A524;--on-med:#1F1300;--med-tint:rgba(245,165,36,.11);
+  --shadow:0 1px 0 rgba(0,0,0,.35);
 }}
-*{box-sizing:border-box}
+
+*,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
-html{scroll-behavior:smooth;scroll-padding-top:72px}
-body{margin:0;background:var(--bg);color:var(--text);font:var(--fs-sm)/1.6 var(--sans);-webkit-font-smoothing:antialiased}
-h1,h2,h3{text-wrap:balance;margin:0;font-weight:600}
-p{text-wrap:pretty;margin:0}
-a{color:inherit;text-decoration:underline;text-underline-offset:4px}
-a:hover{opacity:.9}
-code,pre,.num{font-family:var(--mono);font-size:var(--fs-mono);font-variant-numeric:tabular-nums}
+html{scroll-behavior:smooth;scroll-padding-top:76px;-webkit-text-size-adjust:100%;scrollbar-color:var(--rule-2) var(--ground)}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 var(--t-md)/1.55 var(--font);-webkit-font-smoothing:antialiased}
+::selection{background:var(--select)}
+h1,h2,h3{margin:0;font-weight:650;font-stretch:90%;letter-spacing:-.01em;text-wrap:balance}
+p{margin:0;text-wrap:pretty}
+a{color:inherit;text-decoration:underline;text-decoration-thickness:1px;text-decoration-color:var(--rule-2);text-underline-offset:3px;transition:text-decoration-color .15s}
+a:hover{text-decoration-color:currentColor}
+code,.num{font-family:var(--mono);font-size:.92em;font-variant-numeric:tabular-nums}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-main{max-width:1280px;margin:auto;padding:0 24px 40px}
-.muted{color:var(--text-2)}
-.small{font-size:var(--fs-xs)}
+.ico{width:1em;height:1em;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.muted{color:var(--ink-2)}
+/* Report-table labels: condensed caps, only on table heads and field names. */
+.label,.meta dt,.amounts dt,.record thead th,.record td.n::before,.scan-head,.fn-head{font-size:var(--t-label);font-weight:600;font-stretch:78%;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-2);line-height:1.4}
 
-.top{position:sticky;top:0;z-index:20;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 85%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
-.top-in{max-width:1280px;margin:auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.brand{display:flex;align-items:center;gap:10px;min-width:0;font-weight:600;font-size:var(--fs-sm);letter-spacing:-.01em;white-space:nowrap;text-decoration:none}
-.brand svg{width:24px;height:24px;flex:none}
-.intro{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px 32px;padding:32px 0 24px}
-h1{font-size:var(--fs-lg);line-height:1.3;letter-spacing:-.015em}
-.lede{color:var(--text-2);margin-top:4px;max-width:680px}
-.coverage{display:inline-flex;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--text-2);white-space:nowrap}
-.coverage b{font-weight:500;color:var(--text)}
-.chips{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;font-size:var(--fs-xs);color:var(--text-2)}
-.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);white-space:nowrap}
-.chip .num{font-size:var(--fs-xs);color:var(--text)}
-.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--text-2)}
-.chip.ok .dot{background:var(--allow)}
-.chip.down .dot{background:var(--warn)}
-.chip a{text-decoration:none;color:var(--text)}
+/* Shell */
+.bar{position:sticky;top:0;z-index:10;background:var(--shell);color:var(--on-shell)}
+.bar-in{max-width:1320px;height:56px;margin:auto;padding:0 32px;display:flex;align-items:center;gap:36px}
+.bar :focus-visible{outline-color:#00EC97}
+.mark{display:flex;align-items:center;gap:10px;min-width:0;font-size:15px;font-weight:650;font-stretch:90%;letter-spacing:-.005em;text-decoration:none;white-space:nowrap}
+.mark svg{width:24px;height:24px;flex:none}
+.mark span{overflow:hidden;text-overflow:ellipsis}
+.nav{display:flex;gap:2px;margin-right:auto}
+.nav a{padding:6px 10px;border-radius:4px;font-size:var(--t-sm);font-weight:500;color:var(--on-shell-2);text-decoration:none;transition:color .15s,background-color .15s}
+.nav a:hover{color:var(--on-shell);background:rgba(255,255,255,.07)}
+.status{display:flex;align-items:center;gap:18px;font-size:var(--t-sm);color:var(--on-shell-2);white-space:nowrap}
+.status a{color:var(--on-shell);text-decoration-color:rgba(255,255,255,.35)}
+.status a:hover{text-decoration-color:currentColor}
+.status code{color:var(--on-shell)}
+.net{display:inline-flex;align-items:center;gap:7px}
+.net i{width:8px;height:8px;border-radius:50%;border:1.5px solid currentColor}
+.net.ok{color:var(--on-shell)}
+.net.ok i,.net.down i{background:currentColor}
+.net.down{color:#F8C77A}
 
-/* Primary check on the left grows with its result; scan and track record stack beside it. */
-.workspace{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px;align-items:start;margin-bottom:20px}
-.side{display:grid;gap:20px;min-width:0}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:20px 24px 24px;min-width:0}
-.card-head{margin:-20px -24px 20px;padding:16px 24px;border-bottom:1px solid var(--line)}
-h2{font-size:var(--fs-md);line-height:1.4;letter-spacing:-.01em}
-h3{font-size:var(--fs-sm);line-height:1.4}
-.sub{color:var(--text-2);margin-top:2px}
+/* Sections: what to do on the left, the work it produces on the right. */
+main{max-width:1320px;margin:auto;padding:0 32px 48px}
+.section{display:grid;grid-template-columns:380px minmax(0,1fr);gap:48px;align-items:start;padding:48px 0;border-top:1px solid var(--rule)}
+main>.section:first-child{border-top:0;padding-top:44px}
+.lead{min-width:0}
+.lead h1{font-size:var(--t-h1);line-height:1.1;font-weight:700;font-stretch:86%;letter-spacing:-.022em}
+.lead h2{font-size:var(--t-xl);line-height:1.25}
+.desc{margin-top:10px;color:var(--ink-2)}
+.lead form{margin-top:26px}
+@media (min-width:1101px) and (min-height:760px){.lead{position:sticky;top:88px}}
+.pane{min-width:0;background:var(--pane);border:1px solid var(--rule);border-radius:6px;box-shadow:var(--shadow);overflow:hidden}
 
-.row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
-label{display:flex;flex-direction:column;gap:6px;font-size:var(--fs-xs);font-weight:500;color:var(--text-2);flex:1;min-width:150px}
-input,select,textarea{width:100%;min-width:0;background:var(--field);border:1px solid var(--field-line);border-radius:6px;padding:0 12px;color:var(--text);font-size:var(--fs-sm);transition:border-color .15s}
-input,select{height:40px}
-.mono-input{font:var(--fs-mono) var(--mono)}
-input::placeholder{color:var(--text-2);opacity:.8}
-input:hover,select:hover,textarea:hover{border-color:var(--text-2)}
-input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;border-color:var(--focus);box-shadow:0 0 0 1px var(--focus)}
-input[aria-invalid="true"]{border-color:var(--warn)}
-textarea{min-height:260px;padding:12px;font:var(--fs-mono)/1.6 var(--mono);resize:vertical;white-space:pre;overflow-x:auto}
-.field-err{font-size:var(--fs-xs);color:var(--warn);margin-top:8px}
+/* Controls */
+.field-label{display:block;margin-bottom:6px;font-size:var(--t-sm);font-weight:600}
+.input-row{display:flex;gap:8px}
+input:not([type=checkbox]),select,textarea{width:100%;min-width:0;border:1px solid var(--rule-2);border-radius:4px;background:var(--pane);color:var(--ink);transition:border-color .15s,box-shadow .15s}
+input:not([type=checkbox]),select{height:42px;padding:0 12px}
+.mono-input{font-family:var(--mono);font-size:var(--t-sm)}
+input::placeholder,textarea::placeholder{color:var(--ink-3);opacity:1}
+input:not([type=checkbox]):hover,select:hover,textarea:hover{border-color:var(--ink-2)}
+input:not([type=checkbox]):focus-visible,select:focus-visible,textarea:focus-visible{outline:none;border-color:var(--focus);box-shadow:0 0 0 1px var(--focus)}
+input[aria-invalid="true"]{border-color:var(--high)}
+input,textarea{caret-color:var(--focus)}
+textarea{display:block;min-height:300px;padding:12px;font:var(--t-xs)/1.65 var(--mono);white-space:pre;overflow:auto;resize:vertical}
+.field-err{margin-top:8px;font-size:var(--t-sm);color:var(--high)}
 .field-err:empty{display:none}
-.history-option{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:36px;min-width:0;margin-top:8px;cursor:pointer}
-.history-option input{width:16px;height:16px;flex:none;margin:0;accent-color:var(--accent)}
+.check{display:flex;align-items:center;gap:9px;min-height:36px;margin-top:10px;font-size:var(--t-sm);cursor:pointer}
+.check input{width:16px;height:16px;margin:0;accent-color:var(--btn)}
+.btn{flex:none;display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 20px;border:0;border-radius:4px;background:var(--btn);color:var(--on-btn);font-weight:600;font-stretch:94%;cursor:pointer;transition:background-color .15s,transform .1s}
+.btn:hover{background:var(--btn-hover)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.55;cursor:progress;transform:none}
 
-.btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 18px;border:1px solid transparent;border-radius:8px;background:var(--accent);color:var(--on-accent);font-size:var(--fs-sm);font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;transition:filter .15s,background-color .15s,border-color .15s}
-.btn:hover{filter:brightness(1.08);opacity:1}
-.btn:disabled{opacity:.5;cursor:progress}
-.presets{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
-.presets>span{font-size:var(--fs-xs);color:var(--text-2)}
-.pill-btn{min-height:32px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:transparent;font-size:var(--fs-xs);color:var(--text);cursor:pointer;transition:background-color .15s,border-color .15s}
-.pill-btn:hover{background:var(--raised);border-color:var(--field-line)}
+.samples{margin-top:30px}
+.samples .label{margin:0 0 8px;font-size:var(--t-label);line-height:1.4;letter-spacing:.07em}
+.sample-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+.sample{display:flex;align-items:baseline;justify-content:space-between;gap:12px;width:100%;min-height:42px;margin:0;padding:10px 8px;border:0;border-bottom:1px solid var(--rule);background:transparent;text-align:left;font-size:var(--t-sm);font-weight:500;color:var(--ink);cursor:pointer;transition:background-color .15s}
+.sample code{flex:none;font-size:var(--t-xs);font-weight:400;color:var(--ink-3)}
+.sample:hover{background:var(--pane)}
+.sample[aria-current="true"]{background:var(--pane);font-weight:650}
+.sample[aria-current="true"] code{color:var(--ink)}
 
-.out{margin-top:20px;overflow-wrap:anywhere}
-.empty{border:1px dashed var(--line);border-radius:12px;padding:16px;color:var(--text-2)}
-.loading{display:flex;align-items:center;gap:10px;color:var(--text-2)}
-.spin{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--text);border-radius:50%;animation:spin .8s linear infinite;flex:none}
-@keyframes spin{to{transform:rotate(360deg)}}
-.err{display:flex;gap:8px;align-items:flex-start;background:var(--raised);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
-.err svg{flex:none;margin-top:4px;color:var(--warn)}
+/* Severity tags: solid for high and medium, outlined for the rest, hatched when evidence is incomplete. */
+.tag{display:inline-flex;align-items:center;justify-content:center;height:22px;padding:0 7px;border:1px solid transparent;border-radius:3px;font-size:var(--t-label);font-weight:650;font-stretch:80%;line-height:1;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;width:max-content}
+.tag.high{background:var(--high-fill);color:var(--on-high)}
+.tag.medium{background:var(--med-fill);color:var(--on-med)}
+.tag.low{border-color:var(--rule-2);color:var(--ink-2)}
+.tag.inconclusive{border-color:var(--med);color:var(--med);background:repeating-linear-gradient(-45deg,var(--med-tint) 0 3px,transparent 3px 6px)}
+.tag.unsupported{border-style:dashed;border-color:var(--rule-2);color:var(--ink-2)}
 
-/* Verdict: icon + word + color, so the three outcomes never rely on color alone. */
-.verdict{display:flex;gap:14px;align-items:flex-start;padding:16px;border:1px solid var(--line);border-left-width:4px;border-radius:12px;background:var(--raised)}
-.verdict svg{width:28px;height:28px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:var(--icon)}
-.verdict-word{font-size:var(--fs-lg);line-height:1.3;font-weight:600}
-.verdict p+p{color:var(--text-2);margin-top:2px}
-.verdict.high{border-color:var(--block);background:var(--block-bg)}
-.verdict.high svg,.verdict.high .verdict-word{color:var(--block)}
-.verdict.inconclusive,.verdict.unsupported{border-left-color:var(--warn)}
-.verdict.medium{border-color:var(--warn);background:var(--warn-bg)}
-.verdict.medium svg,.verdict.medium .verdict-word{color:var(--warn)}
-.verdict.low{border-left-color:var(--field-line)}
+/* Pane states */
+.empty{padding:28px var(--pad);color:var(--ink-2)}
+.scale-title{padding:24px var(--pad) 0;font-size:var(--t-lg)}
+.scale-list{margin:14px 0 0}
+.scale-list>div{display:grid;grid-template-columns:184px minmax(0,1fr);gap:16px;align-items:baseline;padding:13px var(--pad);border-top:1px solid var(--rule)}
+.scale-list dt,.scale-list dd{margin:0}
+.scale-list dd{color:var(--ink-2)}
+.scale-note{padding:16px var(--pad) 20px;border-top:1px solid var(--rule);background:var(--sunk);font-size:var(--t-sm);color:var(--ink-2)}
+.loading-text{font-size:var(--t-sm);color:var(--ink-2)}
+.skel{display:grid;gap:10px;margin-top:20px}
+.skel i{display:block;height:12px;border-radius:2px;background:var(--skel);animation:pulse 1.6s ease-in-out infinite}
+.skel i:nth-child(1){width:52%;height:24px}
+.skel i:nth-child(2){width:86%}
+.skel i:nth-child(3){width:64%;margin-bottom:8px}
+.skel i:nth-child(n+4){height:40px}
+@keyframes pulse{50%{opacity:.45}}
+.err{display:flex;gap:10px;align-items:flex-start;margin:0;color:var(--ink)}
+.err .ico{width:18px;height:18px;margin-top:2px;color:var(--high)}
+#scoreOut>.loading,#scanOut>.loading,#scoreOut>.err,#scanOut>.err{padding:24px var(--pad)}
+#analyzeOut>.loading,#analyzeOut>.err{margin-top:18px}
+.notice{display:flex;gap:10px;align-items:flex-start;margin:10px 0 0;font-size:var(--t-sm);color:var(--ink-2)}
+.notice .ico{width:16px;height:16px;margin-top:2px;color:var(--med)}
+.notice strong{color:var(--ink);font-weight:600}
+#scanOut>.notice{margin:0;padding:24px var(--pad)}
 
-.facts{margin:16px 0 0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:0 16px}
-.facts dt,.facts dd{margin:0;padding:8px 0;border-top:1px solid var(--line)}
-.facts dt{color:var(--text-2)}
-.facts dd{font:var(--fs-mono)/1.6 var(--mono)}
-.facts dd small{font:var(--fs-xs)/1.6 var(--sans);color:var(--text-2)}
-.notes{margin-top:12px;display:grid;gap:8px}
-.notice{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--raised);font-size:var(--fs-xs);color:var(--text-2)}
-.notice svg{flex:none;width:14px;height:14px;margin-top:2px;fill:none;stroke:var(--warn);stroke-width:2.2;stroke-linecap:round}
-.notice strong{color:var(--text);font-weight:500}
+/* The finding */
+.finding{--tone:var(--ink);--tone-bg:var(--sunk)}
+.finding.tone-high{--tone:var(--high);--tone-bg:var(--high-tint)}
+.finding.tone-medium,.finding.tone-inconclusive{--tone:var(--med);--tone-bg:var(--med-tint)}
+.finding.tone-unsupported{--tone:var(--ink-2)}
+.finding-head{padding:26px var(--pad) 22px;background:var(--tone-bg)}
+.finding-title{display:flex;align-items:center;gap:10px;font-size:23px;line-height:1.2;font-weight:700;font-stretch:86%;letter-spacing:-.015em;color:var(--tone)}
+.finding-title .ico{width:26px;height:26px}
+.finding-reason{margin-top:8px;max-width:72ch}
+.meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;margin:0;background:var(--rule);border-top:1px solid var(--rule)}
+.meta>div{min-width:0;padding:12px var(--pad) 14px;background:var(--pane)}
+.meta .wide{grid-column:1/-1}
+.meta dd{margin:4px 0 0;font-size:var(--t-sm);overflow-wrap:anywhere}
+.meta dd small{display:block;font:var(--t-xs)/1.5 var(--mono);color:var(--ink-2)}
+.meta dd .fine{margin-top:6px}
+.meta a{display:inline-flex;align-items:center;gap:4px}
+.meta a .ico,.hist a .ico{width:14px;height:14px;color:var(--ink-3)}
+.categories{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:2px 0 0;padding:0}
+.categories li{padding:2px 8px;border:1px solid var(--rule-2);border-radius:3px;font-size:var(--t-xs);font-weight:550}
+.part{padding:22px var(--pad);border-top:1px solid var(--rule);container-type:inline-size}
+.part-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.part h3{font-size:var(--t-lg);line-height:1.3}
+.part-count,.part-sub{font-size:var(--t-sm);color:var(--ink-2)}
+.part-sub{margin-top:4px}
+.fine{margin-top:12px;font-size:var(--t-xs);color:var(--ink-2)}
+.limits{background:var(--sunk)}
+.rules{list-style:none;margin:10px 0 0;padding:0}
+.rules li{display:grid;grid-template-columns:76px minmax(0,1fr);gap:4px 16px;padding:13px 0;border-top:1px solid var(--rule)}
+.rules li:first-child{border-top:0}
+.rule-title{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+.rule-title strong{font-weight:620}
+.rule-title code{font-size:var(--t-xs);color:var(--ink-3)}
+.rule-text{margin-top:2px;color:var(--ink-2)}
+.rule-obs{margin-top:8px;padding-left:10px;border-left:1px solid var(--rule-2);font:var(--t-xs)/1.55 var(--mono);color:var(--ink-2);overflow-wrap:anywhere}
+.flow{margin-top:16px}
+.flow-token{display:grid;gap:2px;font-size:var(--t-xs);color:var(--ink-2)}
+.flow-token code{color:var(--ink);overflow-wrap:anywhere}
+.amounts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 16px;margin:10px 0 0;padding-top:8px;border-top:1px solid var(--rule)}
+.amounts>div{min-width:0;padding:4px 0}
+.amounts .long{grid-column:1/-1}
+.amounts dd{margin:3px 0 0;font:500 var(--t-sm)/1.45 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;overflow-x:auto}
+.amounts .excess{color:var(--high)}
+@container (max-width:460px){.amounts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.flow-reason{margin-top:6px;font-size:var(--t-xs);color:var(--ink-2)}
+.hist{list-style:none;margin:10px 0 0;padding:0}
+.hist li{padding:10px 0;border-top:1px solid var(--rule)}
+.hist-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;font-size:var(--t-xs);color:var(--ink-2)}
+.hist a{display:inline-flex;align-items:center;gap:4px;color:var(--ink)}
+.hist p{margin-top:2px;font-size:var(--t-xs);color:var(--ink-2)}
+.hist-findings{list-style:none;margin:6px 0 0;padding:0}
+.more{margin-top:6px}
+.more>summary{display:inline-flex;align-items:center;gap:8px;min-height:36px;font-size:var(--t-sm);font-weight:550;color:var(--ink-2);cursor:pointer;list-style:none}
+.more>summary::-webkit-details-marker{display:none}
+.more>summary::before{content:"";width:6px;height:6px;margin:0 3px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:rotate(-45deg);transition:transform .2s}
+.more[open]>summary::before{transform:rotate(45deg)}
+.more>summary:hover{color:var(--ink)}
+.score{margin:0;padding:10px var(--pad) 16px;border-top:1px solid var(--rule)}
+.score p{margin-top:6px;font-size:var(--t-sm);color:var(--ink-2)}
+/* The one authored moment: a finding issues in place. */
+@keyframes issue{from{opacity:0;transform:translateY(6px)}}
+.finding>*{animation:issue .38s cubic-bezier(.16,1,.3,1) backwards}
+.finding>:nth-child(2){animation-delay:.06s}
+.finding>:nth-child(3){animation-delay:.12s}
+.finding>:nth-child(n+4){animation-delay:.18s}
 
-.rules{list-style:none;margin:8px 0 0;padding:0}
-.rules li{display:grid;grid-template-columns:72px minmax(0,1fr);gap:4px 12px;padding:12px 0;border-top:1px solid var(--line)}
-.rules p{color:var(--text-2)}
-.rules .detail{font:var(--fs-xs)/1.6 var(--mono);color:var(--text-2);margin-top:4px}
-.rule-title{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
-.rule-title code{font-size:var(--fs-xs);color:var(--text-2)}
-.sev{display:inline-flex;align-items:center;justify-content:center;height:22px;padding:0 8px;border-radius:999px;font-size:var(--fs-xs);font-weight:600;border:1px solid var(--line);width:max-content}
-.sev.high{color:var(--block);background:var(--block-bg);border-color:transparent}
-.sev.medium{color:var(--warn);background:var(--warn-bg);border-color:transparent}
-.sev.low{color:var(--text-2)}
-.section-label{margin-top:20px;color:var(--text)}
-.links{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:16px;font-size:var(--fs-xs)}
-details>summary{cursor:pointer;color:var(--text-2);width:max-content;max-width:100%}
-details>summary:hover{color:var(--text)}
-.out details{margin-top:16px}
-.evidence-panel{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
-.evidence-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
-.evidence-heading h3{font-weight:600}
-.accounting-flow{margin-top:12px;container-type:inline-size}
-.accounting-token{font-size:var(--fs-xs);color:var(--text-2);padding-bottom:6px}
-.accounting-token code{font-size:var(--fs-xs);color:var(--text);overflow-wrap:anywhere}
-.accounting-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px;margin:0}
-.accounting-values>div{padding:8px 0;border-top:1px solid var(--line);min-width:0}
-.accounting-values .long-amount{grid-column:1/-1}
-.accounting-values dt{font-size:var(--fs-xs);color:var(--text-2)}
-.accounting-values dd{font:var(--fs-xs)/1.6 var(--mono);white-space:nowrap;overflow-x:auto;margin:4px 0 0}
-.accounting-values .excess{color:var(--warn);font-weight:500}
-@container (max-width:310px){.accounting-values{grid-template-columns:minmax(0,1fr)}}
-.evidence-reason{font-size:var(--fs-xs);color:var(--text-2);margin-top:4px}
-.history-list{list-style:none;margin:12px 0 0;padding:0 0 0 10px;border-left:1px solid var(--field-line)}
-.history-list li{position:relative;margin-left:8px;padding:0 0 12px 4px}
-.history-list li:before{content:"";position:absolute;left:-22px;top:7px;width:7px;height:7px;border:1px solid var(--text-2);border-radius:50%;background:var(--surface)}
-.history-list .history-meta{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:var(--fs-xs);color:var(--text-2)}
-.history-list a{font:var(--fs-xs)/1.6 var(--mono);color:var(--text)}
-.history-list p{font-size:var(--fs-xs);color:var(--text-2);margin-top:3px}
-.history-findings{padding:0;list-style:none;display:grid;gap:8px;margin-top:12px}
-.evidence-categories{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:12px 0 4px}
-.evidence-categories .chip{white-space:normal;height:auto;min-height:28px}
-
-.counts{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px}
-.count{background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:12px}
-.count b{display:block;font:500 var(--fs-lg)/1.3 var(--mono);font-variant-numeric:tabular-nums}
-.count span{font-size:var(--fs-xs);color:var(--text-2)}
-.count.high.hit b{color:var(--block)}
-.count.medium.hit b{color:var(--warn)}
-.scan-meta{font-size:var(--fs-xs);color:var(--text-2);margin:12px 0 4px}
+/* Account scan */
+.tally{display:flex;flex-wrap:wrap;gap:6px 22px;padding:22px var(--pad) 0;font-size:var(--t-sm);color:var(--ink-2)}
+.tally b{margin-right:6px;font:600 var(--t-lg)/1 var(--mono);color:var(--ink)}
+.tally .hit.high b{color:var(--high)}
+.tally .hit.medium b{color:var(--med)}
+.scan-meta{padding:10px var(--pad) 18px;font-size:var(--t-xs);color:var(--ink-2)}
+.scan-head,.scan-row{display:grid;grid-template-columns:176px 128px minmax(0,1fr) 16px;gap:14px;align-items:center;padding:0 var(--pad)}
+.scan-head{padding-top:8px;padding-bottom:8px;border-top:1px solid var(--rule);background:var(--sunk)}
 .scan-list{list-style:none;margin:0;padding:0}
-.scan-row{display:grid;grid-template-columns:150px 112px minmax(0,1fr);align-items:center;gap:4px 12px;width:100%;min-height:44px;padding:8px;margin:0;border:0;border-top:1px solid var(--line);background:transparent;text-align:left;cursor:pointer;border-radius:0;transition:background-color .15s}
-.scan-row:hover{background:var(--raised)}
-.scan-row code{font-size:var(--fs-xs)}
-.scan-row .why{font-size:var(--fs-xs);color:var(--text-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tag{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);font-weight:600;white-space:nowrap}
-.tag i{width:8px;height:8px;border-radius:50%;background:var(--text-2);flex:none}
-.tag.high{color:var(--block)}.tag.high i{background:var(--block)}
-.tag.medium{color:var(--warn)}.tag.medium i{background:var(--warn)}
-.tag.low{color:var(--text-2);font-weight:500}.tag.low i{background:transparent;border:1.5px solid var(--text-2)}
+.scan-row{width:100%;min-height:46px;margin:0;border:0;border-top:1px solid var(--rule);background:transparent;text-align:left;font-size:var(--t-sm);color:var(--ink);cursor:pointer;transition:background-color .15s}
+.scan-row:hover{background:var(--sunk)}
+.scan-row code{font-size:var(--t-xs)}
+.scan-row .ico{width:16px;height:16px;color:var(--ink-3);transition:transform .15s,color .15s}
+.scan-row:hover .ico{color:var(--ink);transform:translateX(2px)}
+.why{min-width:0;font-size:var(--t-xs);color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.record{width:100%;border-collapse:collapse}
-.record th,.record td{padding:10px 12px 10px 0;border-top:1px solid var(--line);text-align:left;vertical-align:top}
-.record thead th{border-top:0;font-size:var(--fs-xs);font-weight:500;color:var(--text-2)}
-.record td.n,.record th.n{text-align:right;padding-right:0;padding-left:16px;white-space:nowrap}
-.record td.n{font-family:var(--mono);font-size:var(--fs-mono);font-variant-numeric:tabular-nums}
-.record td small{display:block;font-size:var(--fs-xs);color:var(--text-2)}
-.record tr.fa td{color:var(--text-2)}
-.record td.n:before{content:attr(data-k);display:none;font:var(--fs-xs)/1.6 var(--sans);color:var(--text-2)}
-.side .record thead{display:none}
-.side .record tr{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;border-top:1px solid var(--line);padding:12px 0}
-.side .record tr:first-child{border-top:0;padding-top:0}
-.side .record td{border-top:0;padding:0}
-.side .record td:first-child{grid-column:1/-1;margin-bottom:8px}
-.side .record td.n{text-align:left;padding-left:0}
-.side .record td.n:before{display:block}
-.caveat{margin-top:12px;font-size:var(--fs-xs);color:var(--text-2)}
-.caveat strong{color:var(--text);font-weight:500}
+/* Validation tables */
+.caveat{margin-top:16px;padding-top:14px;border-top:1px solid var(--rule);font-size:var(--t-sm);color:var(--ink-2)}
+.caveat strong{color:var(--ink);font-weight:600}
+.record{width:100%;border-collapse:collapse;font-size:var(--t-sm)}
+.record th,.record td{padding:15px 16px;border-top:1px solid var(--rule);text-align:left;vertical-align:top}
+.record th:first-child,.record td:first-child{padding-left:var(--pad)}
+.record th:last-child,.record td:last-child{padding-right:var(--pad)}
+.record thead th{padding-top:11px;padding-bottom:11px;border-top:0;background:var(--sunk)}
+.record tbody th{font-weight:600}
+.record tr.fa th{font-weight:500}
+.record small{display:block;margin-top:2px;font-size:var(--t-xs);font-weight:400;color:var(--ink-2)}
+.record .n{width:23%}
+.record td.n::before{content:attr(data-k);display:none}
+.ratio{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.ratio b{font-weight:600;color:var(--ink)}
+.bar-track{display:block;height:4px;margin-top:8px;background:var(--skel);overflow:hidden}
+.bar-track i{display:block;height:100%;width:calc(var(--p) * 100%);background:var(--high-fill)}
+.bar-track.med i{background:var(--med-fill)}
+.bar-track.cov i{background:var(--btn)}
+.record tr.fa .bar-track i{background:var(--ink-3)}
+.pane-more{margin:0;padding:6px var(--pad) 24px;border-top:1px solid var(--rule)}
+.pane-more .record{margin-top:10px}
+.pane-more .record th:first-child,.pane-more .record td:first-child{padding-left:0}
+.pane-more .record th:last-child,.pane-more .record td:last-child{padding-right:0}
+.pane-more .record thead th{background:none}
+.pane-more h3{margin-top:26px;font-size:var(--t-md)}
 
-pre{background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:16px;margin:12px 0 0;overflow:auto;font-size:var(--fs-xs);line-height:1.7;white-space:pre-wrap}
-.code-card{padding:0}
-.code-card>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;list-style:none;width:auto;color:var(--text);min-height:44px;padding:16px 24px}
-.code-card[open]>summary{border-bottom:1px solid var(--line)}
-.code-card>summary::-webkit-details-marker{display:none}
-.code-card>summary:after{content:"+";font:400 var(--fs-lg)/1 var(--mono);color:var(--text-2)}
-.code-card[open]>summary:after{content:"\2212"}
-.code-card>summary .sub{display:block;margin-top:6px}
-.code-body{padding:20px 24px 24px}
-.code-grid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:28px}
-.code-grid label{margin-bottom:12px}
-.stat{padding:12px 0;border-top:1px solid var(--line);font-size:var(--fs-xs);color:var(--text-2)}
-.stat:first-child{border-top:0;padding-top:0}
-.stat b{display:block;font:500 var(--fs-lg)/1.3 var(--mono);color:var(--text)}
-.caption{font-size:var(--fs-xs);color:var(--text-2);margin-top:12px}
-.result-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px}
-.meta{font-size:var(--fs-xs);color:var(--text-2)}
-.fn-list{margin-top:12px}
-.fn-row{display:grid;grid-template-columns:minmax(0,1.3fr) 72px minmax(0,1fr) minmax(0,1.6fr);gap:12px;padding:10px 0;border-top:1px solid var(--line)}
-.fn-head{color:var(--text-2);font-size:var(--fs-xs);font-weight:500}
+/* Contract source check */
+.source{padding:36px 0;border-top:1px solid var(--rule)}
+.source summary{display:flex;align-items:center;justify-content:space-between;gap:24px;cursor:pointer;list-style:none}
+.source summary::-webkit-details-marker{display:none}
+.source summary h2{font-size:var(--t-xl);line-height:1.25}
+.source summary .desc{display:block;max-width:72ch;margin-top:6px}
+.toggle{display:inline-flex;align-items:center;gap:6px;flex:none;font-size:var(--t-sm);font-weight:550;color:var(--ink-2)}
+.toggle .ico{width:16px;height:16px;transition:transform .2s}
+.source summary:hover .toggle{color:var(--ink)}
+.source details[open] .toggle .ico{transform:rotate(90deg)}
+.source details[open] .when-closed,.source details:not([open]) .when-open{display:none}
+.source .section{padding:32px 0 0;border-top:0}
+.source-pane{padding:24px var(--pad)}
+.source-pane .field+.field{margin-top:16px}
+.actions{margin-top:14px}
+.stats{border-top:1px solid var(--rule)}
+.stat{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px solid var(--rule);font-size:var(--t-sm);color:var(--ink-2)}
+.stat b{font:600 var(--t-lg)/1.35 var(--mono);color:var(--ink)}
+.result-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--rule);font-weight:600}
+.meta-line{font-size:var(--t-sm);font-weight:400;color:var(--ink-2)}
+.fn-list{margin-top:12px;font-size:var(--t-sm)}
+.fn-row{display:grid;grid-template-columns:minmax(0,1.3fr) 64px minmax(0,1fr) minmax(0,1.6fr);gap:12px;padding:10px 0;border-top:1px solid var(--rule)}
+.fn-row b{font-weight:600}
 .fn-row .k{display:none}
 
-.foot{display:flex;justify-content:space-between;gap:24px;margin-top:20px;padding-top:24px;border-top:1px solid var(--line);font-size:var(--fs-xs);color:var(--text-2)}
-.foot p{max-width:760px}
+.foot{display:flex;justify-content:space-between;align-items:flex-start;gap:32px;padding-top:28px;border-top:1px solid var(--rule);font-size:var(--t-sm);color:var(--ink-2)}
+.foot p{max-width:88ch}
+.foot strong{color:var(--ink);font-weight:600}
+.foot a{flex:none}
 
 @media (max-width:1100px){
-  .workspace,.code-grid{grid-template-columns:minmax(0,1fr)}
+  .section{grid-template-columns:minmax(0,1fr);gap:24px}
+  .desc{max-width:72ch}
 }
-@media (max-width:600px){
-  main{padding:0 16px 28px}
-  .top-in{padding:0 16px;gap:8px}
-  .brand span{overflow:hidden;text-overflow:ellipsis}
-  .chips>:not(#netChip){display:none}
-  .intro{padding:20px 0 16px}
-  input,select,.mono-input{font-size:var(--fs-md)}
-  textarea{font-size:var(--fs-sm)}
-  .card{padding:16px 16px 20px}
-  .card-head{margin:-16px -16px 16px;padding:14px 16px}
-  .code-card{padding:0}
-  .code-card>summary{padding:14px 16px}
-  .code-body{padding:16px}
-  .workspace,.side{gap:16px;margin-bottom:16px}
-  .row label{flex:1 1 100%}
-  .row .btn{flex:1 1 100%}
-  .verdict{padding:14px 12px;gap:12px}
-  .facts{grid-template-columns:1fr}
-  .facts dt{padding-bottom:0}
-  .facts dd{border-top:0;padding-top:2px}
-  .rules li{grid-template-columns:1fr}
+@media (max-width:760px){
+  :root{--pad:18px}
+  .bar-in{height:52px;padding:0 16px;gap:12px}
+  .nav,.status .model,.status .api{display:none}
+  .status{margin-left:auto}
+  main{padding:0 16px 32px}
+  .section{padding:32px 0}
+  main>.section:first-child{padding-top:24px}
+  .lead h1{font-size:25px}
+  input:not([type=checkbox]),select,.mono-input,textarea{font-size:16px}
+  .meta{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .scale-list>div{grid-template-columns:minmax(0,1fr);gap:6px}
+  .rules li{grid-template-columns:minmax(0,1fr);gap:6px}
+  .scan-head{display:none}
+  .scan-row{grid-template-columns:auto minmax(0,1fr) 16px;row-gap:4px;padding-top:11px;padding-bottom:11px}
+  .scan-row .tag{grid-column:1}
+  .scan-row code{grid-column:2}
+  .scan-row .ico{grid-column:3;grid-row:1}
+  .scan-row .why{grid-column:1/-1;grid-row:2;white-space:normal}
   .record thead{display:none}
-  .record tr{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);padding:10px 0}
-  .record td{border-top:0;padding:0}
-  .record td:first-child{grid-column:1/-1;margin-bottom:6px}
-  .record td.n{text-align:left}
-  .record td.n:before{display:block}
-  .scan-row{grid-template-columns:minmax(0,1fr) auto}
-  .scan-row .why{grid-column:1/-1}
-  .count{padding:10px 8px}
+  .record,.record tbody{display:block}
+  .record tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;padding:16px var(--pad);border-top:1px solid var(--rule)}
+  .pane-more .record tr{padding-left:0;padding-right:0}
+  .record tbody tr:first-child{border-top:0}
+  .record th,.record td,.record th:first-child,.record td:first-child,.record th:last-child,.record td:last-child{width:auto;padding:0;border:0}
+  .record tbody th{grid-column:1/-1}
+  .record td.n::before{display:block;margin-bottom:4px}
   .fn-head{display:none}
   .fn-row{grid-template-columns:minmax(0,1fr) auto;gap:4px 12px}
   .fn-row>:nth-child(3),.fn-row>:nth-child(4){grid-column:1/-1}
-  .fn-row .k{display:inline;color:var(--text-2)}
+  .fn-row .k{display:inline;color:var(--ink-2)}
+  .source{padding:28px 0}
   .foot{flex-direction:column;gap:12px}
 }
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.spin{animation:none}*{transition:none!important}}
+@media (max-width:420px){
+  .input-row{flex-direction:column}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<header class="top">
-  <div class="top-in">
-      <a class="brand" href="#" aria-label="NEAR protocol security agent, back to top"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M16 6.5 8.5 9.5v6c0 4.6 3.1 8 7.5 9.5 4.4-1.5 7.5-4.9 7.5-9.5v-6L16 6.5Z" fill="none" stroke="var(--on-accent)" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="15.5" r="2.6" fill="var(--on-accent)"/></svg><span>NEAR protocol security agent</span></a>
-      <div class="chips"><span class="chip" id="netChip"><span class="dot" aria-hidden="true"></span><span id="net">Connecting…</span></span><span class="chip" id="modelChip" hidden>Model <span class="num" id="model"></span></span><span class="chip"><a href="/docs">API docs</a></span></div>
+<header class="bar">
+  <div class="bar-in">
+    <a class="mark" href="#" aria-label="NEAR Protocol Security Agent, back to top"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5" fill="#00EC97"/><path d="M12 6 7 12l5 6 5-6z" fill="none" stroke="#0F3B38" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="6" r="2.3" fill="#0F3B38"/><circle cx="7" cy="12" r="2.3" fill="#0F3B38"/><circle cx="17" cy="12" r="2.3" fill="#0F3B38"/><circle cx="12" cy="18" r="2.4" fill="#00EC97" stroke="#0F3B38" stroke-width="1.8"/></svg><span>NEAR Protocol Security Agent</span></a>
+    <nav class="nav" aria-label="Sections"><a href="#check">Inspect</a><a href="#scan">Account scan</a><a href="#record">Validation</a><a href="#code-inspection">Source check</a></nav>
+    <div class="status"><span class="net" id="netChip"><i aria-hidden="true"></i><span id="net">Connecting…</span></span><span class="model" id="modelChip" hidden>Model <code id="model"></code></span><a class="api" href="/docs">API</a></div>
   </div>
 </header>
 <main>
-  <section class="intro" aria-labelledby="page-title">
-    <div><h1 id="page-title">Inspect NEAR transactions for known attack patterns</h1>
-      <p class="lede">Paste a transaction to inspect its receipt graph, token accounting and earlier related activity. Other protocols are marked unsupported.</p></div>
-    <p class="coverage">Calibrated coverage <b>NEAR Intents</b></p>
+  <section class="section" id="check" aria-labelledby="page-title">
+    <div class="lead">
+      <h1 id="page-title">Inspect a NEAR transaction for known attack patterns</h1>
+      <p class="desc">Reads the receipt graph, reconciles deposits and refunds, and checks earlier related activity. Calibrated on NEAR Intents; other protocols are marked unsupported.</p>
+      <form id="scoreForm" novalidate>
+        <label class="field-label" for="txHash">Transaction hash or NearBlocks link</label>
+        <div class="input-row"><input id="txHash" class="mono-input" placeholder="3k91uDpUiezxUe7hBgAR7kc3TBkToMZKGAiv6GqbtKiC" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="txErr"><button class="btn" id="scoreBtn" type="submit">Inspect</button></div>
+        <p class="field-err" id="txErr" role="alert"></p>
+        <label class="check"><input type="checkbox" id="includeHistory" checked><span>Include earlier activity <span class="muted">· bounded account window</span></span></label>
+      </form>
+      <div class="samples"><h2 class="label" id="tx-samples">Sample transactions</h2><ul class="sample-list" id="txPresets" aria-labelledby="tx-samples"></ul></div>
+    </div>
+    <div class="pane" id="scoreOut" aria-live="polite">
+      <h2 class="scale-title">Assessment scale</h2>
+      <dl class="scale-list">
+        <div><dt><span class="tag high">High-severity pattern</span></dt><dd>A known attack pattern was observed in the receipts. Investigate the evidence.</dd></div>
+        <div><dt><span class="tag medium">Suspicious</span></dt><dd>Unusual activity or medium-severity rules need review. Not proof of an attack.</dd></div>
+        <div><dt><span class="tag low">No known pattern</span></dt><dd>Nothing reached an alert threshold in complete, supported data. Not proof of safety.</dd></div>
+        <div><dt><span class="tag inconclusive">Inconclusive</span></dt><dd>Receipts are missing or incomplete, so no clean result is possible.</dd></div>
+        <div><dt><span class="tag unsupported">Unsupported</span></dt><dd>Outside NEAR Intents, the detector's calibrated scope.</dd></div>
+      </dl>
+      <p class="scale-note">Pick a sample transaction or paste a hash to see its finding.</p>
+    </div>
   </section>
-  <div class="workspace">
-    <section class="card" id="check" aria-labelledby="check-title">
-      <div class="card-head"><h2 id="check-title">Check a transaction</h2><p class="sub">Inspect receipt rules, observed token accounting and earlier related activity.</p></div>
-      <form id="scoreForm" novalidate><div class="row">
-        <label for="txHash">Transaction hash or NearBlocks link<input id="txHash" class="mono-input" placeholder="3k91uDpUiezxUe7hBgAR7kc3TBkToMZKGAiv6GqbtKiC" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="txErr"></label>
-        <button class="btn" id="scoreBtn" type="submit">Check</button>
-      </div><p class="field-err" id="txErr" role="alert"></p><label class="history-option"><input type="checkbox" id="includeHistory" checked>Include earlier activity <span class="small muted">· bounded account window</span></label></form>
-      <div class="presets" id="txPresets" aria-label="Example transactions"><span>Try</span></div>
-      <div class="out" id="scoreOut" aria-live="polite"><div class="empty">Pick an example or paste a hash to see the assessment, evidence coverage and rules that fired.</div></div>
-    </section>
 
-    <aside class="side">
-    <section class="card" id="scan" aria-labelledby="scan-title">
-      <div class="card-head"><h2 id="scan-title">Scan a protocol or account</h2><p class="sub">Checks up to 20 NEAR Intents transactions among the account's 40 most recent. This is a bounded activity scan, not a protocol audit.</p></div>
-      <form id="scanForm" novalidate><div class="row">
-        <label for="account">Account or contract<input id="account" class="mono-input" value="intents.near" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="accErr"></label>
-        <button class="btn" id="scanBtn" type="submit">Scan</button>
-      </div><p class="field-err" id="accErr" role="alert"></p></form>
-      <div class="presets" id="scanPresets" aria-label="Example accounts"><span>Try</span></div>
-      <div class="out" id="scanOut" aria-live="polite"><div class="empty">Scan for observed attack patterns in recent Intents activity. Missing receipts and gaps in protocol coverage remain explicit. Select a row to inspect it.</div></div>
-    </section>
+  <section class="section" id="scan" aria-labelledby="scan-title">
+    <div class="lead">
+      <h2 id="scan-title">Account scan</h2>
+      <p class="desc">Checks up to 20 NEAR Intents transactions among an account's 40 most recent. A bounded activity scan, not a protocol audit.</p>
+      <form id="scanForm" novalidate>
+        <label class="field-label" for="account">Account or contract</label>
+        <div class="input-row"><input id="account" class="mono-input" value="intents.near" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="accErr"><button class="btn" id="scanBtn" type="submit">Scan</button></div>
+        <p class="field-err" id="accErr" role="alert"></p>
+      </form>
+      <div class="samples"><h3 class="label" id="acct-samples">Sample accounts</h3><ul class="sample-list" id="scanPresets" aria-labelledby="acct-samples"></ul></div>
+    </div>
+    <div class="pane" id="scanOut" aria-live="polite"><p class="empty">Lists each recent NEAR Intents transaction with its assessment. Missing receipts and unsupported activity stay visible. Select a row to open its finding.</p></div>
+  </section>
 
-  <section class="card" id="record" aria-labelledby="record-title">
-    <div class="card-head"><h2 id="record-title">Accounting validation</h2><p class="sub">Agreement with recorded contract state and case labels. Not unseen-attack accuracy.</p></div>
-    <table class="record" aria-label="Accounting validation across five datasets">
-      <thead><tr><th scope="col">Dataset</th><th scope="col" class="n">High findings</th><th scope="col" class="n">Accounting checked</th></tr></thead>
-      <tbody>
-        <tr><td>Sandbox: measured credit defects</td><td class="n" data-k="High findings">712 / 712</td><td class="n" data-k="Accounting checked">712 / 712</td></tr>
-        <tr><td>Sandbox: other unpatched runs</td><td class="n" data-k="High findings">0 / 2,953</td><td class="n" data-k="Accounting checked">1,849 / 2,953</td></tr>
-        <tr><td>Sandbox: patched verifier</td><td class="n" data-k="High findings">0 / 349</td><td class="n" data-k="Accounting checked">109 / 349</td></tr>
-        <tr><td>Recorded October exploits<small>One attacker, one repeated technique</small></td><td class="n" data-k="High findings">23 / 23</td><td class="n" data-k="Accounting checked">23 / 23</td></tr>
-        <tr><td>Historical sampled normals</td><td class="n" data-k="High findings">0 / 100,098</td><td class="n" data-k="Accounting checked">25,336 / 100,098</td></tr>
-      </tbody>
-    </table>
-    <p class="caveat">Across 4,014 sandbox runs: 712 / 712 measured defects flagged; 0 / 3,302 other runs flagged. Of those other runs, 1,189 lack direct state measurements. Normals include 4,984 inconclusive and 69,778 unsupported flows. <strong>No finding does not mean safe.</strong></p>
-    <details style="margin-top:16px"><summary>Campaign results &amp; limits</summary>
-      <p class="caption">Frozen intents_v1 + rules. Each campaign uses the same thresholds as the normal-alert row.</p>
-    <table class="record">
-      <thead><tr><th scope="col">Attack</th><th scope="col" class="n">High-severity pattern</th><th scope="col" class="n">Suspicious or higher</th></tr></thead>
-      <tbody>
-        <tr><td>Sep 29 – Oct 1 2026 exploit, about $3.8M<small>Deposit callback overflows its log; credit kept while the token refunds</small></td><td class="n" data-k="High-severity pattern">23 / 23</td><td class="n" data-k="Suspicious or higher">23 / 23</td></tr>
-        <tr><td>Apr 2026 out-of-gas attempts<small>41 of 53 flags only mean “deposit used Notify”; they do not identify out-of-gas behavior</small></td><td class="n" data-k="High-severity pattern">0 / 55</td><td class="n" data-k="Suspicious or higher">53 / 55</td></tr>
-        <tr><td>May 2026 admin fuzzing<small>Private or admin methods called by an outsider</small></td><td class="n" data-k="High-severity pattern">0 / 177</td><td class="n" data-k="Suspicious or higher">110 / 177</td></tr>
-        <tr><td>May 2026 “token spoofing” campaign<small>Campaign label; these rules do not verify token authenticity</small></td><td class="n" data-k="High-severity pattern">0 / 182</td><td class="n" data-k="Suspicious or higher">18 / 182</td></tr>
-        <tr class="fa"><td>False alarms on 7,400 unseen normal transactions<small>80 of the 84 came from one hour when Intents was paused; all 84 came from the anomaly model, none from the rules</small></td><td class="n" data-k="High-severity pattern">0 / 7,400</td><td class="n" data-k="Suspicious or higher">84 / 7,400</td></tr>
-      </tbody>
-    </table>
-      <p class="caveat"><strong>Retrospective: rules were written after these attacks.</strong> These are case studies, not an estimate of new-attack accuracy.</p>
-      <h3 class="section-label">What the receipt rules see</h3>
-      <table class="record" aria-label="Frozen receipt-rule coverage by mechanism">
-        <thead><tr><th scope="col">Mechanism</th><th scope="col" class="n">Flagged</th><th scope="col" class="n">Normal alerts</th></tr></thead>
+  <section class="section" id="record" aria-labelledby="record-title">
+    <div class="lead">
+      <h2 id="record-title">Accounting validation</h2>
+      <p class="desc">Agreement with recorded contract state and case labels. Not unseen-attack accuracy.</p>
+      <p class="caveat">Across 4,014 sandbox runs: 712 / 712 measured defects flagged; 0 / 3,302 other runs flagged. Of those other runs, 1,189 lack direct state measurements. Normals include 4,984 inconclusive and 69,778 unsupported flows. <strong>No finding does not mean safe.</strong></p>
+    </div>
+    <div class="pane">
+      <table class="record" aria-label="Accounting validation across five datasets">
+        <thead><tr><th scope="col">Dataset</th><th scope="col" class="n">High findings</th><th scope="col" class="n">Accounting checked</th></tr></thead>
         <tbody>
-          <tr><td>Receipt-visible signals<small>Includes generic Notify usage, not just exploit-specific signals</small></td><td class="n" data-k="Flagged medium+">204 / 204</td><td class="n" data-k="Normal alerts medium+">0 / 7,400</td></tr>
-          <tr><td>Signed-intent and other campaign calls<small>194 signed-intent probes + 39 other calls</small></td><td class="n" data-k="Flagged medium+">0 / 233</td><td class="n" data-k="Normal alerts medium+">0 / 7,400</td></tr>
+          <tr><th scope="row">Sandbox: measured credit defects</th><td class="n" data-k="High findings"><span class="ratio"><b>712</b> / 712</span><span class="bar-track" style="--p:1"><i></i></span></td><td class="n" data-k="Accounting checked"><span class="ratio"><b>712</b> / 712</span><span class="bar-track cov" style="--p:1"><i></i></span></td></tr>
+          <tr><th scope="row">Sandbox: other unpatched runs</th><td class="n" data-k="High findings"><span class="ratio"><b>0</b> / 2,953</span><span class="bar-track" style="--p:0"><i></i></span></td><td class="n" data-k="Accounting checked"><span class="ratio"><b>1,849</b> / 2,953</span><span class="bar-track cov" style="--p:.6261"><i></i></span></td></tr>
+          <tr><th scope="row">Sandbox: patched verifier</th><td class="n" data-k="High findings"><span class="ratio"><b>0</b> / 349</span><span class="bar-track" style="--p:0"><i></i></span></td><td class="n" data-k="Accounting checked"><span class="ratio"><b>109</b> / 349</span><span class="bar-track cov" style="--p:.3123"><i></i></span></td></tr>
+          <tr><th scope="row">Recorded October exploits<small>One attacker, one repeated technique</small></th><td class="n" data-k="High findings"><span class="ratio"><b>23</b> / 23</span><span class="bar-track" style="--p:1"><i></i></span></td><td class="n" data-k="Accounting checked"><span class="ratio"><b>23</b> / 23</span><span class="bar-track cov" style="--p:1"><i></i></span></td></tr>
+          <tr><th scope="row">Historical sampled normals</th><td class="n" data-k="High findings"><span class="ratio"><b>0</b> / 100,098</span><span class="bar-track" style="--p:0"><i></i></span></td><td class="n" data-k="Accounting checked"><span class="ratio"><b>25,336</b> / 100,098</span><span class="bar-track cov" style="--p:.2531"><i></i></span></td></tr>
         </tbody>
       </table>
-      <p class="caveat">Rules alone shown here; the anomaly model adds the 84 normal alerts above. The v2 sandbox is a variant holdout of four scripted recipes: 6 measured exploits across all splits, not independent attack techniques. The research model was rejected; serving stays on intents_v1.</p>
+      <details class="more pane-more"><summary>Campaign results &amp; limits</summary>
+        <p class="fine">Frozen intents_v1 + rules. Each campaign uses the same thresholds as the normal-alert row.</p>
+        <table class="record">
+          <thead><tr><th scope="col">Attack</th><th scope="col" class="n">High-severity pattern</th><th scope="col" class="n">Suspicious or higher</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Sep 29 – Oct 1 2026 exploit, about $3.8M<small>Deposit callback overflows its log; credit kept while the token refunds</small></th><td class="n" data-k="High-severity pattern"><span class="ratio"><b>23</b> / 23</span><span class="bar-track" style="--p:1"><i></i></span></td><td class="n" data-k="Suspicious or higher"><span class="ratio"><b>23</b> / 23</span><span class="bar-track med" style="--p:1"><i></i></span></td></tr>
+            <tr><th scope="row">Apr 2026 out-of-gas attempts<small>41 of 53 flags only mean “deposit used Notify”; they do not identify out-of-gas behavior</small></th><td class="n" data-k="High-severity pattern"><span class="ratio"><b>0</b> / 55</span><span class="bar-track" style="--p:0"><i></i></span></td><td class="n" data-k="Suspicious or higher"><span class="ratio"><b>53</b> / 55</span><span class="bar-track med" style="--p:.9636"><i></i></span></td></tr>
+            <tr><th scope="row">May 2026 admin fuzzing<small>Private or admin methods called by an outsider</small></th><td class="n" data-k="High-severity pattern"><span class="ratio"><b>0</b> / 177</span><span class="bar-track" style="--p:0"><i></i></span></td><td class="n" data-k="Suspicious or higher"><span class="ratio"><b>110</b> / 177</span><span class="bar-track med" style="--p:.6215"><i></i></span></td></tr>
+            <tr><th scope="row">May 2026 “token spoofing” campaign<small>Campaign label; these rules do not verify token authenticity</small></th><td class="n" data-k="High-severity pattern"><span class="ratio"><b>0</b> / 182</span><span class="bar-track" style="--p:0"><i></i></span></td><td class="n" data-k="Suspicious or higher"><span class="ratio"><b>18</b> / 182</span><span class="bar-track med" style="--p:.0989"><i></i></span></td></tr>
+            <tr class="fa"><th scope="row">False alarms on 7,400 unseen normal transactions<small>80 of the 84 came from one hour when Intents was paused; all 84 came from the anomaly model, none from the rules</small></th><td class="n" data-k="High-severity pattern"><span class="ratio"><b>0</b> / 7,400</span><span class="bar-track" style="--p:0"><i></i></span></td><td class="n" data-k="Suspicious or higher"><span class="ratio"><b>84</b> / 7,400</span><span class="bar-track" style="--p:.0114"><i></i></span></td></tr>
+          </tbody>
+        </table>
+        <p class="caveat"><strong>Retrospective: rules were written after these attacks.</strong> These are case studies, not an estimate of new-attack accuracy.</p>
+        <h3>What the receipt rules see</h3>
+        <table class="record" aria-label="Frozen receipt-rule coverage by mechanism">
+          <thead><tr><th scope="col">Mechanism</th><th scope="col" class="n">Flagged</th><th scope="col" class="n">Normal alerts</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Receipt-visible signals<small>Includes generic Notify usage, not just exploit-specific signals</small></th><td class="n" data-k="Flagged medium+"><span class="ratio"><b>204</b> / 204</span><span class="bar-track med" style="--p:1"><i></i></span></td><td class="n" data-k="Normal alerts medium+"><span class="ratio"><b>0</b> / 7,400</span><span class="bar-track" style="--p:0"><i></i></span></td></tr>
+            <tr><th scope="row">Signed-intent and other campaign calls<small>194 signed-intent probes + 39 other calls</small></th><td class="n" data-k="Flagged medium+"><span class="ratio"><b>0</b> / 233</span><span class="bar-track med" style="--p:0"><i></i></span></td><td class="n" data-k="Normal alerts medium+"><span class="ratio"><b>0</b> / 7,400</span><span class="bar-track" style="--p:0"><i></i></span></td></tr>
+          </tbody>
+        </table>
+        <p class="caveat">Rules alone shown here; the anomaly model adds the 84 normal alerts above. The v2 sandbox is a variant holdout of four scripted recipes: 6 measured exploits across all splits, not independent attack techniques. The research model was rejected; serving stays on intents_v1.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="source" id="code-inspection" aria-labelledby="source-title">
+    <details>
+      <summary><span><h2 id="source-title">Contract source check</h2><span class="desc">A supporting signal: scores Rust contract source for known bug patterns. Most real bugs are missed.</span></span><span class="toggle" aria-hidden="true"><span class="when-closed">Show</span><span class="when-open">Hide</span><svg class="ico" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></svg></span></summary>
+      <div class="section">
+        <div class="lead"><div class="stats" id="stats" aria-label="Code model evaluation"></div><p class="fine">Sealed test of v1. The optional v2 was not measurably better on test_v1c, which is not sealed. See near/model/reports/RESULTS.md.</p></div>
+        <div class="pane source-pane">
+          <div class="field"><label class="field-label" for="example">Example</label><select id="example"></select></div>
+          <div class="field"><label class="field-label" for="code">Rust contract source</label><textarea id="code" spellcheck="false" wrap="off"></textarea></div>
+          <div class="actions"><button class="btn" id="analyzeBtn" type="button">Analyze contract</button></div>
+          <div id="analyzeOut" aria-live="polite"></div>
+        </div>
+      </div>
     </details>
   </section>
-    </aside>
-  </div>
 
-  <details class="card code-card" id="code-inspection"><summary><span><h2 style="display:inline">Contract code check (supporting signal)</h2><span class="sub">Scores Rust contract source for known bug patterns. Most real bugs are missed.</span></span></summary>
-    <div class="code-body"><div class="code-grid"><div>
-      <label for="example">Example<select id="example"></select></label>
-      <label for="code" style="margin-bottom:6px">Rust contract source</label><textarea id="code" spellcheck="false" wrap="off"></textarea>
-      <div class="row" style="margin-top:12px"><button class="btn" id="analyzeBtn" type="button">Analyze contract</button></div>
-      <div class="out" id="analyzeOut" aria-live="polite"></div>
-    </div><aside aria-label="Code model evaluation"><div id="stats"></div><p class="caption">Sealed test of v1. The optional v2 was not measurably better on test_v1c, which is not sealed. See near/model/reports/RESULTS.md.</p></aside></div></div>
-  </details>
-
-  <footer class="foot"><p>Prototype, not an audit. Checks transactions after they land. An 11-category taxonomy describes attack types; served rules cover 3: callback accounting, access control and resource exhaustion. Token authenticity and wallet drainers are not covered. Calibrated only on NEAR Intents; other protocols are unsupported. Incomplete graphs can hide evidence. No known pattern does not mean safe.</p><a href="/docs">API reference</a></footer>
+  <footer class="foot"><p><strong>Prototype, not an audit.</strong> Checks transactions after they land. An 11-category taxonomy describes attack types; served rules cover 3: callback accounting, access control and resource exhaustion. Token authenticity and wallet drainers are not covered. Calibrated only on NEAR Intents; other protocols are unsupported. Incomplete graphs can hide evidence. No known pattern does not mean safe.</p><a href="/docs">API reference</a></footer>
 </main>
 <script type="module">
 const $ = id => document.getElementById(id);
@@ -382,9 +471,14 @@ const SCAN_PRESETS = [
 ];
 
 const VERDICT = {
-  high: {word: "High-severity pattern", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 2.8h7.6l5.4 5.4v7.6l-5.4 5.4H8.2l-5.4-5.4V8.2z"/><path d="m9 9 6 6m0-6-6 6"/></svg>'},
-  medium: {word: "Suspicious", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 2.5 20h19L12 3.5Z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>'},
-  low: {word: "No known attack pattern", icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.5v.01"/></svg>'},
+  high: {word: "High-severity pattern", icon: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 2.8h7.6l5.4 5.4v7.6l-5.4 5.4H8.2l-5.4-5.4V8.2z"/><path d="m9 9 6 6m0-6-6 6"/></svg>'},
+  medium: {word: "Suspicious", icon: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 2.5 20h19L12 3.5Z"/><path d="M12 10v4.5M12 17.5v.01"/></svg>'},
+  low: {word: "No known attack pattern", icon: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.5v.01"/></svg>'},
+};
+const ICON = {
+  alert: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.01"/></svg>',
+  ext: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 16 16 8M9.5 8H16v6.5"/></svg>',
+  next: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg>',
 };
 const SEV_RANK = {high: 0, medium: 1, low: 2};
 
@@ -504,12 +598,14 @@ async function api(path, body) {
   return j;
 }
 
-const loading = text => `<div class="loading" role="status"><span class="spin" aria-hidden="true"></span>${esc(text)}</div>`;
-const failure = e => `<div class="err" role="alert"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.01"/></svg><span>${esc(e.message)}</span></div>`;
-const notice = html => `<div class="notice"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.01"/></svg><span>${html}</span></div>`;
+// Loading keeps the pane's shape: a status line over skeleton rows, not a spinner.
+const loading = (text, rows = 5) => `<div class="loading" role="status"><p class="loading-text">${esc(text)}</p><div class="skel" aria-hidden="true">${"<i></i>".repeat(rows)}</div></div>`;
+const failure = e => `<p class="err" role="alert">${ICON.alert}<span>${esc(e.message)}</span></p>`;
+const notice = html => `<p class="notice">${ICON.alert}<span>${html}</span></p>`;
 // 64-hex implicit accounts and hashes are shortened for display; the full value stays in the title.
 const shortId = s => { s = String(s ?? ""); return /^[0-9a-f]{64}$/.test(s) ? `${s.slice(0, 8)}…${s.slice(-6)}` : s; };
 const shortHash = s => { s = String(s ?? ""); return s.length > 14 ? `${s.slice(0, 6)}…${s.slice(-4)}` : s; };
+const account = s => `<code title="${esc(s)}">${esc(shortId(s))}</code>`;
 const setModel = m => { if (m && m.version) { $("model").textContent = m.version; $("modelChip").hidden = false; } };
 
 // Accepts a bare hash or an explorer link ending in one. Returns [hash, error].
@@ -535,6 +631,10 @@ function b58Bytes(s) {
 function fieldError(input, out, msg) {
   $(out).textContent = msg || "";
   if (msg) $(input).setAttribute("aria-invalid", "true"); else $(input).removeAttribute("aria-invalid");
+}
+// The sample being inspected stays marked; typing another hash clears it.
+function markSample(hash) {
+  document.querySelectorAll("#txPresets .sample").forEach(b => b.setAttribute("aria-current", String(b.dataset.hash === hash)));
 }
 
 // Conservative fallback also protects the UI when talking to an older service.
@@ -564,6 +664,7 @@ function assessmentState(j, hits = j.rule_hits || []) {
   };
   return {key, ...states[key], summary: j.assessment === key && j.assessment_reason ? j.assessment_reason : states[key].fallback};
 }
+const ROW_WORD = {malicious_pattern: "High-severity pattern", suspicious: "Suspicious", no_known_pattern: "No known pattern", inconclusive: "Inconclusive", unsupported: "Unsupported"};
 
 function atomicAmount(value) {
   // Keep atomic amounts as strings: token values routinely exceed JavaScript's exact integer range.
@@ -571,7 +672,7 @@ function atomicAmount(value) {
 }
 
 function categoryEvidence(categories = []) {
-  return categories.length ? `<ul class="evidence-categories" aria-label="Observed pattern categories">${categories.map(c => `<li class="chip">${esc(c.label)}</li>`).join("")}</ul><p class="small muted">Observed patterns, not a verified root cause.</p>` : "";
+  return categories.length ? `<ul class="categories" aria-label="Observed pattern categories">${categories.map(c => `<li>${esc(c.label)}</li>`).join("")}</ul><p class="fine">Observed patterns, not a verified root cause.</p>` : "";
 }
 
 function accountingEvidence(accounting) {
@@ -580,15 +681,18 @@ function accountingEvidence(accounting) {
   const status = statuses[a.status] || "Unavailable";
   const count = Number.isInteger(coverage.checked_deposit_flows) ? `${coverage.checked_deposit_flows} checked · ${coverage.unchecked_deposit_flows || 0} uncheckable deposit flows` : "Deposit-flow coverage is unavailable.";
   const rows = checks.slice().sort((x, y) => Number(y.status === "excess_credit") - Number(x.status === "excess_credit"));
-  const table = c => `<div class="accounting-flow"><p class="accounting-token"><code>${esc(c.token_id || "Unknown token")}</code>${c.owner_ids?.length ? `<br>Credited owner: ${esc(c.owner_ids.join(", "))}` : ""}</p>
-    <dl class="accounting-values">${[["Deposited", c.deposited], ["Refunded", c.refunded], ["Credit retained", c.credit_retained], ["Excess", c.excess]].map(([label, raw]) => {
+  const table = c => {
+    const reason = c.reason || (c.status === "inconclusive" ? "This flow could not be reconciled." : "");
+    return `<div class="flow"><p class="flow-token"><code>${esc(c.token_id || "Unknown token")}</code>${c.owner_ids?.length ? `<span>Credited owner ${c.owner_ids.map(account).join(", ")}</span>` : ""}</p>
+    <dl class="amounts">${[["Deposited", c.deposited], ["Refunded", c.refunded], ["Credit retained", c.credit_retained], ["Excess", c.excess]].map(([label, raw]) => {
       const value = atomicAmount(raw), long = value.length > 20;
-      return `<div${long ? ' class="long-amount"' : ""}><dt>${label}</dt><dd${long ? ' tabindex="0"' : ""}${label === "Excess" && c.status === "excess_credit" ? ' class="excess"' : ""}>${value}</dd></div>`;
-    }).join("")}</dl><p class="evidence-reason">${esc(c.reason || (c.status === "inconclusive" ? "This flow could not be reconciled." : ""))}</p></div>`;
-  return `<section class="evidence-panel" aria-label="Observed event accounting"><div class="evidence-heading"><h3>Observed event accounting</h3><span class="sev ${a.status === "inconclusive" ? "medium" : "low"}">${status}</span></div>
-    <p class="small muted">${esc(count)}</p>${rows.length ? rows.slice(0, 3).map(table).join("") : `<p class="evidence-reason">${a.status === "unsupported" ? "No supported Intents deposit accounting is available." : "No deposit flow could be reconciled from the available events."}</p>`}
-    ${rows.length > 3 ? `<details><summary>${rows.length - 3} more deposit flows</summary>${rows.slice(3).map(table).join("")}</details>` : ""}
-    <p class="caveat">Exact atomic units from observed successful events. This is not a balance query or a solvency check.</p></section>`;
+      return `<div${long ? ' class="long"' : ""}><dt>${label}</dt><dd${long ? ' tabindex="0"' : ""}${label === "Excess" && c.status === "excess_credit" ? ' class="excess"' : ""}>${value}</dd></div>`;
+    }).join("")}</dl>${reason ? `<p class="flow-reason">${esc(reason)}</p>` : ""}</div>`;
+  };
+  return `<section class="part" aria-label="Observed event accounting"><div class="part-head"><h3>Observed event accounting</h3><span class="tag ${a.status === "inconclusive" ? "inconclusive" : "low"}">${status}</span></div>
+    <p class="part-sub">${esc(count)}</p>${rows.length ? rows.slice(0, 3).map(table).join("") : `<p class="part-sub">${a.status === "unsupported" ? "No supported Intents deposit accounting is available." : "No deposit flow could be reconciled from the available events."}</p>`}
+    ${rows.length > 3 ? `<details class="more"><summary>${rows.length - 3} more deposit flows</summary>${rows.slice(3).map(table).join("")}</details>` : ""}
+    <p class="fine">Exact atomic units from observed successful events. This is not a balance query or a solvency check.</p></section>`;
 }
 
 function historyEvidence(history) {
@@ -597,19 +701,19 @@ function historyEvidence(history) {
   const finding = (h.findings || []).map(f => `<li>${notice(esc(f.message || "Earlier activity needs review."))}</li>`).join("");
   const txRow = t => {
     const [hash, invalid] = readHash(t.tx_hash || "");
-    const identity = invalid ? `<code>${esc(shortHash(t.tx_hash || "Unknown transaction"))}</code>` : `<a href="https://nearblocks.io/txns/${encodeURIComponent(hash)}" target="_blank" rel="noopener noreferrer" aria-label="View earlier transaction ${esc(hash)}">${esc(shortHash(hash))} ↗</a>`;
-    return `<li><div class="history-meta">${identity}${t.block_height ? `<span>Block ${esc(t.block_height)}</span>` : ""}</div>
-      ${t.shared_accounts?.length ? `<p>Shared participant: ${esc(t.shared_accounts.join(", "))}</p>` : ""}
+    const identity = invalid ? `<code>${esc(shortHash(t.tx_hash || "Unknown transaction"))}</code>` : `<a href="https://nearblocks.io/txns/${encodeURIComponent(hash)}" target="_blank" rel="noopener noreferrer" aria-label="View earlier transaction ${esc(hash)} on NearBlocks"><code>${esc(shortHash(hash))}</code>${ICON.ext}</a>`;
+    return `<li><div class="hist-meta">${identity}${t.block_height ? `<span>Block ${esc(t.block_height)}</span>` : ""}</div>
+      ${t.shared_accounts?.length ? `<p>Shared participant: ${t.shared_accounts.map(account).join(", ")}</p>` : ""}
       ${t.observations?.length ? `<p>${esc(t.observations.map(s => String(s).replaceAll("_", " ")).join(" · "))}</p>` : ""}</li>`;
   };
   const summary = h.status === "not_requested" ? "Enable earlier activity to inspect a bounded history window." :
     h.status === "unavailable" || !h.status ? (h.reason || h.message || "Earlier activity could not be checked. The transaction result above still applies to the observed receipts.") :
     `${coverage.eligible_prior_transactions ?? 0} earlier transactions considered · ${coverage.related_transactions ?? rows.length} linked by participant${coverage.window_seconds ? ` · at most ${coverage.window_seconds / 3600} hours` : ""}.`;
-  return `<section class="evidence-panel" aria-label="Earlier related activity"><div class="evidence-heading"><h3>Earlier related activity</h3><span class="sev low">${status}</span></div>
-    <p class="small muted">${esc(summary)}</p>${finding ? `<ul class="history-findings">${finding}</ul>` : ""}
-    ${rows.length ? `<ol class="history-list">${rows.slice(0, 5).map(txRow).join("")}</ol>` : ""}
-    ${rows.length > 5 ? `<details><summary>${rows.length - 5} more earlier transactions</summary><ol class="history-list">${rows.slice(5).map(txRow).join("")}</ol></details>` : ""}
-    <p class="caveat">A partial history window, not a complete account audit. A shared participant does not prove an attack or establish where funds came from.</p></section>`;
+  return `<section class="part" aria-label="Earlier related activity"><div class="part-head"><h3>Earlier related activity</h3><span class="tag low">${status}</span></div>
+    <p class="part-sub">${esc(summary)}</p>${finding ? `<ul class="hist-findings">${finding}</ul>` : ""}
+    ${rows.length ? `<ol class="hist">${rows.slice(0, 5).map(txRow).join("")}</ol>` : ""}
+    ${rows.length > 5 ? `<details class="more"><summary>${rows.length - 5} more earlier transactions</summary><ol class="hist">${rows.slice(5).map(txRow).join("")}</ol></details>` : ""}
+    <p class="fine">A partial history window, not a complete account audit. A shared participant does not prove an attack or establish where funds came from.</p></section>`;
 }
 
 let scoreSeq = 0;
@@ -618,6 +722,7 @@ async function scoreTx() {
   fieldError("txHash", "txErr", bad);
   if (bad) return;
   $("txHash").value = hash;
+  markSample(hash);
   const my = ++scoreSeq, btn = $("scoreBtn");
   btn.disabled = true;
   $("scoreOut").innerHTML = loading("Reading receipts and accounting" + ($("includeHistory").checked ? ", then earlier activity…" : "…"));
@@ -634,25 +739,30 @@ async function scoreTx() {
     if (complete !== true) notes.push(notice("<strong>Incomplete receipt evidence:</strong> missing outcomes can hide attack patterns. Observed rule hits remain visible; no clean assessment can be made from missing evidence."));
     if (KNOWN_MISSES[hash]) notes.push(notice(KNOWN_MISSES[hash]));
     const ruleRow = h => {
-        const [title, text] = RULE_TEXT[h.rule] || [h.rule, ""];
-        return `<li><span class="sev ${esc(h.severity)}">${esc(cap(h.severity))}</span><div><div class="rule-title"><h3>${esc(title)}</h3><code>${esc(h.rule)}</code></div>${text ? `<p>${esc(text)}</p>` : ""}<p class="detail">${esc(h.message)}</p></div></li>`;
-      };
-    const rules = hits.length ? `<h3 class="section-label">Observed receipt evidence</h3><ul class="rules">${hits.slice(0, 3).map(ruleRow).join("")}</ul>${hits.length > 3 ? `<details><summary>${hits.length - 3} more findings</summary><ul class="rules">${hits.slice(3).map(ruleRow).join("")}</ul></details>` : ""}`
-      : `<p class="section-label small muted">No receipt rule fired.</p>`;
-    $("scoreOut").innerHTML = `<div class="verdict ${state.tone}" data-assessment="${state.key}">${state.icon}<div><p class="verdict-word">${esc(state.word)}</p><p>${esc(state.summary)}</p></div></div>
-      <dl class="facts">
-        <dt>Signer → receiver</dt><dd><span title="${esc(j.signer_id)}">${esc(shortId(j.signer_id))}</span> → <span title="${esc(j.receiver_id)}">${esc(shortId(j.receiver_id))}</span></dd>
-        <dt>Flow</dt><dd>${esc(j.flow_type)}</dd>
-        <dt>Coverage</dt><dd>${complete === true ? "Complete receipt graph" : "Incomplete / unknown"}${Number.isInteger(coverage.observed_receipts) ? `<br><small>${esc(coverage.observed_receipts)} observed · ${esc(coverage.missing_receipts)} missing</small>` : ""}</dd>
-        <dt>Detector scope</dt><dd>${state.key === "unsupported" ? "Unsupported protocol" : "NEAR Intents"}</dd>
-      </dl>
-      ${notes.length ? `<div class="notes">${notes.join("")}</div>` : ""}
-      ${accountingEvidence(j.accounting)}
+      const [title, text] = RULE_TEXT[h.rule] || [h.rule, ""];
+      return `<li><span class="tag ${esc(h.severity)}">${esc(cap(h.severity))}</span><div><p class="rule-title"><strong>${esc(title)}</strong><code>${esc(h.rule)}</code></p>${text ? `<p class="rule-text">${esc(text)}</p>` : ""}<p class="rule-obs">${esc(h.message)}</p></div></li>`;
+    };
+    const rules = `<section class="part" aria-label="Observed receipt evidence"><div class="part-head"><h3>Observed receipt evidence</h3>${hits.length ? `<span class="part-count">${plural(hits.length, "rule")} fired</span>` : ""}</div>`
+      + (hits.length ? `<ol class="rules">${hits.slice(0, 3).map(ruleRow).join("")}</ol>${hits.length > 3 ? `<details class="more"><summary>${hits.length - 3} more findings</summary><ol class="rules">${hits.slice(3).map(ruleRow).join("")}</ol></details>` : ""}`
+        : `<p class="part-sub">No receipt rule fired.</p>`) + `</section>`;
+    const categories = categoryEvidence(j.attack_categories);
+    const meta = [
+      ["Transaction", `<a href="https://nearblocks.io/txns/${encodeURIComponent(hash)}" target="_blank" rel="noopener noreferrer" aria-label="View transaction ${esc(hash)} on NearBlocks"><code>${esc(shortHash(hash))}</code>${ICON.ext}</a>`],
+      ["Flow", esc(j.flow_type || "—")],
+      ["Detector scope", state.key === "unsupported" ? "Unsupported protocol" : "NEAR Intents"],
+      ["Signer", account(j.signer_id)],
+      ["Receiver", account(j.receiver_id)],
+      ["Receipts", `${complete === true ? "Complete receipt graph" : "Incomplete / unknown"}${Number.isInteger(coverage.observed_receipts) ? `<small>${esc(coverage.observed_receipts)} observed · ${esc(coverage.missing_receipts)} missing</small>` : ""}`],
+    ];
+    $("scoreOut").innerHTML = `<article class="finding tone-${state.tone}" data-assessment="${state.key}" aria-labelledby="finding-title">
+      <header class="finding-head"><h2 class="finding-title" id="finding-title">${state.icon}<span>${esc(state.word)}</span></h2><p class="finding-reason">${esc(state.summary)}</p></header>
+      <dl class="meta">${meta.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}${categories ? `<div class="wide"><dt>Pattern categories</dt><dd>${categories}</dd></div>` : ""}</dl>
+      ${notes.length ? `<section class="part limits" aria-label="Limitations"><h3>Limitations</h3>${notes.join("")}</section>` : ""}
       ${rules}
-      ${categoryEvidence(j.attack_categories)}
+      ${accountingEvidence(j.accounting)}
       ${historyEvidence(j.history)}
-      <div class="links"><a href="https://nearblocks.io/txns/${encodeURIComponent(hash)}" target="_blank" rel="noopener noreferrer">View on NearBlocks</a></div>
-      <details><summary>Score and confidence details</summary><p class="small muted">Raw score <span class="num">${esc(Number(j.risk).toFixed(4))}</span> is a rule/rank score, not an attack probability. ${j.confidence?.basis ? esc(j.confidence.basis) : ""}</p><p class="small muted">Anomaly percentile <span class="num">${esc(Number(j.anomaly_percentile).toFixed(4))}</span> against normal Intents traffic · model ${esc(j.model && j.model.version)} · sha256 <span class="num">${esc(String((j.model && j.model.sha256) || "").slice(0, 12))}</span></p></details>`;
+      <details class="more score"><summary>Score and confidence details</summary><p>Raw score <span class="num">${esc(Number(j.risk).toFixed(4))}</span> is a rule/rank score, not an attack probability. ${j.confidence?.basis ? esc(j.confidence.basis) : ""}</p><p>Anomaly percentile <span class="num">${esc(Number(j.anomaly_percentile).toFixed(4))}</span> against normal Intents traffic · model ${esc(j.model && j.model.version)} · sha256 <span class="num">${esc(String((j.model && j.model.sha256) || "").slice(0, 12))}</span></p></details>
+    </article>`;
   } catch (e) { if (my === scoreSeq) $("scoreOut").innerHTML = failure(e); }
   finally { if (my === scoreSeq) btn.disabled = false; }
 }
@@ -666,7 +776,7 @@ async function scan() {
   $("account").value = id;
   const my = ++scanSeq, btn = $("scanBtn");
   btn.disabled = true;
-  $("scanOut").innerHTML = loading("Reading recent transactions from FastNEAR and checking each one (up to 20 seconds)…");
+  $("scanOut").innerHTML = loading("Reading recent transactions from FastNEAR and checking each one (up to 20 seconds)…", 6);
   try {
     const j = await api("/v1/protocols/scan", {account_id: id});
     if (my !== scanSeq) return;
@@ -674,45 +784,36 @@ async function scan() {
     const txs = j.txs || [];
     const states = txs.map(t => assessmentState(t));
     const c = states.reduce((counts, s) => { counts[s.key] = (counts[s.key] || 0) + 1; return counts; }, {});
-    const box = (key, tone, word) => `<div class="count ${tone}${c[key] ? " hit" : ""}"><b>${esc(c[key] || 0)}</b><span>${esc(word)}</span></div>`;
+    const count = (key, tone) => `<span class="${tone}${c[key] ? " hit" : ""}"><b>${esc(c[key] || 0)}</b>${ROW_WORD[key]}</span>`;
     const partial = txs.filter(t => (t.evidence_coverage?.receipts_complete ?? t.receipts_complete) !== true).length;
     const rows = txs.map((t, index) => {
       const rules = (t.rules || []).map(ruleTitle);
       const state = states[index];
       const why = [esc(t.flow), rules.length ? esc(rules[0]) + (rules.length > 1 ? ` +${rules.length - 1} more` : "") : "", t.receipts_complete === false ? "partial receipts" : ""].filter(Boolean).join(" · ");
-      const rowWord = {malicious_pattern: "High-severity pattern", suspicious: "Suspicious", no_known_pattern: "No known pattern", inconclusive: "Inconclusive", unsupported: "Unsupported"}[state.key];
-      return `<li><button type="button" class="scan-row" data-hash="${esc(t.tx_hash)}" data-assessment="${state.key}" aria-label="Inspect transaction ${esc(t.tx_hash)}"><span class="tag ${state.tone}"><i aria-hidden="true"></i>${rowWord}</span><code title="${esc(t.tx_hash)}">${esc(shortHash(t.tx_hash))}</code><span class="why">${why}</span></button></li>`;
+      return `<li><button type="button" class="scan-row" data-hash="${esc(t.tx_hash)}" data-assessment="${state.key}" aria-label="Inspect transaction ${esc(t.tx_hash)}, ${ROW_WORD[state.key]}"><span class="tag ${state.tone}">${ROW_WORD[state.key]}</span><code title="${esc(t.tx_hash)}">${esc(shortHash(t.tx_hash))}</code><span class="why">${why}</span>${ICON.next}</button></li>`;
     }).join("");
-    $("scanOut").innerHTML = txs.length ? `<div class="counts">${box("malicious_pattern", "high", "High pattern")}${box("suspicious", "medium", "Suspicious")}${box("no_known_pattern", "low", "No known pattern")}${box("inconclusive", "medium", "Inconclusive")}${c.unsupported ? box("unsupported", "low", "Unsupported") : ""}</div>
-      <p class="scan-meta">Inspected ${plural(j.n_scored, "transaction")} touching NEAR Intents among the account's ${esc(j.n_index_rows)} most recent. Select one for evidence.${partial ? ` ${partial} had incomplete receipt evidence.` : ""} Cached for 5 minutes. This is not a clean bill of health for the protocol.</p><ul class="scan-list">${rows}</ul>`
+    $("scanOut").innerHTML = txs.length ? `<p class="tally">${count("malicious_pattern", "high")}${count("suspicious", "medium")}${count("no_known_pattern", "low")}${count("inconclusive", "medium")}${c.unsupported ? count("unsupported", "low") : ""}</p>
+      <p class="scan-meta">${plural(j.n_scored, "transaction")} touching NEAR Intents among the account's ${esc(j.n_index_rows)} most recent.${partial ? ` ${partial} had incomplete receipt evidence.` : ""} Cached for 5 minutes. Not a clean bill of health for the protocol.</p>
+      <div class="scan-head" aria-hidden="true"><span>Assessment</span><span>Transaction</span><span>Evidence</span></div><ul class="scan-list" aria-label="Scanned transactions">${rows}</ul>`
       : notice(`<strong>No supported transactions found.</strong> None of the account's ${esc(j.n_index_rows)} recent indexed transactions provided NEAR Intents activity to assess. This scan does not establish that the account or protocol is safe.`);
-
   } catch (e) { if (my === scanSeq) $("scanOut").innerHTML = failure(e); }
   finally { if (my === scanSeq) btn.disabled = false; }
 }
-
-$("scanOut").addEventListener("click", e => {
-  const row = e.target.closest(".scan-row");
-  if (!row) return;
-  $("txHash").value = row.dataset.hash;
-  $("check").scrollIntoView({block: "start"});
-  scoreTx();
-});
 
 async function analyze() {
   const btn = $("analyzeBtn"); if (btn.disabled) return;
   if (!$("code").value.trim()) { $("analyzeOut").innerHTML = failure(new Error("Paste Rust source first.")); return; }
   btn.disabled = true;
-  $("analyzeOut").innerHTML = loading("Scoring…");
+  $("analyzeOut").innerHTML = loading("Scoring…", 3);
   try {
     const j = await api("/v1/analyze", {source_files: {"src/lib.rs": $("code").value}});
     const fns = (j.functions || j.top || []).slice().sort((a, b) => (b.risk || 0) - (a.risk || 0));
     if (!Number(j.n_functions)) {
-      $("analyzeOut").innerHTML = `<div class="empty">No contract functions found; nothing was scored.</div>`;
+      $("analyzeOut").innerHTML = `<p class="result-head meta-line">No contract functions found; nothing was scored.</p>`;
     } else {
       // Code risk is a supporting signal, so it does not use the high-evidence verdict color.
       const sev = ["high", "medium"].includes(j.label) ? "medium" : "low";
-      $("analyzeOut").innerHTML = `<div class="result-head"><span>Contract risk</span><span class="sev ${sev}">${esc(cap(j.label))}</span><span class="meta"><span class="num">${esc(Number(j.risk).toFixed(2))}</span> · ${esc(j.n_functions)} functions · model ${esc(j.model && j.model.version)}</span></div>
+      $("analyzeOut").innerHTML = `<div class="result-head"><span>Contract risk</span><span class="tag ${sev}">${esc(cap(j.label))}</span><span class="meta-line"><span class="num">${esc(Number(j.risk).toFixed(2))}</span> · ${esc(j.n_functions)} functions · model ${esc(j.model && j.model.version)}</span></div>
         <div class="fn-list"><div class="fn-row fn-head"><span>Function</span><span>Risk</span><span>Likely class</span><span>Rule hits</span></div>
         ${fns.map(f => `<div class="fn-row"><code>${esc(f.fn)}</code><span class="num">${f.risk == null ? '<span class="muted">not scored</span>' : esc(Number(f.risk).toFixed(2))}</span>
           <span>${f.vuln_class_guess ? `<span class="k">Likely class: </span>${esc(f.vuln_class_guess)}` : ""}</span>
@@ -723,19 +824,42 @@ async function analyze() {
   btn.disabled = false;
 }
 
-const pill = (label, onclick) => { const b = document.createElement("button"); b.type = "button"; b.className = "pill-btn"; b.textContent = label; b.onclick = onclick; return b; };
-TX_PRESETS.forEach(p => $("txPresets").appendChild(pill(p.label, () => { $("txHash").value = p.hash; scoreTx(); })));
-SCAN_PRESETS.forEach(p => $("scanPresets").appendChild(pill(p.label, () => { $("account").value = p.id; scan(); })));
+// Sample rows: what the sample is, and the real identifier it runs.
+const pill = (label, id, onclick) => {
+  const b = document.createElement("button"), li = document.createElement("li");
+  b.type = "button"; b.className = "sample"; b.onclick = onclick;
+  b.innerHTML = `<span>${esc(label)}</span><code>${esc(id)}</code>`;
+  li.appendChild(b);
+  return li;
+};
+TX_PRESETS.forEach(p => {
+  const li = pill(p.label, shortHash(p.hash), () => { $("txHash").value = p.hash; scoreTx(); });
+  li.firstChild.dataset.hash = p.hash;
+  $("txPresets").appendChild(li);
+});
+SCAN_PRESETS.forEach(p => $("scanPresets").appendChild(pill(p.label, shortId(p.id), () => { $("account").value = p.id; scan(); })));
 $("scoreForm").onsubmit = e => { e.preventDefault(); scoreTx(); };
 $("scanForm").onsubmit = e => { e.preventDefault(); scan(); };
-$("txHash").oninput = () => fieldError("txHash", "txErr", null);
+$("txHash").oninput = () => { fieldError("txHash", "txErr", null); markSample(null); };
 $("account").oninput = () => fieldError("account", "accErr", null);
+$("scanOut").addEventListener("click", e => {
+  const row = e.target.closest(".scan-row");
+  if (!row) return;
+  $("txHash").value = row.dataset.hash;
+  $("check").scrollIntoView({block: "start"});
+  scoreTx();
+});
+
+// Following the nav link to the source check opens it.
+const openSource = () => { if (location.hash === "#code-inspection") document.querySelector("#code-inspection details").open = true; };
+addEventListener("hashchange", openSource);
+openSource();
 
 Object.keys(EXAMPLES).forEach(k => $("example").add(new Option(k, k)));
 $("example").onchange = () => { $("code").value = EXAMPLES[$("example").value]; $("analyzeOut").innerHTML = ""; };
 $("code").value = EXAMPLES[Object.keys(EXAMPLES)[0]];
 $("analyzeBtn").onclick = analyze;
-$("stats").innerHTML = STATS.map(s => `<div class="stat"><b>${esc(s.value)}</b>${esc(s.label)}</div>`).join("");
+$("stats").innerHTML = STATS.map(s => `<div class="stat"><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`).join("");
 api("/v1/health").then(() => { $("net").textContent = "Mainnet"; $("netChip").classList.add("ok"); })
   .catch(() => { $("net").textContent = "Service not reachable"; $("netChip").classList.add("down"); });
 </script>
